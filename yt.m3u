@@ -17,7 +17,7 @@ http://127.0.0.1:6095/stream?url=https://www.youtube.com/@MediaoneTVLive/live
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/@24onlive/live
 
 #EXTINF:-1 tvg-id="24News" group-title="Malayalam",Reporter
-http://127.0.0.1:6095/stream?url=https://www.youtube.com/@reporterlive
+http://127.0.0.1:6095/stream?url=https://www.youtube.com/@reporterlive/live
 
 #EXTINF:-1 tvg-id="24News" group-title="Malayalam",News 18 kerala
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/@News18Kerala/live
