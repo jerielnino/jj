@@ -8,10 +8,17 @@ http://127.0.0.1:6095/stream?url=https://www.youtube.com/@asianetnews/live
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/@manoramanews/live
 
 #EXTINF:-1 tvg-id="MathrubhumiNews" group-title="Malayalam",Mathrubhumi News
-http://127.0.0.1:6095/stream?url=https://www.youtube.com/@mathrubhuminews/live
+http://127.0.0.1:6095/stream?url=https://www.youtube.com/@TVMathrubhumi/live
 
 #EXTINF:-1 tvg-id="MediaOne" group-title="Malayalam",MediaOne TV
-http://127.0.0.1:6095/stream?url=https://www.youtube.com/@MediaOneLive/live
+http://127.0.0.1:6095/stream?url=https://www.youtube.com/@MediaoneTVLive/live
 
 #EXTINF:-1 tvg-id="24News" group-title="Malayalam",24 News
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/@24onlive/live
+
+#EXTINF:-1 tvg-id="24News" group-title="Malayalam",Reporter
+http://127.0.0.1:6095/stream?url=https://www.youtube.com/@reporterlive
+
+#EXTINF:-1 tvg-id="24News" group-title="Malayalam",News 18 kerala
+http://127.0.0.1:6095/stream?url=https://www.youtube.com/@News18Kerala/live
+
