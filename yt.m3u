@@ -1,24 +1,23 @@
 #EXTM3U
 #EXT-X-VERSION:3
 
-#EXTINF:-1 tvg-id="AsianetNews" tvg-logo="https://www.asianetnews.com/static/images/logo.png" group-title="Malayalam",Asianet News
+#EXTINF:-1 tvg-id="AsianetNews" tvg-logo="https://yt3.googleusercontent.com/8eItmjbOfJwot8wd0-19KgtvF2ztf4np2qIVfJ1kMPv1ADi6wx9giU62B1j6xO0Ug2Idrqbncg=s160-c-k-c0x00ffffff-no-rj" group-title="Malayalam",Asianet News
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/@asianetnews/live
 
-#EXTINF:-1 tvg-id="ManoramaNews" tvg-logo="https://www.manoramanews.com/content/dam/mm/en/logo.png" group-title="Malayalam",Manorama News
+#EXTINF:-1 tvg-id="ManoramaNews" tvg-logo="https://yt3.googleusercontent.com/ZYxJvUMw4-3IZvUc7JP9IsZjOUbHQv5zJ9Tg4qZqSQF5ly2l28J8xekqgHFL7TtrUe1Rkh1Wsg=s160-c-k-c0x00ffffff-no-rj" group-title="Malayalam",Manorama News
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/@manoramanews/live
 
-#EXTINF:-1 tvg-id="MathrubhumiNews" group-title="Malayalam",Mathrubhumi News
+#EXTINF:-1 tvg-id="MathrubhumiNews" tvg-logo="https://yt3.googleusercontent.com/ytc/AIdro_n3GwS5AiD5wcCQcacdBVIqedZEtVm4H1EsLlxB0li41mA=s160-c-k-c0x00ffffff-no-rj" group-title="Malayalam",Mathrubhumi News
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/@TVMathrubhumi/live
 
-#EXTINF:-1 tvg-id="MediaOne" group-title="Malayalam",MediaOne TV
+#EXTINF:-1 tvg-id="MediaOne" tvg-logo="https://yt3.googleusercontent.com/ytc/AIdro_nFqgCQfk09vEWUTJ8YLJqTaahT-cqdX1fP8-rv7ZI5Kos=s160-c-k-c0x00ffffff-no-rj" group-title="Malayalam",MediaOne TV
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/@MediaoneTVLive/live
 
-#EXTINF:-1 tvg-id="24News" group-title="Malayalam",24 News
+#EXTINF:-1 tvg-id="24News" tvg-logo="https://yt3.googleusercontent.com/X_t333KRKpneIeUWhmRwWjXL5HOKQgIefYfs-Fn3sdLlu_zvqJAbSI8kPSYrK3yrZWwjQERM=s160-c-k-c0x00ffffff-no-rj" group-title="Malayalam",24 News
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/@24onlive/live
 
-#EXTINF:-1 tvg-id="24News" group-title="Malayalam",Reporter
+#EXTINF:-1 tvg-id="ReporterTV" tvg-logo="https://yt3.googleusercontent.com/bJDd0TLwG0dXlTmaX9RvX1Ch99KMWU8tqpMIXu6W46dNfIS7gK3pC243M--uLOHgPaNKTaQF=s160-c-k-c0x00ffffff-no-rj" group-title="Malayalam",Reporter
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/@reporterlive/live
 
-#EXTINF:-1 tvg-id="24News" group-title="Malayalam",News 18 kerala
+#EXTINF:-1 tvg-id="News18Kerala" tvg-logo="https://yt3.googleusercontent.com/ytc/AIdro_noEGYn5NGuAElTdnJcp3vAZJYN5bM9ZDjFa7OfVxq2xw=s160-c-k-c0x00ffffff-no-rj" group-title="Malayalam",News 18 kerala
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/@News18Kerala/live
-
