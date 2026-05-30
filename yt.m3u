@@ -21,3 +21,6 @@ http://127.0.0.1:6095/stream?url=https://www.youtube.com/@reporterlive/live
 
 #EXTINF:-1 tvg-id="News18Kerala" tvg-logo="https://yt3.googleusercontent.com/ytc/AIdro_noEGYn5NGuAElTdnJcp3vAZJYN5bM9ZDjFa7OfVxq2xw=s160-c-k-c0x00ffffff-no-rj" group-title="Malayalam",News 18 kerala
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/@News18Kerala/live
+
+#EXTINF:-1 tvg-id="Sport" tvg-logo="" group-title="Xtra",Sport1
+http://127.0.0.1:6095/stream?url=https://www.youtube.com/live/wnlfD625Eqo?si=t1HeTEJy_UWlOvam
