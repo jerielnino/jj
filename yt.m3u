@@ -23,4 +23,4 @@ http://127.0.0.1:6095/stream?url=https://www.youtube.com/@reporterlive/live
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/@News18Kerala/live
 
 #EXTINF:-1 tvg-id="Sport" tvg-logo="" group-title="Xtra",Sport1
-http://127.0.0.1:6095/stream?url=https://www.youtube.com/live/wnlfD625Eqo?si=t1HeTEJy_UWlOvam
+http://127.0.0.1:6095/stream?url=https://www.youtube.com/@drmsportstvnetwork/live
