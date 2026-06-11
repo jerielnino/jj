@@ -4,6 +4,14 @@
 #EXTINF:-1 tvg-id="FIFA.WC" tvg-name="FIFA WC Live" tvg-logo="" group-title="Sports",FIFA WC 1
 https://handt.nuevasantino.xyz/fifawc.m3u8
 
+#EXTINF:-1 tvg-id="Premier.Sports.1" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/USA_Network_logo_%282016%29.svg/512px-USA_Network_logo_%282016%29.svg.png",FIFA WC 2
+#KODIPROP:inputstreamaddon=inputstream.adaptive 
+#KODIPROP:inputstream.adaptive.manifest_type=dash 
+#KODIPROP:inputstream.adaptive.license_type=clearkey
+#KODIPROP:inputstream.adaptive.license_key={"c4088f5f265f9de50cffd80bf89308b7":"2c4d2239d96d532b4ec2050653611003"} 
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36
+https://live-pv-ta.amazon.fastly-edge.com/syd-nitro/live/clients/dash/enc/h9urpo3cwb/out/v1/fde190f369484bc6b6117cc16cd82a9f/cenc.mpd
+
 #EXTINF:-1 tvg-id="Premier.Sports.1" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/USA_Network_logo_%282016%29.svg/512px-USA_Network_logo_%282016%29.svg.png",Friendly1
 #KODIPROP:inputstreamaddon=inputstream.adaptive 
 #KODIPROP:inputstream.adaptive.manifest_type=dash 
