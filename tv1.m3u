@@ -12,6 +12,12 @@ https://inproviszon.st/fox-sports-1.m3u8
 #EXTVLCOPT:http-origin=https://cxfoot.pages.dev
 https://inproviszon.st/fox-usa.m3u8
 
+#EXTINF:-1 tvg-id="cazetv" tvg-name="CazéTV" group-title="Sports",CazéTV
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0
+#EXTVLCOPT:http-referrer=https://footsters-live.pages.dev/
+#EXTVLCOPT:http-origin=https://footsters-live.pages.dev
+https://dfr80qz435crc.cloudfront.net/MNOP/Amagi/Caze/Caze_TV_BR/1080p-vtt/index.m3u8
+
 #EXTINF:-1 tvg-name="RTB Go" group-title="Live", Gaze
 #EXTVLCOPT:http-user-agent=Mozilla/5.0
 https://dfr80qz435crc.cloudfront.net/MNOP/Amagi/Caze/Caze_TV_BR/Caze_TV.m3u8
