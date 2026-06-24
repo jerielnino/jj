@@ -44,6 +44,10 @@ https://otte-tim.live.pv-cdn.net/pdx-nitro/live/clients/dash/enc/ajfoeddkbz/out/
 #EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36
 https://inproviszon.st/fox-sports-1.m3u8
 
+#EXTINF:-1 tvg-id="FoxSports1" tvg-name="Fox Sports 1" group-title="Sports",Fox Sports 1
+#EXT-X-DRM:CLEARKKEY="cb5eaea6d91fc8a702f154cefd69c976:fd4b69623da596aac100e5722d8a1ca0"
+https://inproviszon.st/fox-sports-1.m3u8
+
 #EXTINF:-1 tvg-id="Premier.Sports.1" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/USA_Network_logo_%282016%29.svg/512px-USA_Network_logo_%282016%29.svg.png",FS2
 #KODIPROP:inputstreamaddon=inputstream.adaptive 
 #KODIPROP:inputstream.adaptive.manifest_type=dash 
