@@ -1,20 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <channels>
     <channel>
-        <channel-name>Example TV</channel-name>
+        <channel-name>Germany vs Paraguay</channel-name>
         <tvg-id>example.tv</tvg-id>
         <tvg-name>Example TV</tvg-name>
         <tvg-logo>https://example.com/logo.png</tvg-logo>
         <group-title>Entertainment</group-title>
-        <dailymotion-url>https://www.dailymotion.com/video/x8xxxxx</dailymotion-url>
-    </channel>
-    
-    <channel>
-        <channel-name>Another News Channel</channel-name>
-        <tvg-id>news.tv</tvg-id>
-        <tvg-name>News TV</tvg-name>
-        <tvg-logo>https://example.com/news-logo.png</tvg-logo>
-        <group-title>News</group-title>
-        <dailymotion-url>x7yyyyy</dailymotion-url>
+        <dailymotion-url>https://www.dailymotion.com/video/xajusuy</dailymotion-url>
     </channel>
 </channels>
