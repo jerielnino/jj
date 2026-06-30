@@ -1,4 +1,6 @@
 #EXTM3U
 
 #EXTINF:-1 tvg-id="nl-mar-2026" tvg-name="Netherlands vs Morocco" group-title="World Cup VOD",Netherlands vs Morocco Highlights 2026
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36
+#EXTVLCOPT:http-referrer=https://www.foxsports.com/
 http://127.0.0.1:8085/play/worldcup
