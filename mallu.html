@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Malayalam</title>
+<style>
+  :root{
+    --black:#050505;
+    --black-soft:#141414;
+    --black-softer:#1e1e1e;
+    --gold:#e8b93a;
+    --gold-dark:#b8860b;
+    --cream:#f2efe6;
+    --ink:#161616;
+    --success:#2ecc71;
+    --danger:#e74c3c;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    font-family:'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+    background:
+      radial-gradient(circle at 50% -10%, rgba(232,185,58,.10), transparent 55%),
+      linear-gradient(160deg,#000000,var(--black-soft) 60%,var(--black-softer));
+    color:var(--cream);
+    overflow-x:hidden;
+  }
+  #app{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    padding:20px 16px 40px;
+  }
+  h1{
+    font-size:1.7rem;
+    text-align:center;
+    margin:6px 0 2px;
+    color:var(--gold);
+    text-shadow:0 0 14px rgba(232,185,58,.35);
+  }
+  .subtitle{
+    text-align:center;
+    opacity:.85;
+    font-size:.9rem;
+    margin-bottom:18px;
+  }
+  .screen{
+    width:100%;
+    max-width:420px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+  }
+  .panel{
+    width:100%;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.15);
+    border-radius:18px;
+    padding:18px;
+    backdrop-filter:blur(4px);
+  }
+  label{
+    display:block;
+    font-size:.85rem;
+    margin-bottom:6px;
+    opacity:.9;
+  }
+  input[type=text], input[type=number]{
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,.2);
+    font-size:1rem;
+    background:var(--black-softer);
+    color:var(--cream);
+  }
+  .stepper{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    justify-content:center;
+  }
+  .stepper button{
+    width:42px; height:42px;
+    border-radius:50%;
+    border:none;
+    font-size:1.3rem;
+    background:var(--gold);
+    color:var(--ink);
+    font-weight:bold;
+    cursor:pointer;
+  }
+  .stepper .value{
+    min-width:60px;
+    text-align:center;
+    font-size:1.4rem;
+    font-weight:bold;
+  }
+  .hint{
+    font-size:.78rem;
+    opacity:.75;
+    text-align:center;
+    margin-top:2px;
+  }
+  .chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    justify-content:center;
+  }
+  .chip{
+    padding:8px 16px;
+    border-radius:20px;
+    border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.06);
+    color:var(--cream);
+    font-size:.85rem;
+    cursor:pointer;
+  }
+  .chip.active{
+    background:linear-gradient(135deg,var(--gold),var(--gold-dark));
+    color:var(--ink);
+    border-color:var(--gold);
+    font-weight:600;
+  }
+  button.primary{
+    width:100%;
+    padding:14px;
+    font-size:1.05rem;
+    font-weight:600;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(135deg,var(--gold),var(--gold-dark));
+    color:var(--ink);
+    cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,.25);
+  }
+  button.primary:active{ transform:scale(.98); }
+  button.secondary{
+    width:100%;
+    padding:12px;
+    font-size:.95rem;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.4);
+    background:transparent;
+    color:var(--cream);
+    cursor:pointer;
+  }
+  button:disabled{ opacity:.5; cursor:not-allowed; }
+  .name-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .name-row span{
+    width:26px;
+    text-align:right;
+    opacity:.7;
+    font-size:.85rem;
+  }
+  .names-list{
+    max-height:44vh;
+    overflow-y:auto;
+    padding-right:4px;
+  }
+  .top-bar{
+    width:100%;
+    max-width:420px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:4px;
+  }
+  .top-bar button{
+    background:none;
+    border:none;
+    color:var(--cream);
+    opacity:.7;
+    font-size:.85rem;
+    cursor:pointer;
+  }
+  .progress{
+    font-size:.85rem;
+    opacity:.8;
+  }
+
+  /* ---- Title / rules screens ---- */
+  .title-screen{
+    padding-top:10vh;
+  }
+  .title-emoji{
+    font-size:4.5rem;
+    text-align:center;
+  }
+  .title-heading{
+    text-align:center;
+    color:var(--gold);
+    margin:4px 0 0;
+    font-size:1.5rem;
+  }
+  .title-tagline{
+    text-align:center;
+    opacity:.8;
+    font-size:.9rem;
+    margin:0 0 20px;
+  }
+  .rules-list p{
+    font-size:.88rem;
+    opacity:.9;
+    margin:0 0 12px;
+    line-height:1.4;
+  }
+
+  /* ---- Guard overlay (pass phone screen) ---- */
+  .guard{
+    width:100%;
+    max-width:420px;
+    text-align:center;
+    padding:40px 10px;
+  }
+  .guard .icon{
+    font-size:3.4rem;
+    margin-bottom:6px;
+  }
+  .guard h2{
+    color:var(--gold);
+    margin:6px 0 4px;
+    font-size:1.3rem;
+  }
+  .guard p{
+    opacity:.85;
+    font-size:.9rem;
+    margin-bottom:22px;
+  }
+
+  /* ---- Card ---- */
+  .card-wrap{
+    perspective:1200px;
+    width:min(88vw,340px);
+    height:440px;
+    margin:10px 0;
+  }
+  .card{
+    width:100%; height:100%;
+    position:relative;
+    transform-style:preserve-3d;
+    transition:transform .6s cubic-bezier(.4,.2,.2,1);
+  }
+  .card.flipped{ transform:rotateY(180deg); }
+  .face{
+    position:absolute; inset:0;
+    border-radius:22px;
+    backface-visibility:hidden;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  .face.front{
+    background:
+      radial-gradient(circle at 30% 20%, rgba(232,185,58,.08), transparent 60%),
+      repeating-linear-gradient(45deg, #000000 0 14px, #181818 14px 28px);
+    border:3px solid var(--gold);
+  }
+  .face.front .emoji{ font-size:4rem; opacity:.9; }
+  .face.front .caption{
+    margin-top:14px;
+    color:var(--gold);
+    font-weight:600;
+    letter-spacing:.5px;
+  }
+  .face.back{
+    background:linear-gradient(160deg,#1c1c1c,#0c0c0c);
+    color:var(--cream);
+    transform:rotateY(180deg);
+    border:3px solid var(--gold-dark);
+  }
+  .face.back .big-emoji{
+    font-size:5rem;
+    line-height:1;
+  }
+  .secret-photo{
+    width:140px;
+    height:140px;
+    object-fit:cover;
+    border-radius:16px;
+    border:3px solid var(--gold);
+    box-shadow:0 6px 18px rgba(0,0,0,.4);
+    animation:photoFadeIn .4s ease;
+  }
+  @keyframes photoFadeIn{
+    from{ opacity:0; transform:scale(.92); }
+    to{ opacity:1; transform:scale(1); }
+  }
+  .word-reveal .secret-photo{
+    width:120px;
+    height:120px;
+    margin:0 auto 4px;
+  }
+  .face.back .word{
+    font-size:1.6rem;
+    font-weight:700;
+    margin-top:10px;
+    color:var(--gold);
+  }
+  .face.back .category{
+    margin-top:10px;
+    font-size:.85rem;
+    padding:4px 12px;
+    border-radius:20px;
+    background:rgba(255,255,255,.08);
+  }
+  .face.back .role-tag{
+    font-size:.9rem;
+    letter-spacing:1px;
+    opacity:.7;
+    text-transform:uppercase;
+    margin-bottom:4px;
+  }
+
+  .reveal-controls{
+    width:min(88vw,340px);
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  /* ---- Discussion / results ---- */
+  .timer{
+    font-size:2.4rem;
+    font-weight:700;
+    color:var(--gold);
+    margin:10px 0;
+    font-family:monospace;
+  }
+  .imposter-list{
+    text-align:center;
+    font-size:1.1rem;
+    margin:8px 0;
+  }
+  .imposter-list b{ color:var(--danger); }
+  .word-reveal{
+    text-align:center;
+    margin:6px 0 4px;
+  }
+  .word-reveal .big-emoji{ font-size:3.2rem; }
+  .word-reveal .word{ font-size:1.5rem; font-weight:700; color:var(--gold); }
+  .reveal-label{
+    text-align:center;
+    font-size:.75rem;
+    opacity:.65;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin:14px 0 2px;
+  }
+
+  /* ---- Voting ---- */
+  .vote-list{
+    width:100%;
+    max-height:44vh;
+    overflow-y:auto;
+    padding-right:4px;
+  }
+  .vote-card{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    width:100%;
+    padding:14px 16px;
+    margin-bottom:10px;
+    border-radius:14px;
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.14);
+    overflow:hidden;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+    transition:transform .12s ease, border-color .2s ease;
+  }
+  .vote-card:active{ transform:scale(.96); }
+  .vote-card.disabled{ cursor:not-allowed; opacity:.55; }
+  .vote-card.disabled:active{ transform:none; }
+  .vote-card.tapped{ animation:cardTap .4s ease; }
+  @keyframes cardTap{
+    0%{ border-color:var(--gold); background:rgba(232,185,58,.28); }
+    100%{ border-color:rgba(255,255,255,.14); background:rgba(255,255,255,.06); }
+  }
+  .vote-card .fill{
+    position:absolute;
+    inset:0;
+    width:0%;
+    background:linear-gradient(90deg, rgba(232,185,58,.32), rgba(232,185,58,.06));
+    transition:width .5s cubic-bezier(.2,.7,.2,1);
+    z-index:0;
+  }
+  .vote-card .vname{
+    position:relative;
+    z-index:1;
+    font-size:.98rem;
+    font-weight:500;
+  }
+  .vote-card .vcount{
+    position:relative;
+    z-index:1;
+    min-width:34px;
+    height:34px;
+    padding:0 4px;
+    border-radius:50%;
+    background:var(--gold);
+    color:var(--ink);
+    font-weight:700;
+    font-size:1rem;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:transform .2s ease;
+  }
+  .vote-card .vcount.pulse{ animation:votePulse .4s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes votePulse{
+    0%{ transform:scale(1); }
+    45%{ transform:scale(1.45); background-color:#fff2c9; }
+    100%{ transform:scale(1); }
+  }
+  .vote-footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:8px;
+  }
+  .undo-btn{
+    background:none;
+    border:1px solid rgba(255,255,255,.25);
+    color:var(--cream);
+    padding:6px 14px;
+    border-radius:10px;
+    font-size:.8rem;
+    cursor:pointer;
+  }
+  .undo-btn:disabled{ opacity:.3; cursor:not-allowed; }
+  .vote-banner{
+    text-align:center;
+    padding:12px;
+    border-radius:14px;
+    margin-bottom:14px;
+    font-weight:600;
+  }
+  .vote-banner.correct{
+    background:rgba(46,204,113,.2);
+    border:1px solid var(--success);
+  }
+  .vote-banner.wrong{
+    background:rgba(192,57,43,.25);
+    border:1px solid var(--danger);
+  }
+
+  footer{
+    margin-top:24px;
+    opacity:.5;
+    font-size:.72rem;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Kerala word bank ----------
+  const WORDS = [
+    {word:"Appam", emoji:"🥞", cat:"Food"},
+    {word:"Puttu", emoji:"🍙", cat:"Food"},
+    {word:"Kadala Curry", emoji:"🍛", cat:"Food"},
+    {word:"Idiyappam", emoji:"🍜", cat:"Food"},
+    {word:"Kanji", emoji:"🥣", cat:"Food"},
+    {word:"Sadya", emoji:"🍛", cat:"Food"},
+    {word:"Payasam", emoji:"🍮", cat:"Food"},
+    {word:"Avial", emoji:"🥗", cat:"Food"},
+    {word:"Thoran", emoji:"🥬", cat:"Food"},
+    {word:"Olan", emoji:"🍲", cat:"Food"},
+    {word:"Erissery", emoji:"🍲", cat:"Food"},
+    {word:"Pachadi", emoji:"🥗", cat:"Food"},
+    {word:"Meen Curry", emoji:"🐟", cat:"Food"},
+    {word:"Karimeen Fry", emoji:"🐠", cat:"Food"},
+    {word:"Meen Pollichathu", emoji:"🐟", cat:"Food"},
+    {word:"Beef Fry", emoji:"🥩", cat:"Food"},
+    {word:"Nadan Kozhi Curry", emoji:"🍗", cat:"Food"},
+    {word:"Malabar Biryani", emoji:"🍚", cat:"Food"},
+    {word:"Kappa", emoji:"🥔", cat:"Food"},
+    {word:"Kappa Biriyani", emoji:"🍚", cat:"Food"},
+    {word:"Banana Chips", emoji:"🍌", cat:"Food"},
+    {word:"Chakka Varatti", emoji:"🍈", cat:"Food"},
+    {word:"Unniyappam", emoji:"🍩", cat:"Food"},
+    {word:"Achappam", emoji:"🍪", cat:"Food"},
+    {word:"Kozhukatta", emoji:"🍡", cat:"Food"},
+    {word:"Ela Ada", emoji:"🍃", cat:"Food"},
+    {word:"Pazham Pori", emoji:"🍌", cat:"Food"},
+    {word:"Kozhikodan Halwa", emoji:"🍬", cat:"Food"},
+    {word:"Malabar Paratha", emoji:"🫓", cat:"Food"},
+    {word:"Sulaimani Tea", emoji:"🍵", cat:"Food"},
+    {word:"Filter Kaapi", emoji:"☕", cat:"Food"},
+    {word:"Toddy", emoji:"🍹", cat:"Food"},
+    {word:"Rasam", emoji:"🍲", cat:"Food"},
+    {word:"Achar", emoji:"🥭", cat:"Food"},
+    {word:"Parippu Curry", emoji:"🍲", cat:"Food"},
+    {word:"Jackfruit", emoji:"🍈", cat:"Food"},
+    {word:"Tea", emoji:"🍵", cat:"Food"},
+    {word:"Coffee", emoji:"☕", cat:"Food"},
+    {word:"Curd", emoji:"🥛", cat:"Food"},
+    {word:"Milk", emoji:"🥛", cat:"Food"},
+    {word:"Butter", emoji:"🧈", cat:"Food"},
+    {word:"Bread", emoji:"🍞", cat:"Food"},
+    {word:"Rice", emoji:"🍚", cat:"Food"},
+    {word:"Egg", emoji:"🥚", cat:"Food"},
+    {word:"Omelette", emoji:"🍳", cat:"Food"},
+    {word:"Chapati", emoji:"🫓", cat:"Food"},
+    {word:"Dosa", emoji:"🥞", cat:"Food"},
+    {word:"Idli", emoji:"🍚", cat:"Food"},
+    {word:"Sambar", emoji:"🍲", cat:"Food"},
+    {word:"Chutney", emoji:"🥣", cat:"Food"},
+    {word:"Papadam", emoji:"🫓", cat:"Food"},
+    {word:"Watermelon", emoji:"🍉", cat:"Food"},
+    {word:"Mango", emoji:"🥭", cat:"Food"},
+    {word:"Banana", emoji:"🍌", cat:"Food"},
+    {word:"Pineapple", emoji:"🍍", cat:"Food"},
+    {word:"Grapes", emoji:"🍇", cat:"Food"},
+    {word:"Orange", emoji:"🍊", cat:"Food"},
+    {word:"Apple", emoji:"🍎", cat:"Food"},
+    {word:"Lemon", emoji:"🍋", cat:"Food"},
+    {word:"Coconut Water", emoji:"🥥", cat:"Food"},
+    {word:"Peanuts", emoji:"🥜", cat:"Food"},
+    {word:"Cashew Nuts", emoji:"🌰", cat:"Food"},
+    {word:"Honey", emoji:"🍯", cat:"Food"},
+    {word:"Jaggery", emoji:"🍯", cat:"Food"},
+    {word:"Curry Leaves", emoji:"🌿", cat:"Food"},
+    {word:"Ice Cream", emoji:"🍦", cat:"Food"},
+    {word:"Cake", emoji:"🍰", cat:"Food"},
+    {word:"Biscuit", emoji:"🍪", cat:"Food"},
+
+    {word:"Mundu", emoji:"🧵", cat:"Things"},
+    {word:"Kasavu Saree", emoji:"🥻", cat:"Things"},
+    {word:"Nettipattam", emoji:"👑", cat:"Things"},
+    {word:"Aranmula Kannadi", emoji:"🪞", cat:"Things"},
+    {word:"Uruli", emoji:"🍲", cat:"Things"},
+    {word:"Nilavilakku", emoji:"🕯️", cat:"Things"},
+    {word:"Kindi", emoji:"🫖", cat:"Things"},
+    {word:"Ola (Palm Leaf)", emoji:"🍃", cat:"Things"},
+    {word:"Coir Mat", emoji:"🧺", cat:"Things"},
+    {word:"Coir Rope", emoji:"🪢", cat:"Things"},
+    {word:"Chenda", emoji:"🥁", cat:"Things"},
+    {word:"Edakka", emoji:"🥁", cat:"Things"},
+    {word:"Pookalam", emoji:"🌸", cat:"Things"},
+    {word:"Onavillu", emoji:"🏹", cat:"Things"},
+    {word:"Ammikallu (Grinding Stone)", emoji:"🪨", cat:"Things"},
+    {word:"Chirava (Coconut Scraper)", emoji:"🥥", cat:"Things"},
+    {word:"Uri (Hanging Basket)", emoji:"🧺", cat:"Things"},
+    {word:"Chatti (Clay Pot)", emoji:"🍯", cat:"Things"},
+    {word:"Kerala Lottery Ticket", emoji:"🎟️", cat:"Things"},
+
+    {word:"Book", emoji:"📖", cat:"Things"},
+    {word:"Notebook", emoji:"📓", cat:"Things"},
+    {word:"Notepad", emoji:"📝", cat:"Things"},
+    {word:"Pencil", emoji:"✏️", cat:"Things"},
+    {word:"Pen", emoji:"🖊️", cat:"Things"},
+    {word:"Fountain Pen", emoji:"🖋️", cat:"Things"},
+    {word:"Paintbrush", emoji:"🖌️", cat:"Things"},
+    {word:"Crayon", emoji:"🖍️", cat:"Things"},
+    {word:"Ruler", emoji:"📏", cat:"Things"},
+    {word:"Pushpin", emoji:"📌", cat:"Things"},
+    {word:"Paperclip", emoji:"📎", cat:"Things"},
+    {word:"Scissors", emoji:"✂️", cat:"Things"},
+    {word:"Trash Can", emoji:"🗑️", cat:"Things"},
+    {word:"Padlock", emoji:"🔒", cat:"Things"},
+    {word:"Key", emoji:"🔑", cat:"Things"},
+    {word:"Hammer", emoji:"🔨", cat:"Things"},
+    {word:"Axe", emoji:"🪓", cat:"Things"},
+    {word:"Pickaxe", emoji:"⛏️", cat:"Things"},
+    {word:"Wrench", emoji:"🔧", cat:"Things"},
+    {word:"Screwdriver", emoji:"🪛", cat:"Things"},
+    {word:"Bolt", emoji:"🔩", cat:"Things"},
+    {word:"Gear", emoji:"⚙️", cat:"Things"},
+    {word:"Toolbox", emoji:"🧰", cat:"Things"},
+    {word:"Magnet", emoji:"🧲", cat:"Things"},
+    {word:"Ladder", emoji:"🪜", cat:"Things"},
+    {word:"Mirror", emoji:"🪞", cat:"Things"},
+    {word:"Window", emoji:"🪟", cat:"Things"},
+    {word:"Bed", emoji:"🛏️", cat:"Things"},
+    {word:"Sofa", emoji:"🛋️", cat:"Things"},
+    {word:"Chair", emoji:"🪑", cat:"Things"},
+    {word:"Door", emoji:"🚪", cat:"Things"},
+    {word:"Lotion Bottle", emoji:"🧴", cat:"Things"},
+    {word:"Safety Pin", emoji:"🧷", cat:"Things"},
+    {word:"Broom", emoji:"🧹", cat:"Things"},
+    {word:"Basket", emoji:"🧺", cat:"Things"},
+    {word:"Toilet Paper", emoji:"🧻", cat:"Things"},
+    {word:"Bucket", emoji:"🪣", cat:"Things"},
+    {word:"Soap", emoji:"🧼", cat:"Things"},
+    {word:"Toothbrush", emoji:"🪥", cat:"Things"},
+    {word:"Razor", emoji:"🪒", cat:"Things"},
+    {word:"Sponge", emoji:"🧽", cat:"Things"},
+    {word:"Fire Extinguisher", emoji:"🧯", cat:"Things"},
+    {word:"Shopping Cart", emoji:"🛒", cat:"Things"},
+    {word:"Gift Box", emoji:"🎁", cat:"Things"},
+    {word:"Balloon", emoji:"🎈", cat:"Things"},
+    {word:"Bell", emoji:"🔔", cat:"Things"},
+    {word:"Thread", emoji:"🧵", cat:"Things"},
+    {word:"Yarn", emoji:"🧶", cat:"Things"},
+    {word:"Glasses", emoji:"👓", cat:"Things"},
+    {word:"Sunglasses", emoji:"🕶️", cat:"Things"},
+    {word:"Goggles", emoji:"🥽", cat:"Things"},
+    {word:"Necktie", emoji:"👔", cat:"Things"},
+    {word:"T-Shirt", emoji:"👕", cat:"Things"},
+    {word:"Jeans", emoji:"👖", cat:"Things"},
+    {word:"Socks", emoji:"🧦", cat:"Things"},
+    {word:"Handbag", emoji:"👜", cat:"Things"},
+    {word:"Purse", emoji:"👛", cat:"Things"},
+    {word:"Backpack", emoji:"🎒", cat:"Things"},
+    {word:"Shoe", emoji:"👞", cat:"Things"},
+    {word:"Sneaker", emoji:"👟", cat:"Things"},
+    {word:"High Heel", emoji:"👠", cat:"Things"},
+    {word:"Cap", emoji:"🧢", cat:"Things"},
+    {word:"Sun Hat", emoji:"👒", cat:"Things"},
+    {word:"Top Hat", emoji:"🎩", cat:"Things"},
+    {word:"Watch", emoji:"⌚", cat:"Things"},
+    {word:"Ring", emoji:"💍", cat:"Things"},
+    {word:"Prayer Beads", emoji:"📿", cat:"Things"},
+    {word:"Gem", emoji:"💎", cat:"Things"},
+    {word:"Alarm Clock", emoji:"⏰", cat:"Things"},
+    {word:"Wall Clock", emoji:"🕰️", cat:"Things"},
+    {word:"Battery", emoji:"🔋", cat:"Things"},
+    {word:"Electric Plug", emoji:"🔌", cat:"Things"},
+    {word:"Light Bulb", emoji:"💡", cat:"Things"},
+    {word:"Flashlight", emoji:"🔦", cat:"Things"},
+    {word:"Candle", emoji:"🕯️", cat:"Things"},
+    {word:"Bathtub", emoji:"🛁", cat:"Things"},
+    {word:"Shower", emoji:"🚿", cat:"Things"},
+    {word:"Plunger", emoji:"🪠", cat:"Things"},
+    {word:"Newspaper", emoji:"📰", cat:"Things"},
+    {word:"Envelope", emoji:"✉️", cat:"Things"},
+    {word:"Cardboard Box", emoji:"📦", cat:"Things"},
+    {word:"Postbox", emoji:"📮", cat:"Things"},
+    {word:"Suitcase", emoji:"🧳", cat:"Things"},
+    {word:"Ticket", emoji:"🎫", cat:"Things"},
+    {word:"Credit Card", emoji:"💳", cat:"Things"},
+    {word:"Banknote", emoji:"💵", cat:"Things"},
+    {word:"Coin", emoji:"🪙", cat:"Things"},
+    {word:"Mobile Phone", emoji:"📱", cat:"Things"},
+    {word:"Telephone", emoji:"☎️", cat:"Things"},
+    {word:"Television", emoji:"📺", cat:"Things"},
+    {word:"Radio", emoji:"📻", cat:"Things"},
+    {word:"Camera", emoji:"📷", cat:"Things"},
+    {word:"Headphones", emoji:"🎧", cat:"Things"},
+    {word:"Microphone", emoji:"🎤", cat:"Things"},
+    {word:"Magnifying Glass", emoji:"🔍", cat:"Things"},
+    {word:"Microscope", emoji:"🔬", cat:"Things"},
+    {word:"Telescope", emoji:"🔭", cat:"Things"},
+    {word:"Laptop", emoji:"💻", cat:"Things"},
+    {word:"Keyboard", emoji:"⌨️", cat:"Things"},
+    {word:"Computer Mouse", emoji:"🖱️", cat:"Things"},
+    {word:"Floppy Disk", emoji:"💾", cat:"Things"},
+    {word:"Compact Disc", emoji:"💿", cat:"Things"},
+    {word:"Abacus", emoji:"🧮", cat:"Things"},
+    {word:"Umbrella", emoji:"☂️", cat:"Things"},
+    {word:"Scarf", emoji:"🧣", cat:"Things"},
+    {word:"Gloves", emoji:"🧤", cat:"Things"},
+    {word:"Kite", emoji:"🪁", cat:"Things"},
+    {word:"Paint Palette", emoji:"🎨", cat:"Things"},
+    {word:"Picture Frame", emoji:"🖼️", cat:"Things"},
+    {word:"Teddy Bear", emoji:"🧸", cat:"Things"},
+    {word:"Yo-Yo", emoji:"🪀", cat:"Things"},
+    {word:"Dartboard", emoji:"🎯", cat:"Things"},
+    {word:"Plate", emoji:"🍽️", cat:"Things"},
+    {word:"Bowl", emoji:"🥣", cat:"Things"},
+    {word:"Fork", emoji:"🍴", cat:"Things"},
+    {word:"Knife", emoji:"🔪", cat:"Things"},
+    {word:"Chopsticks", emoji:"🥢", cat:"Things"},
+    {word:"Teapot", emoji:"🫖", cat:"Things"},
+    {word:"Cup", emoji:"☕", cat:"Things"},
+    {word:"Bottle", emoji:"🍶", cat:"Things"},
+    {word:"Salt Shaker", emoji:"🧂", cat:"Things"},
+    {word:"Tumbler", emoji:"🥤", cat:"Things"},
+    {word:"Ice Cube", emoji:"🧊", cat:"Things"},
+    {word:"Spoon", emoji:"🥄", cat:"Things"},
+    {word:"Napkin", emoji:"🧻", cat:"Things"},
+    {word:"Blanket", emoji:"🛏️", cat:"Things"},
+    {word:"Curtain", emoji:"🪟", cat:"Things"},
+    {word:"Sewing Needle", emoji:"🪡", cat:"Things"},
+    {word:"Safety Helmet", emoji:"⛑️", cat:"Things"},
+    {word:"Flag", emoji:"🚩", cat:"Things"},
+    {word:"Map", emoji:"🗺️", cat:"Things"},
+    {word:"Compass", emoji:"🧭", cat:"Things"},
+    {word:"Anchor", emoji:"⚓", cat:"Things"},
+    {word:"Rope", emoji:"🪢", cat:"Things"},
+    {word:"Chain", emoji:"⛓️", cat:"Things"},
+    {word:"Shield", emoji:"🛡️", cat:"Things"},
+    {word:"Sword", emoji:"🗡️", cat:"Things"},
+    {word:"Bow and Arrow", emoji:"🏹", cat:"Things"},
+    {word:"Syringe", emoji:"💉", cat:"Things"},
+    {word:"Pill", emoji:"💊", cat:"Things"},
+    {word:"Thermometer", emoji:"🌡️", cat:"Things"},
+    {word:"Stethoscope", emoji:"🩺", cat:"Things"},
+    {word:"Band-Aid", emoji:"🩹", cat:"Things"},
+    {word:"Crutch", emoji:"🩼", cat:"Things"},
+    {word:"Wheelchair", emoji:"🦽", cat:"Things"},
+    {word:"Skateboard", emoji:"🛹", cat:"Things"},
+    {word:"Bicycle", emoji:"🚲", cat:"Things"},
+    {word:"Scooter", emoji:"🛴", cat:"Things"},
+    {word:"Car", emoji:"🚗", cat:"Things"},
+    {word:"Bus", emoji:"🚌", cat:"Things"},
+    {word:"Train", emoji:"🚆", cat:"Things"},
+    {word:"Boat", emoji:"⛵", cat:"Things"},
+    {word:"Airplane", emoji:"✈️", cat:"Things"},
+    {word:"Helicopter", emoji:"🚁", cat:"Things"},
+    {word:"Traffic Light", emoji:"🚦", cat:"Things"},
+    {word:"Fire Truck", emoji:"🚒", cat:"Things"},
+    {word:"Ambulance", emoji:"🚑", cat:"Things"},
+    {word:"Police Car", emoji:"🚓", cat:"Things"},
+    {word:"Tractor", emoji:"🚜", cat:"Things"},
+    {word:"Barrel", emoji:"🛢️", cat:"Things"},
+    {word:"Satellite", emoji:"🛰️", cat:"Things"},
+    {word:"Rocket", emoji:"🚀", cat:"Things"},
+    {word:"Parachute", emoji:"🪂", cat:"Things"},
+    {word:"Life Ring", emoji:"🛟", cat:"Things"},
+    {word:"Fishing Rod", emoji:"🎣", cat:"Things"},
+    {word:"Drum", emoji:"🥁", cat:"Things"},
+    {word:"Guitar", emoji:"🎸", cat:"Things"},
+    {word:"Violin", emoji:"🎻", cat:"Things"},
+    {word:"Trumpet", emoji:"🎺", cat:"Things"},
+    {word:"Saxophone", emoji:"🎷", cat:"Things"},
+    {word:"Piano", emoji:"🎹", cat:"Things"},
+    {word:"Banjo", emoji:"🪕", cat:"Things"},
+    {word:"Accordion", emoji:"🪗", cat:"Things"},
+    {word:"Hourglass", emoji:"⏳", cat:"Things"},
+    {word:"Stopwatch", emoji:"⏱️", cat:"Things"},
+    {word:"Calendar", emoji:"📅", cat:"Things"},
+    {word:"Clipboard", emoji:"📋", cat:"Things"},
+    {word:"File Folder", emoji:"📁", cat:"Things"},
+    {word:"Globe", emoji:"🌍", cat:"Things"},
+    {word:"Test Tube", emoji:"🧪", cat:"Things"},
+    {word:"Petri Dish", emoji:"🧫", cat:"Things"},
+    {word:"Joystick", emoji:"🕹️", cat:"Things"},
+    {word:"Slot Machine", emoji:"🎰", cat:"Things"},
+    {word:"Dice", emoji:"🎲", cat:"Things"},
+    {word:"Puzzle", emoji:"🧩", cat:"Things"},
+    {word:"Chess Piece", emoji:"♟️", cat:"Things"},
+    {word:"Playing Cards", emoji:"🃏", cat:"Things"},
+    {word:"Trophy", emoji:"🏆", cat:"Things"},
+    {word:"Medal", emoji:"🎖️", cat:"Things"},
+    {word:"Ribbon", emoji:"🎀", cat:"Things"},
+    {word:"Confetti Ball", emoji:"🎊", cat:"Things"},
+    {word:"Firecracker", emoji:"🧨", cat:"Things"},
+    {word:"Party Popper", emoji:"🎉", cat:"Things"},
+    {word:"Frying Pan", emoji:"🍳", cat:"Things"},
+    {word:"Cooking Pot", emoji:"🍲", cat:"Things"},
+    {word:"Football", emoji:"⚽", cat:"Things"},
+    {word:"Basketball", emoji:"🏀", cat:"Things"},
+    {word:"Cricket Bat", emoji:"🏏", cat:"Things"},
+    {word:"Badminton Racket", emoji:"🏸", cat:"Things"},
+    {word:"Tennis Ball", emoji:"🎾", cat:"Things"},
+    {word:"Volleyball", emoji:"🏐", cat:"Things"},
+    {word:"Table Tennis Paddle", emoji:"🏓", cat:"Things"},
+    {word:"Bowling Ball", emoji:"🎳", cat:"Things"},
+    {word:"Boxing Gloves", emoji:"🥊", cat:"Things"},
+    {word:"Skis", emoji:"🎿", cat:"Things"},
+
+    {word:"Coconut Tree", emoji:"🥥", cat:"Nature"},
+    {word:"Backwaters", emoji:"🌴", cat:"Nature"},
+    {word:"Monsoon Rain", emoji:"🌧️", cat:"Nature"},
+    {word:"Peacock", emoji:"🦚", cat:"Nature"},
+    {word:"Great Hornbill", emoji:"🦤", cat:"Nature"},
+    {word:"Elephant", emoji:"🐘", cat:"Nature"},
+    {word:"Western Ghats", emoji:"⛰️", cat:"Nature"},
+    {word:"Periyar Tiger Reserve", emoji:"🐅", cat:"Nature"},
+    {word:"Nilgiri Tahr", emoji:"🐐", cat:"Nature"},
+    {word:"Malabar Giant Squirrel", emoji:"🐿️", cat:"Nature"},
+    {word:"Rice Paddy Fields", emoji:"🌾", cat:"Nature"},
+    {word:"Rubber Plantation", emoji:"🌳", cat:"Nature"},
+    {word:"Spice Garden", emoji:"🌶️", cat:"Nature"},
+    {word:"Sun", emoji:"☀️", cat:"Nature"},
+    {word:"Moon", emoji:"🌙", cat:"Nature"},
+    {word:"Star", emoji:"⭐", cat:"Nature"},
+    {word:"Cloud", emoji:"☁️", cat:"Nature"},
+    {word:"Rainbow", emoji:"🌈", cat:"Nature"},
+    {word:"River", emoji:"🏞️", cat:"Nature"},
+    {word:"Tree", emoji:"🌳", cat:"Nature"},
+    {word:"Flower", emoji:"🌸", cat:"Nature"},
+    {word:"Leaf", emoji:"🍁", cat:"Nature"},
+    {word:"Grass", emoji:"🌱", cat:"Nature"},
+    {word:"Butterfly", emoji:"🦋", cat:"Nature"},
+    {word:"Bee", emoji:"🐝", cat:"Nature"},
+    {word:"Ant", emoji:"🐜", cat:"Nature"},
+    {word:"Frog", emoji:"🐸", cat:"Nature"},
+    {word:"Fish", emoji:"🐟", cat:"Nature"},
+    {word:"Snake", emoji:"🐍", cat:"Nature"},
+    {word:"Crow", emoji:"🐦", cat:"Nature"},
+    {word:"Dog", emoji:"🐕", cat:"Nature"},
+    {word:"Cat", emoji:"🐈", cat:"Nature"},
+    {word:"Cow", emoji:"🐄", cat:"Nature"},
+    {word:"Goat", emoji:"🐐", cat:"Nature"},
+    {word:"Duck", emoji:"🦆", cat:"Nature"},
+    {word:"Hen", emoji:"🐔", cat:"Nature"},
+    {word:"Rooster", emoji:"🐓", cat:"Nature"},
+    {word:"Owl", emoji:"🦉", cat:"Nature"},
+    {word:"Parrot", emoji:"🦜", cat:"Nature"},
+    {word:"Squirrel", emoji:"🐿️", cat:"Nature"},
+    {word:"Bat", emoji:"🦇", cat:"Nature"},
+    {word:"Lizard", emoji:"🦎", cat:"Nature"},
+    {word:"Crab", emoji:"🦀", cat:"Nature"},
+    {word:"Turtle", emoji:"🐢", cat:"Nature"}
+  ];
+
+  // ---------- Game state ----------
+  const MIN_PLAYERS_TO_CONTINUE = 3;
+
+  let state = {
+    screen: "title",       // title -> rules/setup -> names -> guard -> card -> discuss -> vote -> voteNoMajority/roundResult/results
+    numPlayers: 6,
+    numImposters: 1,
+    categoryFilter: "All",
+    names: [],
+    secret: null,
+    secretImageUrl: null,
+    secretImageStatus: "idle",
+    decoySecret: null,
+    decoyImageUrl: null,
+    decoyImageStatus: "idle",
+    imposterSet: new Set(),
+    eliminatedSet: new Set(),
+    currentIndex: 0,
+    flipped: false,
+    timerSeconds: 0,
+    timerRunning: false,
+    timerHandle: null,
+    votes: [],
+    voteHistory: [],
+    justVoted: null,
+    voteOutcome: null,
+    gameOverReason: null
+  };
+
+  const CATEGORIES = ["All", ...new Set(WORDS.map(w => w.cat))];
+
+  function getWordPool(){
+    if (state.categoryFilter === "All") return WORDS;
+    return WORDS.filter(w => w.cat === state.categoryFilter);
+  }
+
+  function pickDecoyWord(secret){
+    const candidates = WORDS.filter(w => w.cat === secret.cat && w.word !== secret.word);
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  function fetchWordImage(word, urlField, statusField){
+    state[urlField] = null;
+    state[statusField] = "loading";
+    try {
+      fetch("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(word))
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && data.thumbnail && data.thumbnail.source){
+            state[urlField] = data.thumbnail.source;
+            state[statusField] = "loaded";
+          } else {
+            state[statusField] = "none";
+          }
+          if (state.screen === "guard" || state.screen === "card") render();
+        })
+        .catch(() => { state[statusField] = "none"; });
+    } catch (e){
+      state[statusField] = "none";
+    }
+  }
+
+  function fetchRoundImages(){
+    fetchWordImage(state.secret.word, "secretImageUrl", "secretImageStatus");
+    fetchWordImage(state.decoySecret.word, "decoyImageUrl", "decoyImageStatus");
+  }
+
+  function makeWordVisual(wordObj, imageUrl, onImageError){
+    if (imageUrl){
+      const img = el("img", {class:"secret-photo", src: imageUrl, alt: wordObj.word});
+      img.addEventListener("error", onImageError);
+      return img;
+    }
+    return el("div", {class:"big-emoji"}, [document.createTextNode(wordObj.emoji)]);
+  }
+
+  function getAliveIndices(){
+    const arr = [];
+    for (let i = 0; i < state.names.length; i++){
+      if (!state.eliminatedSet.has(i)) arr.push(i);
+    }
+    return arr;
+  }
+
+  function getMaxVotes(){
+    return getAliveIndices().length;
+  }
+
+  function autoImposters(n){
+    let count = Math.round(n / 5);
+    if (count < 1) count = 1;
+    let maxAllowed = Math.max(1, Math.floor((n - 1) / 2));
+    if (count > maxAllowed) count = maxAllowed;
+    return count;
+  }
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function el(tag, attrs, children){
+    const e = document.createElement(tag);
+    if (attrs) for (const k in attrs){
+      if (k === "class") e.className = attrs[k];
+      else if (k === "html") e.innerHTML = attrs[k];
+      else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    }
+    (children || []).forEach(c => { if (c) e.appendChild(c); });
+    return e;
+  }
+
+  function render(){
+    const app = document.getElementById("app");
+    app.innerHTML = "";
+    app.appendChild(el("h1", {}, [document.createTextNode("🥥 Mallu")]));
+    app.appendChild(el("div", {class:"subtitle"}, [document.createTextNode("Pass & play — find the imposter among you")]));
+
+    const menuScreens = ["title", "rules", "setup", "names"];
+    if (!menuScreens.includes(state.screen)){
+      const bar = el("div", {class:"top-bar"});
+      bar.appendChild(el("button", {onclick: resetGame}, [document.createTextNode("🆕 New Game")]));
+      if (state.screen === "guard" || state.screen === "card"){
+        bar.appendChild(el("div", {class:"progress"}, [document.createTextNode(
+          "Player " + (state.currentIndex + 1) + " / " + state.names.length
+        )]));
+      } else {
+        bar.appendChild(el("div"));
+      }
+      app.appendChild(bar);
+    }
+
+    if (state.screen === "title") renderTitle(app);
+    else if (state.screen === "rules") renderRules(app);
+    else if (state.screen === "setup") renderSetup(app);
+    else if (state.screen === "names") renderNames(app);
+    else if (state.screen === "guard") renderGuard(app);
+    else if (state.screen === "card") renderCard(app);
+    else if (state.screen === "discuss") renderDiscuss(app);
+    else if (state.screen === "vote") renderVote(app);
+    else if (state.screen === "voteNoMajority") renderVoteNoMajority(app);
+    else if (state.screen === "roundResult") renderRoundResult(app);
+    else if (state.screen === "results") renderResults(app);
+
+    app.appendChild(el("footer", {}, [document.createTextNode("Mallu· local pass-and-play game")]));
+  }
+
+  // ---------- Title screen ----------
+  function renderTitle(app){
+    const screen = el("div", {class:"screen title-screen"});
+    screen.appendChild(el("div", {class:"title-emoji"}, [document.createTextNode("🥥🕵️")]));
+    screen.appendChild(el("h2", {class:"title-heading"}, [document.createTextNode("Find the Imposter")]));
+    screen.appendChild(el("p", {class:"title-tagline"}, [document.createTextNode(
+      "A Kerala-themed pass & play party game for any number of players"
+    )]));
+    screen.appendChild(el("button", {class:"primary", onclick: () => { state.screen = "setup"; render(); }}, [document.createTextNode("▶ New Game")]));
+    screen.appendChild(el("button", {class:"secondary", onclick: () => { state.screen = "rules"; render(); }}, [document.createTextNode("📖 How to Play")]));
+    app.appendChild(screen);
+  }
+
+  // ---------- Rules screen ----------
+  function renderRules(app){
+    const screen = el("div", {class:"screen"});
+    const panel = el("div", {class:"panel"});
+    panel.appendChild(el("h2", {style:"color:var(--gold);text-align:center;margin:0 0 12px"}, [document.createTextNode("How to Play")]));
+
+    const steps = [
+      "Pick a player count — one or more secret imposters are chosen automatically.",
+      "Pass the device around. Each player privately reveals their card with a local word (and photo!). Almost everyone gets the same word, but the imposter(s) secretly get a different, similar word from the same category — and nobody is told who has the odd one out.",
+      "Discuss out loud, describing your word without saying it — try to spot whoever seems to be describing something slightly different.",
+      "Vote! Tap a suspect's card each time someone calls their name out.",
+      "A majority vote eliminates that player. Guess right and you're closer to winning; guess wrong and the game continues with fewer players — down to a minimum of 3.",
+      "Crew wins by catching every imposter. Imposters win if the crew runs out of guesses first."
+    ];
+    const list = el("div", {class:"rules-list"});
+    steps.forEach((s, i) => {
+      list.appendChild(el("p", {}, [document.createTextNode((i + 1) + ". " + s)]));
+    });
+    panel.appendChild(list);
+
+    screen.appendChild(panel);
+    screen.appendChild(el("button", {class:"secondary", onclick: () => { state.screen = "title"; render(); }}, [document.createTextNode("← Back")]));
+    app.appendChild(screen);
+  }
+
+  // ---------- Setup screen ----------
+  function renderSetup(app){
+    const screen = el("div", {class:"screen"});
+    const panel = el("div", {class:"panel"});
+
+    panel.appendChild(el("label", {}, [document.createTextNode("Number of players")]));
+    const stepperP = el("div", {class:"stepper"});
+    const minusP = el("button", {onclick: () => changePlayers(-1)}, [document.createTextNode("−")]);
+    const valP = el("div", {class:"value"}, [document.createTextNode(String(state.numPlayers))]);
+    const plusP = el("button", {onclick: () => changePlayers(1)}, [document.createTextNode("+")]);
+    stepperP.appendChild(minusP); stepperP.appendChild(valP); stepperP.appendChild(plusP);
+    panel.appendChild(stepperP);
+    panel.appendChild(el("div", {class:"hint"}, [document.createTextNode("Minimum 3 players · no upper limit")]));
+
+    panel.appendChild(el("label", {style:"margin-top:14px", html:"Number of imposters"}));
+    const stepperI = el("div", {class:"stepper"});
+    const minusI = el("button", {onclick: () => changeImposters(-1)}, [document.createTextNode("−")]);
+    const valI = el("div", {class:"value"}, [document.createTextNode(String(state.numImposters))]);
+    const plusI = el("button", {onclick: () => changeImposters(1)}, [document.createTextNode("+")]);
+    stepperI.appendChild(minusI); stepperI.appendChild(valI); stepperI.appendChild(plusI);
+    panel.appendChild(stepperI);
+    panel.appendChild(el("div", {class:"hint"}, [document.createTextNode("Auto-suggested (~1 per 5 players). You can adjust it.")]));
+
+    panel.appendChild(el("label", {style:"margin-top:14px"}, [document.createTextNode("Category")]));
+    const chipRow = el("div", {class:"chip-row"});
+    CATEGORIES.forEach(cat => {
+      chipRow.appendChild(el("button", {
+        class:"chip" + (state.categoryFilter === cat ? " active" : ""),
+        onclick: () => { state.categoryFilter = cat; render(); }
+      }, [document.createTextNode(cat)]));
+    });
+    panel.appendChild(chipRow);
+    panel.appendChild(el("div", {class:"hint"}, [document.createTextNode(getWordPool().length + " words available in this category")]));
+
+    screen.appendChild(panel);
+    screen.appendChild(el("button", {class:"primary", onclick: goToNames}, [document.createTextNode("Next: Enter Names →")]));
+    app.appendChild(screen);
+  }
+
+  function changePlayers(delta){
+    const n = state.numPlayers + delta;
+    if (n < 3 || n > 60) return;
+    state.numPlayers = n;
+    state.numImposters = autoImposters(n);
+    render();
+  }
+
+  function changeImposters(delta){
+    const maxAllowed = Math.max(1, Math.floor((state.numPlayers - 1) / 2));
+    const n = state.numImposters + delta;
+    if (n < 1 || n > maxAllowed) return;
+    state.numImposters = n;
+    render();
+  }
+
+  function goToNames(){
+    state.names = [];
+    for (let i = 0; i < state.numPlayers; i++) state.names.push("");
+    state.screen = "names";
+    render();
+  }
+
+  // ---------- Names screen ----------
+  function renderNames(app){
+    const screen = el("div", {class:"screen"});
+    const panel = el("div", {class:"panel"});
+    panel.appendChild(el("label", {}, [document.createTextNode("Player names (optional — leave blank to use “Player N”)")]));
+    const list = el("div", {class:"names-list"});
+    for (let i = 0; i < state.numPlayers; i++){
+      const row = el("div", {class:"name-row"});
+      row.appendChild(el("span", {}, [document.createTextNode((i + 1) + ".")]));
+      const input = el("input", {type:"text", placeholder:"Player " + (i + 1)});
+      input.value = state.names[i] || "";
+      input.addEventListener("input", (e) => { state.names[i] = e.target.value; });
+      row.appendChild(input);
+      list.appendChild(row);
+    }
+    panel.appendChild(list);
+    screen.appendChild(panel);
+    screen.appendChild(el("button", {class:"primary", onclick: startGame}, [document.createTextNode("Start Game ▶")]));
+    screen.appendChild(el("button", {class:"secondary", onclick: () => { state.screen = "setup"; render(); }}, [document.createTextNode("← Back")]));
+    app.appendChild(screen);
+  }
+
+  function startGame(){
+    for (let i = 0; i < state.names.length; i++){
+      if (!state.names[i] || !state.names[i].trim()) state.names[i] = "Player " + (i + 1);
+    }
+    const pool = getWordPool();
+    state.secret = pool[Math.floor(Math.random() * pool.length)];
+    state.decoySecret = pickDecoyWord(state.secret);
+    fetchRoundImages();
+    const indices = shuffle([...Array(state.numPlayers).keys()]).slice(0, state.numImposters);
+    state.imposterSet = new Set(indices);
+    state.eliminatedSet = new Set();
+    state.gameOverReason = null;
+    state.currentIndex = 0;
+    state.flipped = false;
+    state.screen = "guard";
+    render();
+  }
+
+  // ---------- Guard (pass phone) screen ----------
+  function renderGuard(app){
+    const screen = el("div", {class:"guard"});
+    screen.appendChild(el("div", {class:"icon"}, [document.createTextNode("🤲")]));
+    screen.appendChild(el("h2", {}, [document.createTextNode("Pass the device to")]));
+    screen.appendChild(el("h2", {style:"font-size:1.6rem"}, [document.createTextNode(state.names[state.currentIndex])]));
+    screen.appendChild(el("p", {}, [document.createTextNode("Make sure no one else can see the screen.")]));
+    screen.appendChild(el("button", {class:"primary", onclick: showCard}, [
+      document.createTextNode("I am " + state.names[state.currentIndex] + " — Show My Card")
+    ]));
+    app.appendChild(screen);
+  }
+
+  function showCard(){
+    state.screen = "card";
+    state.flipped = false;
+    render();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        state.flipped = true;
+        const cardEl = document.getElementById("theCard");
+        if (cardEl) cardEl.classList.add("flipped");
+      });
+    });
+  }
+
+  // ---------- Card screen ----------
+  function renderCard(app){
+    const screen = el("div", {class:"screen"});
+    const isImposter = state.imposterSet.has(state.currentIndex);
+    const wordObj = isImposter ? state.decoySecret : state.secret;
+    const imageUrl = isImposter ? state.decoyImageUrl : state.secretImageUrl;
+
+    const wrap = el("div", {class:"card-wrap"});
+    const card = el("div", {class:"card" + (state.flipped ? " flipped" : ""), id:"theCard"});
+
+    const front = el("div", {class:"face front"});
+    front.appendChild(el("div", {class:"emoji"}, [document.createTextNode("🥥")]));
+    front.appendChild(el("div", {class:"caption"}, [document.createTextNode("Mallu")]));
+    card.appendChild(front);
+
+    const back = el("div", {class:"face back"});
+    back.appendChild(el("div", {class:"role-tag"}, [document.createTextNode("Your word is")]));
+    back.appendChild(makeWordVisual(wordObj, imageUrl, () => {
+      if (isImposter){ state.decoyImageUrl = null; state.decoyImageStatus = "none"; }
+      else { state.secretImageUrl = null; state.secretImageStatus = "none"; }
+      render();
+    }));
+    back.appendChild(el("div", {class:"word"}, [document.createTextNode(wordObj.word)]));
+    back.appendChild(el("div", {class:"category"}, [document.createTextNode("Category: " + wordObj.cat)]));
+    card.appendChild(back);
+    wrap.appendChild(card);
+    screen.appendChild(wrap);
+
+    const controls = el("div", {class:"reveal-controls"});
+    controls.appendChild(el("button", {class:"primary", onclick: hideAndAdvance}, [document.createTextNode("Hide Card & Pass →")]));
+    screen.appendChild(controls);
+
+    app.appendChild(screen);
+  }
+
+  function hideAndAdvance(){
+    const cardEl = document.getElementById("theCard");
+    if (cardEl) cardEl.classList.remove("flipped");
+    setTimeout(() => {
+      state.currentIndex++;
+      if (state.currentIndex >= state.names.length){
+        state.screen = "discuss";
+      } else {
+        state.screen = "guard";
+      }
+      render();
+    }, 350);
+  }
+
+  // ---------- Discussion screen ----------
+  function renderDiscuss(app){
+    const screen = el("div", {class:"screen"});
+    const panel = el("div", {class:"panel"}, [
+      el("h2", {style:"margin:0 0 6px;color:var(--gold);text-align:center"}, [document.createTextNode("Discuss!")]),
+      el("p", {style:"text-align:center;opacity:.85;margin:0 0 10px"}, [document.createTextNode(
+        "Almost everyone has the same word — but one or more players secretly have a different, similar one. Describe your word and vote for who you think doesn't match."
+      )])
+    ]);
+
+    const aliveIndices = getAliveIndices();
+    if (aliveIndices.length < state.names.length){
+      const aliveNames = aliveIndices.map(i => state.names[i]).join(", ");
+      panel.appendChild(el("p", {style:"text-align:center;opacity:.75;font-size:.85rem;margin:0 0 10px"}, [document.createTextNode(
+        "Still in (" + aliveIndices.length + "): " + aliveNames
+      )]));
+    }
+
+    const timerDiv = el("div", {class:"timer", id:"timerDisplay"}, [document.createTextNode(formatTime(state.timerSeconds))]);
+    panel.appendChild(timerDiv);
+
+    const timerBtns = el("div", {class:"stepper"});
+    timerBtns.appendChild(el("button", {onclick: toggleTimer}, [document.createTextNode(state.timerRunning ? "⏸" : "▶")]));
+    timerBtns.appendChild(el("button", {onclick: resetTimer}, [document.createTextNode("↺")]));
+    panel.appendChild(timerBtns);
+
+    screen.appendChild(panel);
+    screen.appendChild(el("button", {class:"primary", onclick: goToVote}, [document.createTextNode("Proceed to Vote 🗳️")]));
+    app.appendChild(screen);
+  }
+
+  function formatTime(s){
+    const m = Math.floor(s / 60), sec = s % 60;
+    return String(m).padStart(2,"0") + ":" + String(sec).padStart(2,"0");
+  }
+
+  function toggleTimer(){
+    state.timerRunning = !state.timerRunning;
+    if (state.timerRunning){
+      state.timerHandle = setInterval(() => {
+        state.timerSeconds++;
+        const disp = document.getElementById("timerDisplay");
+        if (disp) disp.textContent = formatTime(state.timerSeconds);
+        else clearInterval(state.timerHandle);
+      }, 1000);
+    } else {
+      clearInterval(state.timerHandle);
+    }
+    render();
+  }
+
+  function resetTimer(){
+    clearInterval(state.timerHandle);
+    state.timerRunning = false;
+    state.timerSeconds = 0;
+    render();
+  }
+
+  function goToVote(){
+    clearInterval(state.timerHandle);
+    state.timerRunning = false;
+    state.votes = state.names.map(() => 0);
+    state.voteHistory = [];
+    state.justVoted = null;
+    state.screen = "vote";
+    render();
+  }
+
+  // ---------- Voting screen ----------
+  function renderVote(app){
+    const screen = el("div", {class:"screen"});
+    const panel = el("div", {class:"panel"});
+    panel.appendChild(el("h2", {style:"margin:0 0 6px;color:var(--gold);text-align:center"}, [document.createTextNode("Cast Your Votes")]));
+    panel.appendChild(el("p", {style:"text-align:center;opacity:.85;margin:0 0 10px;font-size:.85rem"}, [document.createTextNode(
+      "As each player calls out their suspect out loud, tap their card to add a vote."
+    )]));
+
+    const total = state.votes.reduce((a, b) => a + b, 0);
+    const maxVotes = getMaxVotes();
+    const maxReached = total >= maxVotes;
+    const list = el("div", {class:"vote-list"});
+    getAliveIndices().forEach(i => {
+      const pct = total > 0 ? Math.round((state.votes[i] / total) * 100) : 0;
+      const row = el("div", {
+        class:"vote-card" + (state.justVoted === i ? " tapped" : "") + (maxReached ? " disabled" : ""),
+        onclick: () => castVote(i)
+      });
+      row.appendChild(el("div", {class:"fill", style:"width:" + pct + "%"}));
+      row.appendChild(el("div", {class:"vname"}, [document.createTextNode(state.names[i])]));
+      row.appendChild(el("div", {class:"vcount" + (state.justVoted === i ? " pulse" : "")}, [document.createTextNode(String(state.votes[i]))]));
+      list.appendChild(row);
+    });
+    panel.appendChild(list);
+
+    if (maxReached){
+      panel.appendChild(el("div", {class:"hint", style:"margin:4px 0 0;color:var(--gold)"}, [document.createTextNode(
+        "Max votes reached (" + total + "/" + maxVotes + "). Undo a vote to change it."
+      )]));
+    }
+
+    const footer = el("div", {class:"vote-footer"});
+    footer.appendChild(el("div", {class:"hint", style:"margin:0"}, [document.createTextNode("Total votes cast: " + total + " / " + maxVotes)]));
+    const undoBtn = el("button", {class:"undo-btn", onclick: undoLastVote}, [document.createTextNode("↺ Undo Vote")]);
+    undoBtn.disabled = state.voteHistory.length === 0;
+    footer.appendChild(undoBtn);
+    panel.appendChild(footer);
+
+    screen.appendChild(panel);
+    screen.appendChild(el("button", {class:"primary", onclick: finishVoting}, [document.createTextNode("Finish Voting ✅")]));
+    screen.appendChild(el("button", {class:"secondary", onclick: () => { state.screen = "discuss"; render(); }}, [document.createTextNode("← Back to Discussion")]));
+    app.appendChild(screen);
+  }
+
+  function castVote(i){
+    const total = state.votes.reduce((a, b) => a + b, 0);
+    if (total >= getMaxVotes()) return;
+    state.votes[i]++;
+    state.voteHistory.push(i);
+    state.justVoted = i;
+    render();
+    setTimeout(() => {
+      if (state.justVoted === i){
+        state.justVoted = null;
+        render();
+      }
+    }, 400);
+  }
+
+  function undoLastVote(){
+    if (state.voteHistory.length === 0) return;
+    const last = state.voteHistory.pop();
+    if (state.votes[last] > 0) state.votes[last]--;
+    render();
+  }
+
+  function finishVoting(){
+    const total = state.votes.reduce((a, b) => a + b, 0);
+    const maxVotes = Math.max(...state.votes, 0);
+    const topIndices = total > 0 ? state.votes.map((v, i) => v === maxVotes ? i : -1).filter(i => i !== -1) : [];
+    const hasMajority = total > 0 && topIndices.length === 1 && maxVotes > total / 2;
+
+    if (!hasMajority){
+      state.voteOutcome = { majority: false, topIndices: topIndices, total: total };
+      state.screen = "voteNoMajority";
+      render();
+      return;
+    }
+
+    const votedIndex = topIndices[0];
+    const wasImposter = state.imposterSet.has(votedIndex);
+    state.eliminatedSet.add(votedIndex);
+
+    const aliveIndices = getAliveIndices();
+    const remainingImposters = aliveIndices.filter(i => state.imposterSet.has(i)).length;
+
+    state.voteOutcome = {
+      majority: true,
+      votedIndex: votedIndex,
+      wasImposter: wasImposter,
+      remainingImposters: remainingImposters,
+      aliveCount: aliveIndices.length
+    };
+
+    if (remainingImposters === 0){
+      state.gameOverReason = "crewWin";
+      state.screen = "results";
+    } else if (aliveIndices.length <= MIN_PLAYERS_TO_CONTINUE){
+      state.gameOverReason = "floorReached";
+      state.screen = "results";
+    } else {
+      state.screen = "roundResult";
+    }
+    render();
+  }
+
+  // ---------- Round result (game continues) ----------
+  function renderRoundResult(app){
+    const screen = el("div", {class:"screen"});
+    const panel = el("div", {class:"panel"});
+    const o = state.voteOutcome;
+    const name = state.names[o.votedIndex];
+
+    const banner = el("div", {class:"vote-banner " + (o.wasImposter ? "correct" : "wrong")});
+    banner.appendChild(el("div", {style:"font-size:1.8rem"}, [document.createTextNode(o.wasImposter ? "✅" : "❌")]));
+    banner.appendChild(el("div", {}, [document.createTextNode(
+      o.wasImposter
+        ? name + " was voted out — and WAS an imposter!"
+        : name + " was voted out — but was NOT the imposter."
+    )]));
+    panel.appendChild(banner);
+
+    const msg = o.wasImposter
+      ? o.remainingImposters + " imposter" + (o.remainingImposters > 1 ? "s" : "") + " still remain among the " + o.aliveCount + " players left. Keep going!"
+      : o.aliveCount + " players remain. Keep discussing and vote again.";
+    panel.appendChild(el("p", {style:"text-align:center;opacity:.9;margin-top:8px"}, [document.createTextNode(msg)]));
+
+    screen.appendChild(panel);
+    screen.appendChild(el("button", {class:"primary", onclick: continueAfterRound}, [document.createTextNode("Continue Discussion →")]));
+    app.appendChild(screen);
+  }
+
+  function continueAfterRound(){
+    state.votes = [];
+    state.voteHistory = [];
+    state.justVoted = null;
+    state.screen = "discuss";
+    render();
+  }
+
+  // ---------- No-majority screen ----------
+  function renderVoteNoMajority(app){
+    const screen = el("div", {class:"screen"});
+    const panel = el("div", {class:"panel"});
+    const o = state.voteOutcome;
+
+    panel.appendChild(el("div", {style:"font-size:2.6rem;text-align:center"}, [document.createTextNode("🤷")]));
+    panel.appendChild(el("h2", {style:"color:var(--gold);text-align:center;margin:6px 0"}, [document.createTextNode("No Majority")]));
+
+    let msg;
+    if (o.total === 0){
+      msg = "No votes were cast. No one was voted out as the imposter.";
+    } else if (o.topIndices.length > 1){
+      const names = o.topIndices.map(i => state.names[i]).join(", ");
+      msg = names + " tied for the most votes, but no majority was reached. No one was voted out as the imposter.";
+    } else {
+      const name = state.names[o.topIndices[0]];
+      msg = name + " got the most votes, but not a majority. " + name + " was NOT voted out as the imposter.";
+    }
+    panel.appendChild(el("p", {style:"text-align:center;opacity:.9"}, [document.createTextNode(msg)]));
+    panel.appendChild(el("p", {style:"text-align:center;opacity:.7;font-size:.85rem"}, [document.createTextNode("Keep discussing and vote again when ready.")]));
+
+    screen.appendChild(panel);
+    screen.appendChild(el("button", {class:"primary", onclick: continueAfterNoMajority}, [document.createTextNode("Continue Discussion →")]));
+    app.appendChild(screen);
+  }
+
+  function continueAfterNoMajority(){
+    state.votes = [];
+    state.voteHistory = [];
+    state.justVoted = null;
+    state.screen = "discuss";
+    render();
+  }
+
+  // ---------- Results screen ----------
+  function renderResults(app){
+    const screen = el("div", {class:"screen"});
+    const panel = el("div", {class:"panel"});
+
+    if (state.voteOutcome && state.voteOutcome.majority){
+      const o = state.voteOutcome;
+      const name = state.names[o.votedIndex];
+      let icon, text, bannerClass;
+
+      if (state.gameOverReason === "crewWin"){
+        icon = "🎉"; bannerClass = "correct";
+        text = name + " was voted out and WAS an imposter — all imposters caught! Crew wins!";
+      } else if (o.wasImposter){
+        icon = "🎉"; bannerClass = "correct";
+        text = name + " was voted out and WAS an imposter, but other imposters remain — too few players left to continue. Imposters win!";
+      } else {
+        icon = "😈"; bannerClass = "wrong";
+        text = name + " was voted out but was NOT the imposter — too few players left to continue. Imposters win!";
+      }
+
+      const banner = el("div", {class:"vote-banner " + bannerClass});
+      banner.appendChild(el("div", {style:"font-size:1.8rem"}, [document.createTextNode(icon)]));
+      banner.appendChild(el("div", {}, [document.createTextNode(text)]));
+      panel.appendChild(banner);
+    }
+
+    panel.appendChild(el("div", {class:"reveal-label"}, [document.createTextNode("Crew's word")]));
+    panel.appendChild(el("div", {class:"word-reveal"}, [
+      makeWordVisual(state.secret, state.secretImageUrl, () => { state.secretImageUrl = null; state.secretImageStatus = "none"; render(); }),
+      el("div", {class:"word"}, [document.createTextNode(state.secret.word)]),
+    ]));
+
+    panel.appendChild(el("div", {class:"reveal-label"}, [document.createTextNode("Imposter's word")]));
+    panel.appendChild(el("div", {class:"word-reveal"}, [
+      makeWordVisual(state.decoySecret, state.decoyImageUrl, () => { state.decoyImageUrl = null; state.decoyImageStatus = "none"; render(); }),
+      el("div", {class:"word"}, [document.createTextNode(state.decoySecret.word)]),
+    ]));
+
+    const imposterNames = [...state.imposterSet].map(i => state.names[i]);
+    const listDiv = el("div", {class:"imposter-list"});
+    listDiv.appendChild(document.createTextNode(imposterNames.length > 1 ? "The imposters were: " : "The imposter was: "));
+    listDiv.appendChild(el("b", {}, [document.createTextNode(imposterNames.join(", "))]));
+    panel.appendChild(listDiv);
+
+    screen.appendChild(panel);
+    screen.appendChild(el("button", {class:"primary", onclick: playAgainSamePlayers}, [document.createTextNode("Play Again (same players) ↻")]));
+    screen.appendChild(el("button", {class:"secondary", onclick: resetGame}, [document.createTextNode("New Game / New Players")]));
+    app.appendChild(screen);
+  }
+
+  function playAgainSamePlayers(){
+    const pool = getWordPool();
+    state.secret = pool[Math.floor(Math.random() * pool.length)];
+    state.decoySecret = pickDecoyWord(state.secret);
+    fetchRoundImages();
+    const indices = shuffle([...Array(state.numPlayers).keys()]).slice(0, state.numImposters);
+    state.imposterSet = new Set(indices);
+    state.eliminatedSet = new Set();
+    state.currentIndex = 0;
+    state.flipped = false;
+    state.timerSeconds = 0;
+    state.timerRunning = false;
+    state.votes = [];
+    state.voteHistory = [];
+    state.justVoted = null;
+    state.voteOutcome = null;
+    state.gameOverReason = null;
+    state.screen = "guard";
+    render();
+  }
+
+  function resetGame(){
+    clearInterval(state.timerHandle);
+    state = {
+      screen: "title",
+      numPlayers: 6,
+      numImposters: 1,
+      categoryFilter: "All",
+      names: [],
+      secret: null,
+      secretImageUrl: null,
+      secretImageStatus: "idle",
+      decoySecret: null,
+      decoyImageUrl: null,
+      decoyImageStatus: "idle",
+      imposterSet: new Set(),
+      eliminatedSet: new Set(),
+      currentIndex: 0,
+      flipped: false,
+      timerSeconds: 0,
+      timerRunning: false,
+      timerHandle: null,
+      votes: [],
+      voteHistory: [],
+      justVoted: null,
+      voteOutcome: null,
+      gameOverReason: null
+    };
+    state.numImposters = autoImposters(state.numPlayers);
+    render();
+  }
+
+  resetGame();
+})();
+</script>
+</body>
+</html>
