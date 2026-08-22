@@ -78,6 +78,32 @@
     background:var(--black-softer);
     color:var(--cream);
   }
+  select{
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,.2);
+    font-size:1rem;
+    background:var(--black-softer);
+    color:var(--cream);
+  }
+  select option{ background:var(--black-softer); color:var(--cream); }
+  .recent-actions{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+  }
+  .recent-actions .secondary{ flex:1; }
+  .link-btn{
+    background:none;
+    border:none;
+    color:var(--cream);
+    opacity:.6;
+    font-size:.8rem;
+    cursor:pointer;
+    padding:6px 8px;
+    white-space:nowrap;
+  }
   .stepper{
     display:flex;
     align-items:center;
@@ -468,6 +494,11 @@
     font-size:.72rem;
     text-align:center;
   }
+
+  @keyframes slideIn{
+    from{ opacity:0; transform:translateY(-10px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
 </style>
 </head>
 <body>
@@ -846,10 +877,68 @@
     voteHistory: [],
     justVoted: null,
     voteOutcome: null,
-    gameOverReason: null
+    gameOverReason: null,
+    firstPlayerIndex: 0 // Index of player who goes first; randomized on game start
   };
 
   const CATEGORIES = ["All", ...new Set(WORDS.map(w => w.cat))];
+
+  // ---------- Recent players (localStorage) ----------
+  const STORAGE_KEY = "mallu_player_history";
+
+  function getPlayerHistory(){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (data && Array.isArray(data.recent)) return data;
+    } catch(e){}
+    return null;
+  }
+
+  function getRecentPlayers(){
+    const h = getPlayerHistory();
+    return h ? h.recent : [];
+  }
+
+  function getLastGame(){
+    const h = getPlayerHistory();
+    return h && Array.isArray(h.lastGame) ? h.lastGame : [];
+  }
+
+  // Called at game start with the finalized names. Dedupes case-insensitively,
+  // keeps the most recent first, and caps the list at 30.
+  function savePlayers(names){
+    const clean = names.map(n => n.trim()).filter(Boolean);
+    if (clean.length === 0) return;
+    const history = getPlayerHistory() || { recent: [], lastGame: [] };
+    const seen = new Set();
+    const recent = [];
+    for (const n of [...clean, ...history.recent]){
+      const key = n.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      recent.push(n);
+      if (recent.length >= 30) break;
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ recent: recent, lastGame: clean }));
+    } catch(e){}
+  }
+
+  function clearPlayerHistory(){
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+    render();
+  }
+
+  function restoreLastGame(){
+    const last = getLastGame();
+    if (!last.length) return;
+    for (let i = 0; i < state.names.length; i++){
+      if (last[i]) state.names[i] = last[i];
+    }
+    render();
+  }
 
   function getWordPool(){
     if (state.categoryFilter === "All") return WORDS;
@@ -961,6 +1050,7 @@
     else if (state.screen === "rules") renderRules(app);
     else if (state.screen === "setup") renderSetup(app);
     else if (state.screen === "names") renderNames(app);
+    else if (state.screen === "firstPlayer") { console.log("Switching to firstPlayer screen; current state:", state); renderFirstPlayer(app); }
     else if (state.screen === "guard") renderGuard(app);
     else if (state.screen === "card") renderCard(app);
     else if (state.screen === "discuss") renderDiscuss(app);
@@ -1072,9 +1162,40 @@
     render();
   }
 
+  function randomizeFirstPlayer(){
+    state.firstPlayerIndex = Math.floor(Math.random() * state.numPlayers);
+    render();
+  }
+
   // ---------- Names screen ----------
   function renderNames(app){
     const screen = el("div", {class:"screen"});
+    const recent = getRecentPlayers();
+    const lastGame = getLastGame();
+    if (recent.length > 0){
+      const rp = el("div", {class:"panel"});
+      rp.appendChild(el("label", {}, [document.createTextNode("Recently played — pick a name to fill the next empty slot")]));
+      const select = el("select", {class:"recent-select"});
+      select.appendChild(el("option", {value:""}, [document.createTextNode("Pick a recent player…")]));
+      recent.forEach(name => {
+        select.appendChild(el("option", {value:name}, [document.createTextNode(name)]));
+      });
+      select.addEventListener("change", () => {
+        if (!select.value) return;
+        const idx = state.names.findIndex(n => !n.trim());
+        if (idx === -1) return;
+        state.names[idx] = select.value;
+        render();
+      });
+      rp.appendChild(select);
+      const row = el("div", {class:"recent-actions"});
+      if (lastGame.length > 0){
+        row.appendChild(el("button", {class:"secondary", onclick: restoreLastGame}, [document.createTextNode("↺ Use last game's players")]));
+      }
+      row.appendChild(el("button", {class:"link-btn", onclick: clearPlayerHistory}, [document.createTextNode("Clear history")]));
+      rp.appendChild(row);
+      screen.appendChild(rp);
+    }
     const panel = el("div", {class:"panel"});
     panel.appendChild(el("label", {}, [document.createTextNode("Player names (optional — leave blank to use “Player N”)")]));
     const list = el("div", {class:"names-list"});
@@ -1098,6 +1219,9 @@
     for (let i = 0; i < state.names.length; i++){
       if (!state.names[i] || !state.names[i].trim()) state.names[i] = "Player " + (i + 1);
     }
+    // Always randomize the true first player and store it in state
+    state.firstPlayerIndex = Math.floor(Math.random() * state.numPlayers);
+    savePlayers(state.names);
     const pool = getWordPool();
     state.secret = pool[Math.floor(Math.random() * pool.length)];
     state.decoySecret = pickDecoyWord(state.secret);
@@ -1106,10 +1230,25 @@
     state.imposterSet = new Set(indices);
     state.eliminatedSet = new Set();
     state.gameOverReason = null;
-    state.currentIndex = 0;
+    // Start from the randomized first player index
+    state.currentIndex = state.firstPlayerIndex;
     state.flipped = false;
     state.screen = "guard";
     render();
+    // Announce who goes first
+    announceFirstPlayer(state.names[state.firstPlayerIndex]);
+  }
+
+  // Announce who goes first at the start of the round
+  function announceFirstPlayer(playerName){
+    const banner = el("div", {class:"vote-banner correct", style:"margin-top:16px; animation:slideIn .3s ease"});
+    banner.appendChild(el("div", {style:"font-size:1.6rem"}, [document.createTextNode("👑")]));
+    banner.appendChild(el("div", {}, [document.createTextNode(playerName + " goes first")]));
+    const app = document.getElementById("app");
+    if (app) app.appendChild(banner);
+    setTimeout(() => {
+      if (banner.parentNode) banner.parentNode.removeChild(banner);
+    }, 4000);
   }
 
   // ---------- Guard (pass phone) screen ----------
