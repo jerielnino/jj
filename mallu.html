@@ -878,7 +878,8 @@
     justVoted: null,
     voteOutcome: null,
     gameOverReason: null,
-    firstPlayerIndex: 0 // Index of player who goes first; randomized on game start
+    firstPlayerIndex: 0, // Index of player who goes first; randomized on game start
+    revealedCount: 0     // How many players have revealed their card this round
   };
 
   const CATEGORIES = ["All", ...new Set(WORDS.map(w => w.cat))];
@@ -1038,7 +1039,7 @@
       bar.appendChild(el("button", {onclick: resetGame}, [document.createTextNode("🆕 New Game")]));
       if (state.screen === "guard" || state.screen === "card"){
         bar.appendChild(el("div", {class:"progress"}, [document.createTextNode(
-          "Player " + (state.currentIndex + 1) + " / " + state.names.length
+          "Player " + (state.revealedCount + 1) + " / " + state.names.length
         )]));
       } else {
         bar.appendChild(el("div"));
@@ -1050,7 +1051,6 @@
     else if (state.screen === "rules") renderRules(app);
     else if (state.screen === "setup") renderSetup(app);
     else if (state.screen === "names") renderNames(app);
-    else if (state.screen === "firstPlayer") { console.log("Switching to firstPlayer screen; current state:", state); renderFirstPlayer(app); }
     else if (state.screen === "guard") renderGuard(app);
     else if (state.screen === "card") renderCard(app);
     else if (state.screen === "discuss") renderDiscuss(app);
@@ -1162,11 +1162,6 @@
     render();
   }
 
-  function randomizeFirstPlayer(){
-    state.firstPlayerIndex = Math.floor(Math.random() * state.numPlayers);
-    render();
-  }
-
   // ---------- Names screen ----------
   function renderNames(app){
     const screen = el("div", {class:"screen"});
@@ -1232,6 +1227,7 @@
     state.gameOverReason = null;
     // Start from the randomized first player index
     state.currentIndex = state.firstPlayerIndex;
+    state.revealedCount = 0;
     state.flipped = false;
     state.screen = "guard";
     render();
@@ -1316,10 +1312,11 @@
     const cardEl = document.getElementById("theCard");
     if (cardEl) cardEl.classList.remove("flipped");
     setTimeout(() => {
-      state.currentIndex++;
-      if (state.currentIndex >= state.names.length){
+      state.revealedCount++;
+      if (state.revealedCount >= state.names.length){
         state.screen = "discuss";
       } else {
+        state.currentIndex = (state.currentIndex + 1) % state.names.length;
         state.screen = "guard";
       }
       render();
@@ -1629,7 +1626,10 @@
     const indices = shuffle([...Array(state.numPlayers).keys()]).slice(0, state.numImposters);
     state.imposterSet = new Set(indices);
     state.eliminatedSet = new Set();
-    state.currentIndex = 0;
+    // Randomize the first player again for the new round
+    state.firstPlayerIndex = Math.floor(Math.random() * state.numPlayers);
+    state.currentIndex = state.firstPlayerIndex;
+    state.revealedCount = 0;
     state.flipped = false;
     state.timerSeconds = 0;
     state.timerRunning = false;
@@ -1640,6 +1640,8 @@
     state.gameOverReason = null;
     state.screen = "guard";
     render();
+    // Announce who goes first
+    announceFirstPlayer(state.names[state.firstPlayerIndex]);
   }
 
   function resetGame(){
@@ -1667,7 +1669,9 @@
       voteHistory: [],
       justVoted: null,
       voteOutcome: null,
-      gameOverReason: null
+      gameOverReason: null,
+      firstPlayerIndex: 0,
+      revealedCount: 0
     };
     state.numImposters = autoImposters(state.numPlayers);
     render();
