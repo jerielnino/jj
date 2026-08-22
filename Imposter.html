@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Malayalam</title>
+<title>Imposter Party Game</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
 <style>
   :root{
     --black:#050505;
@@ -1030,7 +1031,7 @@
   function render(){
     const app = document.getElementById("app");
     app.innerHTML = "";
-    app.appendChild(el("h1", {}, [document.createTextNode("🥥 Mallu")]));
+    app.appendChild(el("h1", {}, [document.createTextNode("🕵️ Imposter Party Game")]));
     app.appendChild(el("div", {class:"subtitle"}, [document.createTextNode("Pass & play — find the imposter among you")]));
 
     const menuScreens = ["title", "rules", "setup", "names"];
@@ -1059,7 +1060,7 @@
     else if (state.screen === "roundResult") renderRoundResult(app);
     else if (state.screen === "results") renderResults(app);
 
-    app.appendChild(el("footer", {}, [document.createTextNode("Mallu· local pass-and-play game")]));
+    app.appendChild(el("footer", {}, [document.createTextNode("Imposter Party Game · local pass-and-play game")]));
   }
 
   // ---------- Title screen ----------
