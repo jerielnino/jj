@@ -218,11 +218,30 @@
 
   /* ---- Title / rules screens ---- */
   .title-screen{
-    padding-top:10vh;
+    padding-top:4vh;
   }
-  .title-emoji{
-    font-size:4.5rem;
-    text-align:center;
+  .title-mascot{
+    width:130px;
+    height:130px;
+    border-radius:24px;
+    object-fit:cover;
+    box-shadow:0 8px 24px rgba(0,0,0,.6), 0 0 20px rgba(232,185,58,.3);
+    border:2px solid rgba(232,185,58,.4);
+    margin:0 auto 10px;
+    display:block;
+    transition:transform .2s ease;
+  }
+  .title-mascot:hover{
+    transform:scale(1.04);
+  }
+  .header-icon{
+    width:28px;
+    height:28px;
+    border-radius:7px;
+    object-fit:cover;
+    vertical-align:middle;
+    border:1px solid rgba(232,185,58,.4);
+    margin-right:8px;
   }
   .title-heading{
     text-align:center;
@@ -508,6 +527,7 @@
 <script>
 (function(){
   "use strict";
+  const MASCOT_IMG = "https://raw.githubusercontent.com/jerielnino/jj/main/media/icons/boy_hoodie_specs_imposter.png";
 
   // ---------- Kerala word bank ----------
   const WORDS = [
@@ -1031,7 +1051,10 @@
   function render(){
     const app = document.getElementById("app");
     app.innerHTML = "";
-    app.appendChild(el("h1", {}, [document.createTextNode("🕵️ Imposter Party Game")]));
+    app.appendChild(el("h1", {}, [
+      el("img", {class:"header-icon", src:MASCOT_IMG, alt:"Icon"}),
+      document.createTextNode("Imposter Party Game")
+    ]));
     app.appendChild(el("div", {class:"subtitle"}, [document.createTextNode("Pass & play — find the imposter among you")]));
 
     const menuScreens = ["title", "rules", "setup", "names"];
@@ -1066,7 +1089,11 @@
   // ---------- Title screen ----------
   function renderTitle(app){
     const screen = el("div", {class:"screen title-screen"});
-    screen.appendChild(el("div", {class:"title-emoji"}, [document.createTextNode("🥥🕵️")]));
+    screen.appendChild(el("img", {
+      class:"title-mascot",
+      src:MASCOT_IMG,
+      alt:"Imposter Character"
+    }));
     screen.appendChild(el("h2", {class:"title-heading"}, [document.createTextNode("Find the Imposter")]));
     screen.appendChild(el("p", {class:"title-tagline"}, [document.createTextNode(
       "A Kerala-themed pass & play party game for any number of players"
