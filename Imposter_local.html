@@ -742,6 +742,44 @@
     padding:18px;
     box-shadow:0 12px 36px rgba(0,0,0,.8);
   }
+  .modal-close-btn{
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.2);
+    color:var(--cream);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:1.1rem;
+    line-height:1;
+    cursor:pointer;
+    padding:0;
+    transition:all 0.15s ease;
+  }
+  .modal-close-btn:hover{
+    background:rgba(231,76,60,.25);
+    border-color:var(--danger);
+    color:#ff7675;
+    transform:scale(1.08);
+  }
+  .modal-close-btn:active{
+    transform:scale(0.92);
+  }
+  .link-btn{
+    background:none;
+    border:none;
+    color:var(--gold);
+    cursor:pointer;
+    font-family:inherit;
+    padding:4px 8px;
+    border-radius:8px;
+    transition:all 0.15s ease;
+  }
+  .link-btn:hover{
+    background:rgba(255,255,255,.08);
+  }
   .score-btn-top{
     display:inline-flex;
     align-items:center;
@@ -1194,8 +1232,8 @@
       document.createTextNode("🎨 Choose Player Emoji Avatar")
     ]));
     topRow.appendChild(el("button", {
-      class:"link-btn",
-      style:"font-size:1.2rem; color:var(--cream); padding:4px 8px;",
+      class:"modal-close-btn",
+      title:"Close",
       onclick: () => {
         showEmojiModal = false;
         render();
@@ -1289,8 +1327,8 @@
       document.createTextNode("🏆 Live Game Scorecard")
     ]));
     topRow.appendChild(el("button", {
-      class:"link-btn",
-      style:"font-size:1.1rem; color:var(--cream); padding:4px 8px;",
+      class:"modal-close-btn",
+      title:"Close",
       onclick: () => {
         showScoreModal = false;
         render();
