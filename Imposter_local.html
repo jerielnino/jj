@@ -463,7 +463,29 @@
     color:var(--gold);
   }
 
-  /* Result Banner */
+  /* Vote & Outcome Banners matching Imposter.html */
+  .vote-banner{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:14px 16px;
+    border-radius:14px;
+    margin-bottom:12px;
+    font-size:.95rem;
+    font-weight:600;
+    text-align:left;
+  }
+  .vote-banner.correct{
+    background:rgba(46,204,113,.2);
+    border:1px solid var(--success);
+    color:var(--cream);
+  }
+  .vote-banner.wrong{
+    background:rgba(192,57,43,.25);
+    border:1px solid var(--danger);
+    color:var(--cream);
+  }
+
   .outcome-banner{
     padding:16px;
     border-radius:16px;
@@ -656,6 +678,7 @@
     screen: "lobby", // "lobby" | "card" | "discuss" | "vote" | "roundResult" | "results"
     categoryFilter: "All",
     numImposters: 1,
+    imposterIds: [],
     players: [], // [{ id, name, avatar, isHost, ready, alive, votesReceived }]
     firstPlayerName: "",
     secretWord: "",
@@ -955,7 +978,9 @@
     // Pick imposters randomly
     const shuffled = [...gameState.players].sort(() => 0.5 - Math.random());
     const imposterCount = Math.min(gameState.numImposters, Math.max(1, Math.floor((gameState.players.length - 1) / 2)));
-    const imposterIds = new Set(shuffled.slice(0, imposterCount).map(p => p.id));
+    const chosenImposters = shuffled.slice(0, imposterCount).map(p => p.id);
+    gameState.imposterIds = chosenImposters;
+    const imposterIds = new Set(chosenImposters);
 
     gameState.secretWord = secret.word;
     gameState.secretEmoji = secret.emoji;
@@ -1075,71 +1100,52 @@
   function hostCalculateVoteOutcome(){
     if (!isHost) return;
     const alivePlayers = gameState.players.filter(p => p.alive);
-    let maxVotes = -1;
-    let accused = null;
-    let isTie = false;
+    const totalVotes = alivePlayers.reduce((sum, p) => sum + (p.votesReceived || 0), 0);
+    const maxVotes = Math.max(...alivePlayers.map(p => p.votesReceived || 0), 0);
+    const topPlayers = totalVotes > 0 ? alivePlayers.filter(p => p.votesReceived === maxVotes) : [];
+    const hasMajority = totalVotes > 0 && topPlayers.length === 1 && maxVotes > (totalVotes / 2);
 
-    alivePlayers.forEach(p => {
-      if (p.votesReceived > maxVotes){
-        maxVotes = p.votesReceived;
-        accused = p;
-        isTie = false;
-      } else if (p.votesReceived === maxVotes && maxVotes > 0){
-        isTie = true;
-      }
-    });
-
-    if (!accused || maxVotes === 0 || isTie){
-      // No majority / Tie
-      gameState.eliminatedPlayer = {
-        name: isTie ? "Tie Vote (No Majority)" : "No Votes Cast",
-        wasImposter: false,
-        isTie: true,
-        remainingImposters: countRemainingImposters()
+    if (!hasMajority){
+      gameState.voteOutcome = {
+        majority: false,
+        total: totalVotes,
+        topNames: topPlayers.map(p => p.name)
       };
-      gameState.screen = "roundResult";
+      gameState.screen = "voteNoMajority";
     } else {
-      // Player is eliminated
+      const accused = topPlayers[0];
+      const wasImposter = (gameState.imposterIds || []).includes(accused.id);
       accused.alive = false;
-      const wasImp = (myPrivateCard.role === "imposter" && accused.id === myPlayerId) || 
-                     (isHost && checkHostIfImposter(accused.id));
-      
-      const rem = countRemainingImposters();
-      gameState.eliminatedPlayer = {
+
+      const aliveAfter = gameState.players.filter(p => p.alive);
+      const remainingImposters = (gameState.imposterIds || []).filter(id => {
+        const p = gameState.players.find(x => x.id === id);
+        return p && p.alive;
+      }).length;
+
+      gameState.voteOutcome = {
+        majority: true,
         name: accused.name,
-        wasImposter: wasImp,
-        isTie: false,
-        remainingImposters: rem
+        wasImposter: wasImposter,
+        remainingImposters: remainingImposters,
+        aliveCount: aliveAfter.length
       };
 
-      // Check Win conditions
-      if (rem === 0){
+      if (remainingImposters === 0){
+        gameState.gameOverReason = "crewWin";
         gameState.winner = "crew";
         gameState.screen = "results";
+      } else if (aliveAfter.length <= 3){
+        gameState.gameOverReason = "floorReached";
+        gameState.winner = "imposter";
+        gameState.screen = "results";
       } else {
-        const remAlive = gameState.players.filter(p => p.alive).length;
-        if (remAlive <= 2){
-          gameState.winner = "imposter";
-          gameState.screen = "results";
-        } else {
-          gameState.screen = "roundResult";
-        }
+        gameState.screen = "roundResult";
       }
     }
 
     broadcastGameState();
     render();
-  }
-
-  function checkHostIfImposter(pid){
-    // In host state, check if player got the decoy word
-    return gameState.decoyWord && myPrivateCard.word === gameState.decoyWord && pid === myPlayerId ? true : false;
-  }
-
-  function countRemainingImposters(){
-    // In host tracking:
-    const alivePlayers = gameState.players.filter(p => p.alive);
-    return Math.max(0, gameState.numImposters - (gameState.eliminatedPlayer && gameState.eliminatedPlayer.wasImposter ? 1 : 0));
   }
 
   function formatTime(s){
@@ -1180,6 +1186,7 @@
       else if (gameState.screen === "card") renderMultiplayerCard(app);
       else if (gameState.screen === "discuss") renderMultiplayerDiscuss(app);
       else if (gameState.screen === "vote") renderMultiplayerVote(app);
+      else if (gameState.screen === "voteNoMajority") renderMultiplayerVoteNoMajority(app);
       else if (gameState.screen === "roundResult") renderMultiplayerRoundResult(app);
       else if (gameState.screen === "results") renderMultiplayerResults(app);
     }
@@ -1542,68 +1549,116 @@
     app.appendChild(screen);
   }
 
-  // ---------- Round Result Screen ----------
+  // ---------- No-majority screen ----------
+  function renderMultiplayerVoteNoMajority(app){
+    const screen = el("div", {class:"screen"});
+    const panel = el("div", {class:"panel"});
+    const o = gameState.voteOutcome || {};
+
+    panel.appendChild(el("div", {style:"font-size:2.6rem;text-align:center"}, [document.createTextNode("🤷")]));
+    panel.appendChild(el("h2", {style:"color:var(--gold);text-align:center;margin:6px 0"}, [document.createTextNode("No Majority")]));
+
+    let msg;
+    if (!o.total || o.total === 0){
+      msg = "No votes were cast. No one was voted out as the imposter.";
+    } else if (o.topNames && o.topNames.length > 1){
+      msg = o.topNames.join(", ") + " tied for the most votes, but no majority was reached. No one was voted out as the imposter.";
+    } else if (o.topNames && o.topNames.length === 1){
+      msg = o.topNames[0] + " got the most votes, but not a strict majority (>50%). " + o.topNames[0] + " was NOT voted out as the imposter.";
+    } else {
+      msg = "No majority was reached. No one was voted out.";
+    }
+    panel.appendChild(el("p", {style:"text-align:center;opacity:.9"}, [document.createTextNode(msg)]));
+    panel.appendChild(el("p", {style:"text-align:center;opacity:.7;font-size:.85rem"}, [document.createTextNode("Keep discussing and vote again when ready.")]));
+
+    screen.appendChild(panel);
+    if (isHost){
+      screen.appendChild(el("button", {class:"primary", onclick: hostProceedToDiscussion}, [document.createTextNode("Continue Discussion →")]));
+    } else {
+      screen.appendChild(el("div", {class:"hint"}, [document.createTextNode("Waiting for host to continue discussion...")]));
+    }
+    app.appendChild(screen);
+  }
+
+  // ---------- Round Result Screen (Game Continues) ----------
   function renderMultiplayerRoundResult(app){
     const screen = el("div", {class:"screen"});
+    const panel = el("div", {class:"panel"});
+    const o = gameState.voteOutcome || {};
+    const name = o.name || "Player";
 
-    const info = gameState.eliminatedPlayer || {};
-    if (info.isTie){
-      const banner = el("div", {class:"outcome-banner danger"}, [
-        el("div", {style:"font-size:2rem"}, [document.createTextNode("⚖️")]),
-        el("h3", {style:"margin:4px 0"}, [document.createTextNode("Tie Vote / No Majority!")]),
-        el("p", {style:"font-size:.85rem; margin:0"}, [document.createTextNode("No one was eliminated. Discussion continues!")])
-      ]);
-      screen.appendChild(banner);
-    } else {
-      const banner = el("div", {class:"outcome-banner " + (info.wasImposter ? "success" : "danger")}, [
-        el("div", {style:"font-size:2rem"}, [document.createTextNode(info.wasImposter ? "🎉" : "😱")]),
-        el("h3", {style:"margin:4px 0"}, [document.createTextNode(info.name + " was eliminated!")]),
-        el("div", {class:"role-reveal-tag"}, [
-          document.createTextNode(info.wasImposter ? "THEY WERE AN IMPOSTER!" : "THEY WERE INNOCENT CREW!")
-        ]),
-        el("div", {style:"font-size:.85rem; margin-top:6px; opacity:.9"}, [
-          document.createTextNode("Imposters remaining: " + (info.remainingImposters || 0))
-        ])
-      ]);
-      screen.appendChild(banner);
-    }
+    const banner = el("div", {class:"vote-banner " + (o.wasImposter ? "correct" : "wrong")});
+    banner.appendChild(el("div", {style:"font-size:1.8rem"}, [document.createTextNode(o.wasImposter ? "✅" : "❌")]));
+    banner.appendChild(el("div", {}, [document.createTextNode(
+      o.wasImposter
+        ? name + " was voted out — and WAS an imposter!"
+        : name + " was voted out — but was NOT the imposter."
+    )]));
+    panel.appendChild(banner);
 
+    const msg = o.wasImposter
+      ? o.remainingImposters + " imposter" + (o.remainingImposters > 1 ? "s" : "") + " still remain among the " + o.aliveCount + " players left. Keep going!"
+      : o.aliveCount + " players remain. Keep discussing and vote again.";
+    panel.appendChild(el("p", {style:"text-align:center;opacity:.9;margin-top:8px"}, [document.createTextNode(msg)]));
+
+    screen.appendChild(panel);
     if (isHost){
-      screen.appendChild(el("button", {
-        class:"primary",
-        onclick: hostProceedToDiscussion
-      }, [document.createTextNode("Next Discussion Round ▶")]));
+      screen.appendChild(el("button", {class:"primary", onclick: hostProceedToDiscussion}, [document.createTextNode("Continue Discussion →")]));
+    } else {
+      screen.appendChild(el("div", {class:"hint"}, [document.createTextNode("Waiting for host to continue discussion...")]));
     }
-
     app.appendChild(screen);
   }
 
   // ---------- Game Over Results Screen ----------
   function renderMultiplayerResults(app){
     const screen = el("div", {class:"screen"});
+    const panel = el("div", {class:"panel"});
+    const o = gameState.voteOutcome || {};
+    const name = o.name || "Player";
 
-    const crewWon = gameState.winner === "crew";
-    const banner = el("div", {class:"outcome-banner " + (crewWon ? "success" : "danger")}, [
-      el("div", {style:"font-size:3rem"}, [document.createTextNode(crewWon ? "🏆" : "😈")]),
-      el("h2", {style:"margin:4px 0"}, [document.createTextNode(crewWon ? "CREW VICTORY!" : "IMPOSTER VICTORY!")]),
-      el("p", {style:"font-size:.9rem; margin:0"}, [
-        document.createTextNode(crewWon ? "All imposters were caught!" : "Imposters overpowered the crew!")
-      ])
+    if (o.majority){
+      let icon, text, bannerClass;
+      if (gameState.gameOverReason === "crewWin"){
+        icon = "🎉"; bannerClass = "correct";
+        text = name + " was voted out and WAS an imposter — all imposters caught! Crew wins! Congrats!";
+      } else if (o.wasImposter){
+        icon = "🎉"; bannerClass = "correct";
+        text = name + " was voted out and WAS an imposter, but other imposters remain — too few players left to continue. Imposters win!";
+      } else {
+        icon = "😈"; bannerClass = "wrong";
+        text = name + " was voted out but was NOT the imposter — too few players left to continue. Imposters win!";
+      }
+
+      const banner = el("div", {class:"vote-banner " + bannerClass});
+      banner.appendChild(el("div", {style:"font-size:1.8rem"}, [document.createTextNode(icon)]));
+      banner.appendChild(el("div", {}, [document.createTextNode(text)]));
+      panel.appendChild(banner);
+    }
+
+    panel.appendChild(el("div", {style:"opacity:.7;font-size:.85rem;text-align:center;margin-top:10px;"}, [document.createTextNode("Crew's word")]));
+    const crewDiv = el("div", {style:"text-align:center;margin:6px 0 14px;"}, [
+      gameState.secretImageUrl ? el("img", {class:"secret-photo", src:gameState.secretImageUrl, alt:gameState.secretWord}) : el("div", {class:"big-emoji"}, [document.createTextNode(gameState.secretEmoji || "🥥")]),
+      el("div", {class:"secret-word"}, [document.createTextNode(gameState.secretWord)])
     ]);
-    screen.appendChild(banner);
+    panel.appendChild(crewDiv);
 
-    // Secret Word reveal
-    const wordPanel = el("div", {class:"panel", style:"width:100%; text-align:center"});
-    wordPanel.appendChild(el("label", {}, [document.createTextNode("Words This Round")]));
-    wordPanel.appendChild(el("div", {style:"font-size:1.1rem; margin:4px 0"}, [
-      document.createTextNode("🛡️ Crew Word: "),
-      el("b", {style:"color:var(--gold)"}, [document.createTextNode(gameState.secretWord + " " + gameState.secretEmoji)])
-    ]));
-    wordPanel.appendChild(el("div", {style:"font-size:1.1rem; margin:4px 0"}, [
-      document.createTextNode("🤫 Imposter Word: "),
-      el("b", {style:"color:var(--danger)"}, [document.createTextNode(gameState.decoyWord + " " + gameState.decoyEmoji)])
-    ]));
-    screen.appendChild(wordPanel);
+    panel.appendChild(el("div", {style:"opacity:.7;font-size:.85rem;text-align:center;"}, [document.createTextNode("Imposter's word")]));
+    const impDiv = el("div", {style:"text-align:center;margin:6px 0 14px;"}, [
+      gameState.decoyImageUrl ? el("img", {class:"secret-photo", src:gameState.decoyImageUrl, alt:gameState.decoyWord}) : el("div", {class:"big-emoji"}, [document.createTextNode(gameState.decoyEmoji || "🥥")]),
+      el("div", {class:"secret-word", style:"color:var(--danger)"}, [document.createTextNode(gameState.decoyWord)])
+    ]);
+    panel.appendChild(impDiv);
+
+    const imposterPlayers = (gameState.players || []).filter(p => (gameState.imposterIds || []).includes(p.id));
+    const imposterNames = imposterPlayers.map(p => p.name);
+    const listDiv = el("div", {style:"text-align:center;margin-top:8px;font-size:.95rem;"}, [
+      document.createTextNode(imposterNames.length > 1 ? "The imposters were: " : "The imposter was: "),
+      el("b", {style:"color:var(--gold)"}, [document.createTextNode(imposterNames.join(", "))])
+    ]);
+    panel.appendChild(listDiv);
+
+    screen.appendChild(panel);
 
     if (isHost){
       screen.appendChild(el("button", {
