@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Generate Icons</title></head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+
+function drawIcon(size) {
+  c.width = c.height = size;
+  const padding = size * 0.1;
+  const inner = size - padding * 2;
+
+  // Dark background gradient
+  const bg = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+  bg.addColorStop(0, '#1e1e1e');
+  bg.addColorStop(1, '#050505');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, size, size);
+
+  // Gold accent circle
+  ctx.beginPath();
+  ctx.arc(size/2, size/2, inner * 0.45, 0, Math.PI * 2);
+  ctx.strokeStyle = '#e8b93a';
+  ctx.lineWidth = size * 0.03;
+  ctx.stroke();
+
+  // Detective emoji
+  ctx.font = `${inner * 0.5}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🕵️', size/2, size/2 + inner * 0.02);
+
+  return c.toDataURL('image/png');
+}
+
+async function generateAll() {
+  const zip = new JSZip();
+  for (const size of sizes) {
+    const dataUrl = drawIcon(size);
+    const base64 = dataUrl.split(',')[1];
+    zip.file(`icon-${size}.png`, base64, {base64: true});
+  }
+  const content = await zip.generateAsync({type: 'blob'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(content);
+  a.download = 'icons.zip';
+  a.click();
+}
+
+document.body.onclick = generateAll;
+document.body.textContent = 'Click anywhere to generate and download all icons as icons.zip';
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</body>
+</html>
