@@ -712,6 +712,15 @@
     if (attrs) for (const k in attrs){
       if (k === "class") e.className = attrs[k];
       else if (k === "html") e.innerHTML = attrs[k];
+      else if (k === "disabled") {
+        if (attrs[k]) {
+          e.setAttribute("disabled", "disabled");
+          e.disabled = true;
+        } else {
+          e.removeAttribute("disabled");
+          e.disabled = false;
+        }
+      }
       else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]);
       else e.setAttribute(k, attrs[k]);
     }
@@ -750,6 +759,17 @@
   // ==========================================
   // PEERJS NETWORKING
   // ==========================================
+  const PEER_OPTS = {
+    debug: 1,
+    config: {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' }
+      ]
+    }
+  };
+
   function initHostRoom(){
     isHost = true;
     roomCode = generateRoomCode();
@@ -761,7 +781,7 @@
     const peerId = "imposter-p2p-" + roomCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
     
     if (peer) { try { peer.destroy(); } catch(e){} }
-    peer = new Peer(peerId, { debug: 1 });
+    peer = new Peer(peerId, PEER_OPTS);
 
     peer.on('open', (id) => {
       netStatus = "connected";
@@ -779,13 +799,16 @@
     });
 
     peer.on('connection', (conn) => {
-      conn.on('open', () => {
-        // Connected a new player
-        clientConns.set(conn.peer, conn);
-      });
+      clientConns.set(conn.peer, conn);
 
       conn.on('data', (data) => {
         handleHostReceivedData(conn.peer, data);
+      });
+
+      conn.on('open', () => {
+        clientConns.set(conn.peer, conn);
+        // Send state immediately on open
+        conn.send({ type: "STATE_SYNC", state: gameState });
       });
 
       conn.on('close', () => {
@@ -812,7 +835,7 @@
     render();
 
     if (peer) { try { peer.destroy(); } catch(e){} }
-    peer = new Peer(null, { debug: 1 });
+    peer = new Peer(null, PEER_OPTS);
 
     peer.on('open', () => {
       const targetPeerId = "imposter-p2p-" + roomCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
@@ -1343,11 +1366,13 @@
       screen.appendChild(settingsPanel);
 
       // Start button
-      screen.appendChild(el("button", {
+      const canStart = gameState.players.length >= 3;
+      const startBtn = el("button", {
         class:"primary",
         onclick: hostStartMultiplayerGame,
-        disabled: gameState.players.length < 3
-      }, [document.createTextNode("🚀 Start Multiplayer Game ▶")]));
+        disabled: !canStart
+      }, [document.createTextNode(canStart ? ("🚀 Start Multiplayer Game (" + gameState.players.length + " Players) ▶") : ("Waiting for Players (" + gameState.players.length + "/3 Joined)"))]);
+      screen.appendChild(startBtn);
     } else {
       // Waiting for host message
       const waitBox = el("div", {class:"panel", style:"width:100%; text-align:center; padding:20px"});
