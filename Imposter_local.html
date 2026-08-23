@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Imposter · Multiplayer Party Game</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
+<meta name="theme-color" content="#e8b93a">
+<!-- PeerJS for zero-server WebRTC Multiplayer on GitHub Pages -->
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<!-- QRCode.js for instant LAN join -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+  :root{
+    --black:#050505;
+    --black-soft:#141414;
+    --black-softer:#1e1e1e;
+    --gold:#e8b93a;
+    --gold-dark:#b8860b;
+    --cream:#f2efe6;
+    --ink:#161616;
+    --success:#2ecc71;
+    --danger:#e74c3c;
+    --cyan:#00d2d3;
+    --purple:#9b59b6;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    font-family:'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+    background:
+      radial-gradient(circle at 50% -10%, rgba(232,185,58,.12), transparent 55%),
+      linear-gradient(160deg,#000000,var(--black-soft) 60%,var(--black-softer));
+    color:var(--cream);
+    overflow-x:hidden;
+  }
+  #app{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    padding:16px 14px 40px;
+  }
+  h1{
+    font-size:1.6rem;
+    text-align:center;
+    margin:4px 0 2px;
+    color:var(--gold);
+    text-shadow:0 0 14px rgba(232,185,58,.35);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+  }
+  .subtitle{
+    text-align:center;
+    opacity:.85;
+    font-size:.85rem;
+    margin-bottom:14px;
+  }
+  .screen{
+    width:100%;
+    max-width:440px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+    animation:fadeIn 0.25s ease-out;
+  }
+  @keyframes fadeIn{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .panel{
+    width:100%;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.15);
+    border-radius:18px;
+    padding:16px;
+    backdrop-filter:blur(6px);
+  }
+  label{
+    display:block;
+    font-size:.85rem;
+    margin-bottom:6px;
+    opacity:.9;
+  }
+  input[type=text], input[type=number]{
+    width:100%;
+    padding:12px 14px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.2);
+    font-size:1rem;
+    background:var(--black-softer);
+    color:var(--cream);
+    outline:none;
+    transition:border-color 0.2s;
+  }
+  input[type=text]:focus{
+    border-color:var(--gold);
+  }
+  .stepper{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    justify-content:center;
+  }
+  .stepper button{
+    width:42px; height:42px;
+    border-radius:50%;
+    border:none;
+    font-size:1.3rem;
+    background:var(--gold);
+    color:var(--ink);
+    font-weight:bold;
+    cursor:pointer;
+    transition:transform 0.1s;
+  }
+  .stepper button:active{ transform:scale(0.92); }
+  .stepper .value{
+    min-width:60px;
+    text-align:center;
+    font-size:1.4rem;
+    font-weight:bold;
+  }
+  .hint{
+    font-size:.78rem;
+    opacity:.75;
+    text-align:center;
+    margin-top:4px;
+  }
+  .chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    justify-content:center;
+  }
+  .chip{
+    padding:8px 14px;
+    border-radius:20px;
+    border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.06);
+    color:var(--cream);
+    font-size:.82rem;
+    cursor:pointer;
+    transition:all 0.2s;
+  }
+  .chip.active{
+    background:linear-gradient(135deg,var(--gold),var(--gold-dark));
+    color:var(--ink);
+    border-color:var(--gold);
+    font-weight:600;
+  }
+  button.primary{
+    width:100%;
+    padding:14px;
+    font-size:1.02rem;
+    font-weight:600;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(135deg,var(--gold),var(--gold-dark));
+    color:var(--ink);
+    cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,.3);
+    transition:transform 0.15s, filter 0.15s;
+  }
+  button.primary:active{ transform:scale(.98); }
+  button.secondary{
+    width:100%;
+    padding:12px;
+    font-size:.95rem;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.3);
+    background:rgba(255,255,255,.05);
+    color:var(--cream);
+    cursor:pointer;
+    transition:background 0.2s;
+  }
+  button.secondary:active{ background:rgba(255,255,255,.12); }
+  button.accent-btn{
+    background:linear-gradient(135deg,var(--cyan),#0984e3);
+    color:#fff;
+  }
+  button:disabled{ opacity:.45; cursor:not-allowed; }
+  
+  .top-bar{
+    width:100%;
+    max-width:440px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:6px;
+  }
+  .top-bar button{
+    background:none;
+    border:none;
+    color:var(--cream);
+    opacity:.8;
+    font-size:.85rem;
+    cursor:pointer;
+    padding:4px 6px;
+  }
+  .net-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:4px 10px;
+    border-radius:12px;
+    font-size:.75rem;
+    background:rgba(0,0,0,.4);
+    border:1px solid rgba(255,255,255,.15);
+  }
+  .net-badge.online{ color:var(--success); border-color:var(--success); }
+  .net-badge.connecting{ color:var(--gold); border-color:var(--gold); }
+  .net-badge.error{ color:var(--danger); border-color:var(--danger); }
+  .dot{
+    width:7px; height:7px; border-radius:50%; background:currentColor;
+  }
+
+  /* Mascot and Title */
+  .title-mascot{
+    width:120px;
+    height:120px;
+    border-radius:24px;
+    object-fit:cover;
+    box-shadow:0 8px 24px rgba(0,0,0,.6), 0 0 24px rgba(232,185,58,.3);
+    border:2px solid rgba(232,185,58,.4);
+    margin:0 auto 6px;
+    display:block;
+    transition:transform .2s ease;
+  }
+  .title-mascot:hover{ transform:scale(1.04); }
+  .header-icon{
+    width:26px; height:26px;
+    border-radius:6px;
+    object-fit:cover;
+    vertical-align:middle;
+    border:1px solid rgba(232,185,58,.4);
+  }
+  .title-heading{
+    text-align:center;
+    color:var(--gold);
+    margin:2px 0 0;
+    font-size:1.4rem;
+  }
+  .title-tagline{
+    text-align:center;
+    opacity:.8;
+    font-size:.85rem;
+    margin:0 0 12px;
+  }
+
+  /* Room & Lobby styles */
+  .room-code-box{
+    text-align:center;
+    padding:12px;
+    background:rgba(232,185,58,.1);
+    border:2px dashed var(--gold);
+    border-radius:14px;
+    margin-bottom:12px;
+  }
+  .room-code-text{
+    font-size:2rem;
+    letter-spacing:4px;
+    font-weight:900;
+    color:var(--gold);
+    user-select:all;
+  }
+  #qrcodeContainer{
+    display:flex;
+    justify-content:center;
+    padding:10px;
+    background:#fff;
+    border-radius:12px;
+    margin:10px auto;
+    width:160px;
+    height:160px;
+  }
+  #qrcodeContainer img{
+    width:100%; height:100%;
+  }
+
+  .player-lobby-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));
+    gap:8px;
+    width:100%;
+    margin-top:10px;
+    max-height:220px;
+    overflow-y:auto;
+  }
+  .player-pill{
+    padding:8px 10px;
+    border-radius:12px;
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.15);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:.85rem;
+    position:relative;
+  }
+  .player-pill.is-host{
+    border-color:var(--gold);
+    background:rgba(232,185,58,.15);
+  }
+  .player-pill.is-me{
+    border-color:var(--cyan);
+    font-weight:bold;
+  }
+  .player-avatar{
+    font-size:1.2rem;
+  }
+  .kick-btn{
+    position:absolute;
+    right:4px; top:4px;
+    background:none; border:none;
+    color:var(--danger);
+    cursor:pointer;
+    font-size:.8rem;
+    padding:2px;
+  }
+
+  /* 3D Card styles */
+  .card-wrap{
+    perspective:900px;
+    width:100%;
+    max-width:320px;
+    height:380px;
+    margin:10px auto;
+  }
+  .card{
+    width:100%;
+    height:100%;
+    position:relative;
+    transform-style:preserve-3d;
+    transition:transform 0.55s cubic-bezier(.4,.2,.2,1);
+    cursor:pointer;
+  }
+  .card.flipped{
+    transform:rotateY(180deg);
+  }
+  .face{
+    position:absolute;
+    width:100%;
+    height:100%;
+    backface-visibility:hidden;
+    border-radius:22px;
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 12px 30px rgba(0,0,0,.6);
+    border:2px solid rgba(255,255,255,.2);
+  }
+  .face.front{
+    background:
+      radial-gradient(circle at 50% 30%, rgba(232,185,58,.25), transparent 70%),
+      linear-gradient(145deg, #1c1c1c, #0a0a0a);
+    border-color:var(--gold);
+  }
+  .face.back{
+    background:
+      radial-gradient(circle at 50% 30%, rgba(0,210,211,.2), transparent 70%),
+      linear-gradient(145deg, #141414, #080808);
+    transform:rotateY(180deg);
+  }
+  .card-role-badge{
+    font-size:.8rem;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    padding:4px 12px;
+    border-radius:20px;
+    background:rgba(255,255,255,.1);
+    margin-bottom:10px;
+  }
+  .secret-photo{
+    width:140px;
+    height:140px;
+    border-radius:18px;
+    object-fit:cover;
+    margin:10px 0;
+    box-shadow:0 6px 18px rgba(0,0,0,.5);
+    border:2px solid rgba(255,255,255,.2);
+  }
+  .big-emoji{
+    font-size:4.5rem;
+    margin:10px 0;
+    line-height:1;
+  }
+  .secret-word{
+    font-size:1.6rem;
+    font-weight:bold;
+    color:var(--gold);
+    text-align:center;
+    margin:4px 0;
+  }
+  .secret-category{
+    font-size:.85rem;
+    opacity:.8;
+  }
+
+  /* Timer & Discussion */
+  .timer-box{
+    font-size:3.2rem;
+    font-weight:bold;
+    color:var(--gold);
+    text-shadow:0 0 20px rgba(232,185,58,.4);
+    text-align:center;
+    font-variant-numeric:tabular-nums;
+    margin:8px 0;
+  }
+
+  /* Voting ballot */
+  .vote-grid{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    width:100%;
+    margin-top:8px;
+  }
+  .vote-card{
+    position:relative;
+    padding:12px 14px;
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.15);
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    cursor:pointer;
+    overflow:hidden;
+    transition:all 0.15s;
+  }
+  .vote-card:active{ transform:scale(0.98); }
+  .vote-card.selected{
+    border-color:var(--gold);
+    background:rgba(232,185,58,.2);
+    box-shadow:0 0 14px rgba(232,185,58,.3);
+  }
+  .vote-fill{
+    position:absolute;
+    left:0; top:0; bottom:0;
+    background:rgba(232,185,58,.25);
+    z-index:0;
+    transition:width 0.3s ease;
+  }
+  .vote-info{
+    position:relative;
+    z-index:1;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .vote-count-badge{
+    position:relative;
+    z-index:1;
+    font-weight:bold;
+    font-size:1.1rem;
+    color:var(--gold);
+  }
+
+  /* Result Banner */
+  .outcome-banner{
+    padding:16px;
+    border-radius:16px;
+    text-align:center;
+    width:100%;
+    margin-bottom:10px;
+    animation:slideDown 0.3s ease;
+  }
+  @keyframes slideDown{
+    from{ opacity:0; transform:translateY(-12px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .outcome-banner.success{
+    background:rgba(46,204,113,.2);
+    border:1px solid var(--success);
+    color:#2ecc71;
+  }
+  .outcome-banner.danger{
+    background:rgba(231,76,60,.2);
+    border:1px solid var(--danger);
+    color:#e74c3c;
+  }
+  .role-reveal-tag{
+    font-size:1.3rem;
+    font-weight:bold;
+    margin-top:6px;
+  }
+
+  footer{
+    margin-top:20px;
+    opacity:.55;
+    font-size:.72rem;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ==========================================
+  // KERALA WORD BANK (Preserved from Imposter)
+  // ==========================================
+  const WORDS = [
+    {word:"Appam", emoji:"🥞", cat:"Food"},
+    {word:"Puttu", emoji:"🍙", cat:"Food"},
+    {word:"Kadala Curry", emoji:"🍛", cat:"Food"},
+    {word:"Idiyappam", emoji:"🍜", cat:"Food"},
+    {word:"Kanji", emoji:"🥣", cat:"Food"},
+    {word:"Sadya", emoji:"🍛", cat:"Food"},
+    {word:"Payasam", emoji:"🍮", cat:"Food"},
+    {word:"Avial", emoji:"🥗", cat:"Food"},
+    {word:"Thoran", emoji:"🥬", cat:"Food"},
+    {word:"Olan", emoji:"🍲", cat:"Food"},
+    {word:"Erissery", emoji:"🍲", cat:"Food"},
+    {word:"Pachadi", emoji:"🥗", cat:"Food"},
+    {word:"Meen Curry", emoji:"🐟", cat:"Food"},
+    {word:"Karimeen Fry", emoji:"🐠", cat:"Food"},
+    {word:"Meen Pollichathu", emoji:"🐟", cat:"Food"},
+    {word:"Beef Fry", emoji:"🥩", cat:"Food"},
+    {word:"Nadan Kozhi Curry", emoji:"🍗", cat:"Food"},
+    {word:"Malabar Biryani", emoji:"🍚", cat:"Food"},
+    {word:"Kappa", emoji:"🥔", cat:"Food"},
+    {word:"Kappa Biriyani", emoji:"🍚", cat:"Food"},
+    {word:"Banana Chips", emoji:"🍌", cat:"Food"},
+    {word:"Chakka Varatti", emoji:"🍈", cat:"Food"},
+    {word:"Unniyappam", emoji:"🍩", cat:"Food"},
+    {word:"Achappam", emoji:"🍪", cat:"Food"},
+    {word:"Kozhukatta", emoji:"🍡", cat:"Food"},
+    {word:"Ela Ada", emoji:"🍃", cat:"Food"},
+    {word:"Pazham Pori", emoji:"🍌", cat:"Food"},
+    {word:"Kozhikodan Halwa", emoji:"🍬", cat:"Food"},
+    {word:"Malabar Paratha", emoji:"🫓", cat:"Food"},
+    {word:"Sulaimani Tea", emoji:"🍵", cat:"Food"},
+    {word:"Filter Kaapi", emoji:"☕", cat:"Food"},
+    {word:"Toddy", emoji:"🍹", cat:"Food"},
+    {word:"Rasam", emoji:"🍲", cat:"Food"},
+    {word:"Achar", emoji:"🥭", cat:"Food"},
+    {word:"Parippu Curry", emoji:"🍲", cat:"Food"},
+    {word:"Jackfruit", emoji:"🍈", cat:"Food"},
+    {word:"Tea", emoji:"🍵", cat:"Food"},
+    {word:"Coffee", emoji:"☕", cat:"Food"},
+    {word:"Curd", emoji:"🥛", cat:"Food"},
+    {word:"Milk", emoji:"🥛", cat:"Food"},
+    {word:"Butter", emoji:"🧈", cat:"Food"},
+    {word:"Bread", emoji:"🍞", cat:"Food"},
+    {word:"Rice", emoji:"🍚", cat:"Food"},
+    {word:"Egg", emoji:"🥚", cat:"Food"},
+    {word:"Omelette", emoji:"🍳", cat:"Food"},
+    {word:"Chapati", emoji:"🫓", cat:"Food"},
+    {word:"Dosa", emoji:"🥞", cat:"Food"},
+    {word:"Idli", emoji:"🍚", cat:"Food"},
+    {word:"Sambar", emoji:"🍲", cat:"Food"},
+    {word:"Chutney", emoji:"🥣", cat:"Food"},
+    {word:"Papadam", emoji:"🫓", cat:"Food"},
+    {word:"Watermelon", emoji:"🍉", cat:"Food"},
+    {word:"Mango", emoji:"🥭", cat:"Food"},
+    {word:"Banana", emoji:"🍌", cat:"Food"},
+    {word:"Pineapple", emoji:"🍍", cat:"Food"},
+    {word:"Grapes", emoji:"🍇", cat:"Food"},
+    {word:"Orange", emoji:"🍊", cat:"Food"},
+    {word:"Apple", emoji:"🍎", cat:"Food"},
+    {word:"Lemon", emoji:"🍋", cat:"Food"},
+    {word:"Coconut Water", emoji:"🥥", cat:"Food"},
+    {word:"Peanuts", emoji:"🥜", cat:"Food"},
+    {word:"Cashew Nuts", emoji:"🌰", cat:"Food"},
+    {word:"Honey", emoji:"🍯", cat:"Food"},
+    {word:"Jaggery", emoji:"🍯", cat:"Food"},
+    {word:"Curry Leaves", emoji:"🌿", cat:"Food"},
+    {word:"Ice Cream", emoji:"🍦", cat:"Food"},
+    {word:"Cake", emoji:"🍰", cat:"Food"},
+    {word:"Biscuit", emoji:"🍪", cat:"Food"},
+
+    {word:"Mundu", emoji:"🧵", cat:"Things"},
+    {word:"Kasavu Saree", emoji:"🥻", cat:"Things"},
+    {word:"Nettipattam", emoji:"👑", cat:"Things"},
+    {word:"Aranmula Kannadi", emoji:"🪞", cat:"Things"},
+    {word:"Uruli", emoji:"🍲", cat:"Things"},
+    {word:"Nilavilakku", emoji:"🕯️", cat:"Things"},
+    {word:"Kindi", emoji:"🫖", cat:"Things"},
+    {word:"Ola (Palm Leaf)", emoji:"🍃", cat:"Things"},
+    {word:"Coir Mat", emoji:"🧺", cat:"Things"},
+    {word:"Coir Rope", emoji:"🪢", cat:"Things"},
+    {word:"Chenda", emoji:"🥁", cat:"Things"},
+    {word:"Edakka", emoji:"🥁", cat:"Things"},
+    {word:"Pookalam", emoji:"🌸", cat:"Things"},
+    {word:"Onavillu", emoji:"🏹", cat:"Things"},
+    {word:"Ammikallu", emoji:"🪨", cat:"Things"},
+    {word:"Chirava", emoji:"🥥", cat:"Things"},
+    {word:"Uri", emoji:"🧺", cat:"Things"},
+    {word:"Chatti", emoji:"🍯", cat:"Things"},
+    {word:"Kerala Lottery Ticket", emoji:"🎟️", cat:"Things"},
+    {word:"Book", emoji:"📖", cat:"Things"},
+    {word:"Notebook", emoji:"📓", cat:"Things"},
+    {word:"Pen", emoji:"🖊️", cat:"Things"},
+    {word:"Scissors", emoji:"✂️", cat:"Things"},
+    {word:"Padlock", emoji:"🔒", cat:"Things"},
+    {word:"Key", emoji:"🔑", cat:"Things"},
+    {word:"Hammer", emoji:"🔨", cat:"Things"},
+    {word:"Mirror", emoji:"🪞", cat:"Things"},
+    {word:"Chair", emoji:"🪑", cat:"Things"},
+    {word:"Umbrella", emoji:"☂️", cat:"Things"},
+    {word:"Mobile Phone", emoji:"📱", cat:"Things"},
+    {word:"Television", emoji:"📺", cat:"Things"},
+    {word:"Camera", emoji:"📷", cat:"Things"},
+    {word:"Laptop", emoji:"💻", cat:"Things"},
+
+    {word:"Coconut Tree", emoji:"🥥", cat:"Nature"},
+    {word:"Backwaters", emoji:"🌴", cat:"Nature"},
+    {word:"Monsoon Rain", emoji:"🌧️", cat:"Nature"},
+    {word:"Peacock", emoji:"🦚", cat:"Nature"},
+    {word:"Great Hornbill", emoji:"🦤", cat:"Nature"},
+    {word:"Elephant", emoji:"🐘", cat:"Nature"},
+    {word:"Western Ghats", emoji:"⛰️", cat:"Nature"},
+    {word:"Periyar Tiger Reserve", emoji:"🐅", cat:"Nature"},
+    {word:"Nilgiri Tahr", emoji:"🐐", cat:"Nature"},
+    {word:"Malabar Giant Squirrel", emoji:"🐿️", cat:"Nature"},
+    {word:"Rice Paddy Fields", emoji:"🌾", cat:"Nature"},
+    {word:"Rubber Plantation", emoji:"🌳", cat:"Nature"},
+    {word:"River", emoji:"🏞️", cat:"Nature"},
+    {word:"Butterfly", emoji:"🦋", cat:"Nature"}
+  ];
+
+  const CATEGORIES = ["All", ...new Set(WORDS.map(w => w.cat))];
+  const AVATARS = ["😎", "🕵️", "🤠", "🧙‍♂️", "🥷", "👨‍🎤", "👩‍🚀", "🦁", "🐯", "🦊", "🐼", "🤖"];
+
+  // ==========================================
+  // APP STATE
+  // ==========================================
+  let appMode = "menu"; // "menu" | "multiplayer" | "pass_and_play"
+  let isHost = false;
+  let roomCode = "";
+  let myPlayerId = "";
+  let myPlayerName = localStorage.getItem("imposter_my_name") || "";
+  let myAvatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
+  let netStatus = "idle"; // "idle" | "connecting" | "connected" | "error"
+  let netStatusMsg = "";
+
+  // WebRTC PeerJS instances
+  let peer = null;
+  let hostConn = null;              // Client -> Host connection
+  let clientConns = new Map();       // Host -> Map of Client connections (id -> conn)
+
+  // Synchronized Game State (Controlled by Host in Multiplayer, or local in Pass-and-Play)
+  let gameState = {
+    screen: "lobby", // "lobby" | "card" | "discuss" | "vote" | "roundResult" | "results"
+    categoryFilter: "All",
+    numImposters: 1,
+    players: [], // [{ id, name, avatar, isHost, ready, alive, votesReceived }]
+    firstPlayerName: "",
+    secretWord: "",
+    secretEmoji: "",
+    secretCategory: "",
+    secretImageUrl: null,
+    decoyWord: "",
+    decoyEmoji: "",
+    decoyImageUrl: null,
+    timerSeconds: 0,
+    timerRunning: false,
+    eliminatedPlayer: null, // { name, wasImposter, remainingImposters }
+    winner: null // "crew" | "imposter"
+  };
+
+  // Local client's private card data (sent securely from host)
+  let myPrivateCard = {
+    role: "crew", // "crew" | "imposter"
+    word: "",
+    emoji: "🥥",
+    category: "",
+    imageUrl: null,
+    revealed: false
+  };
+
+  let myVotedId = null;
+  let timerInterval = null;
+
+  // Sound Synth (Web Audio API)
+  const audioCtx = (window.AudioContext || window.webkitAudioContext) ? new (window.AudioContext || window.webkitAudioContext)() : null;
+  function playBeep(freq, type, dur){
+    if (!audioCtx) return;
+    try {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.setValueAtTime(freq || 440, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (dur || 0.15));
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + (dur || 0.15));
+    } catch(e){}
+  }
+  function vibrate(ms){
+    if (navigator.vibrate) navigator.vibrate(ms || 40);
+  }
+
+  // ==========================================
+  // HELPER FUNCTIONS
+  // ==========================================
+  function el(tag, attrs, children){
+    const e = document.createElement(tag);
+    if (attrs) for (const k in attrs){
+      if (k === "class") e.className = attrs[k];
+      else if (k === "html") e.innerHTML = attrs[k];
+      else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    }
+    (children || []).forEach(c => { if (c) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return e;
+  }
+
+  function generateRoomCode(){
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let code = "IMP-";
+    for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    return code;
+  }
+
+  function getWordPool(){
+    if (gameState.categoryFilter === "All") return WORDS;
+    return WORDS.filter(w => w.cat === gameState.categoryFilter);
+  }
+
+  function pickDecoy(secret){
+    const cands = WORDS.filter(w => w.cat === secret.cat && w.word !== secret.word);
+    return cands.length ? cands[Math.floor(Math.random() * cands.length)] : secret;
+  }
+
+  function fetchWikipediaThumbnail(word, callback){
+    try {
+      fetch("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(word))
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d && d.thumbnail && d.thumbnail.source) callback(d.thumbnail.source);
+          else callback(null);
+        }).catch(() => callback(null));
+    } catch(e){ callback(null); }
+  }
+
+  // ==========================================
+  // PEERJS NETWORKING
+  // ==========================================
+  function initHostRoom(){
+    isHost = true;
+    roomCode = generateRoomCode();
+    myPlayerId = "host-" + Math.random().toString(36).substring(2, 7);
+    netStatus = "connecting";
+    netStatusMsg = "Setting up room...";
+    render();
+
+    const peerId = "imposter-p2p-" + roomCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+    
+    if (peer) { try { peer.destroy(); } catch(e){} }
+    peer = new Peer(peerId, { debug: 1 });
+
+    peer.on('open', (id) => {
+      netStatus = "connected";
+      netStatusMsg = "Room Live!";
+      gameState.players = [{
+        id: myPlayerId,
+        name: myPlayerName || "Host",
+        avatar: myAvatar,
+        isHost: true,
+        ready: false,
+        alive: true,
+        votesReceived: 0
+      }];
+      render();
+    });
+
+    peer.on('connection', (conn) => {
+      conn.on('open', () => {
+        // Connected a new player
+        clientConns.set(conn.peer, conn);
+      });
+
+      conn.on('data', (data) => {
+        handleHostReceivedData(conn.peer, data);
+      });
+
+      conn.on('close', () => {
+        clientConns.delete(conn.peer);
+        gameState.players = gameState.players.filter(p => p.connId !== conn.peer);
+        broadcastGameState();
+        render();
+      });
+    });
+
+    peer.on('error', (err) => {
+      netStatus = "error";
+      netStatusMsg = "Room setup error: " + (err.message || err.type);
+      render();
+    });
+  }
+
+  function initClientJoin(targetCode){
+    isHost = false;
+    roomCode = targetCode.toUpperCase().trim();
+    myPlayerId = "player-" + Math.random().toString(36).substring(2, 7);
+    netStatus = "connecting";
+    netStatusMsg = "Connecting to room " + roomCode + "...";
+    render();
+
+    if (peer) { try { peer.destroy(); } catch(e){} }
+    peer = new Peer(null, { debug: 1 });
+
+    peer.on('open', () => {
+      const targetPeerId = "imposter-p2p-" + roomCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+      hostConn = peer.connect(targetPeerId, { reliable: true });
+
+      hostConn.on('open', () => {
+        netStatus = "connected";
+        netStatusMsg = "Connected!";
+        // Send join handshake
+        hostConn.send({
+          type: "JOIN",
+          id: myPlayerId,
+          name: myPlayerName || "Player",
+          avatar: myAvatar
+        });
+        render();
+      });
+
+      hostConn.on('data', (data) => {
+        handleClientReceivedData(data);
+      });
+
+      hostConn.on('close', () => {
+        netStatus = "error";
+        netStatusMsg = "Disconnected from Host";
+        render();
+      });
+    });
+
+    peer.on('error', (err) => {
+      netStatus = "error";
+      netStatusMsg = "Failed to find room " + roomCode;
+      render();
+    });
+  }
+
+  // Host: process incoming messages from clients
+  function handleHostReceivedData(peerId, data){
+    if (data.type === "JOIN"){
+      // Prevent duplicates
+      const exists = gameState.players.find(p => p.id === data.id);
+      if (!exists){
+        gameState.players.push({
+          id: data.id,
+          connId: peerId,
+          name: data.name,
+          avatar: data.avatar,
+          isHost: false,
+          ready: false,
+          alive: true,
+          votesReceived: 0
+        });
+        playBeep(600, 'sine', 0.1);
+      }
+      broadcastGameState();
+      render();
+    } else if (data.type === "PLAYER_READY"){
+      const p = gameState.players.find(x => x.id === data.id);
+      if (p) p.ready = true;
+      broadcastGameState();
+      render();
+    } else if (data.type === "CAST_VOTE"){
+      // data: { voterId, targetId }
+      handlePlayerVote(data.voterId, data.targetId);
+    }
+  }
+
+  // Client: process incoming messages from host
+  function handleClientReceivedData(data){
+    if (data.type === "STATE_SYNC"){
+      gameState = data.state;
+      render();
+    } else if (data.type === "PRIVATE_CARD"){
+      myPrivateCard = data.card;
+      myVotedId = null;
+      render();
+    } else if (data.type === "ANNOUNCE_BEEP"){
+      playBeep(data.freq || 520, 'sine', 0.18);
+      vibrate(50);
+    }
+  }
+
+  function broadcastGameState(){
+    const payload = { type: "STATE_SYNC", state: gameState };
+    clientConns.forEach(conn => {
+      if (conn.open) conn.send(payload);
+    });
+  }
+
+  function sendToPlayer(playerId, payload){
+    const p = gameState.players.find(x => x.id === playerId);
+    if (!p) return;
+    if (p.isHost){
+      // Self
+      if (payload.type === "PRIVATE_CARD") myPrivateCard = payload.card;
+    } else if (p.connId && clientConns.has(p.connId)){
+      clientConns.get(p.connId).send(payload);
+    }
+  }
+
+  // ==========================================
+  // MULTIPLAYER GAME FLOW (Authoritative on Host)
+  // ==========================================
+  function hostStartMultiplayerGame(){
+    if (gameState.players.length < 3) {
+      alert("Need at least 3 players to start!");
+      return;
+    }
+    const pool = getWordPool();
+    const secret = pool[Math.floor(Math.random() * pool.length)];
+    const decoy = pickDecoy(secret);
+
+    // Randomize first player
+    const firstP = gameState.players[Math.floor(Math.random() * gameState.players.length)];
+    gameState.firstPlayerName = firstP.name;
+
+    // Pick imposters randomly
+    const shuffled = [...gameState.players].sort(() => 0.5 - Math.random());
+    const imposterCount = Math.min(gameState.numImposters, Math.max(1, Math.floor((gameState.players.length - 1) / 2)));
+    const imposterIds = new Set(shuffled.slice(0, imposterCount).map(p => p.id));
+
+    gameState.secretWord = secret.word;
+    gameState.secretEmoji = secret.emoji;
+    gameState.secretCategory = secret.cat;
+    gameState.decoyWord = decoy.word;
+    gameState.decoyEmoji = decoy.emoji;
+    gameState.winner = null;
+    gameState.eliminatedPlayer = null;
+
+    gameState.players.forEach(p => {
+      p.ready = false;
+      p.alive = true;
+      p.votesReceived = 0;
+    });
+
+    gameState.screen = "card";
+
+    // Fetch images and send private cards
+    fetchWikipediaThumbnail(secret.word, (secImg) => {
+      gameState.secretImageUrl = secImg;
+      fetchWikipediaThumbnail(decoy.word, (decImg) => {
+        gameState.decoyImageUrl = decImg;
+
+        // Dispatch private role cards to each player's device
+        gameState.players.forEach(p => {
+          const isImp = imposterIds.has(p.id);
+          sendToPlayer(p.id, {
+            type: "PRIVATE_CARD",
+            card: {
+              role: isImp ? "imposter" : "crew",
+              word: isImp ? decoy.word : secret.word,
+              emoji: isImp ? decoy.emoji : secret.emoji,
+              category: secret.cat,
+              imageUrl: isImp ? decImg : secImg,
+              revealed: false
+            }
+          });
+        });
+
+        broadcastGameState();
+        render();
+      });
+    });
+  }
+
+  function markMyCardReady(){
+    myPrivateCard.revealed = true;
+    vibrate(40);
+    playBeep(640, 'triangle', 0.1);
+    if (isHost){
+      const me = gameState.players.find(p => p.id === myPlayerId);
+      if (me) me.ready = true;
+      broadcastGameState();
+      render();
+    } else if (hostConn && hostConn.open){
+      hostConn.send({ type: "PLAYER_READY", id: myPlayerId });
+      render();
+    }
+  }
+
+  function hostProceedToDiscussion(){
+    gameState.screen = "discuss";
+    gameState.timerSeconds = 0;
+    gameState.timerRunning = true;
+    startSyncTimer();
+    broadcastGameState();
+    render();
+  }
+
+  function startSyncTimer(){
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      if (gameState.timerRunning && gameState.screen === "discuss"){
+        gameState.timerSeconds++;
+        const disp = document.getElementById("timerVal");
+        if (disp) disp.textContent = formatTime(gameState.timerSeconds);
+        // Sync every 5 seconds
+        if (gameState.timerSeconds % 5 === 0 && isHost) broadcastGameState();
+      }
+    }, 1000);
+  }
+
+  function hostProceedToVoting(){
+    if (timerInterval) clearInterval(timerInterval);
+    gameState.timerRunning = false;
+    gameState.players.forEach(p => p.votesReceived = 0);
+    gameState.screen = "vote";
+    broadcastGameState();
+    render();
+  }
+
+  function handlePlayerVote(voterId, targetId){
+    if (!isHost) return;
+    const target = gameState.players.find(p => p.id === targetId);
+    if (target && target.alive){
+      target.votesReceived = (target.votesReceived || 0) + 1;
+      playBeep(480, 'sine', 0.08);
+      broadcastGameState();
+      render();
+    }
+  }
+
+  function castVoteOnPhone(targetId){
+    if (myVotedId) return; // already voted
+    myVotedId = targetId;
+    vibrate(50);
+    playBeep(700, 'sine', 0.12);
+
+    if (isHost){
+      handlePlayerVote(myPlayerId, targetId);
+    } else if (hostConn && hostConn.open){
+      hostConn.send({ type: "CAST_VOTE", voterId: myPlayerId, targetId: targetId });
+    }
+    render();
+  }
+
+  function hostCalculateVoteOutcome(){
+    if (!isHost) return;
+    const alivePlayers = gameState.players.filter(p => p.alive);
+    let maxVotes = -1;
+    let accused = null;
+    let isTie = false;
+
+    alivePlayers.forEach(p => {
+      if (p.votesReceived > maxVotes){
+        maxVotes = p.votesReceived;
+        accused = p;
+        isTie = false;
+      } else if (p.votesReceived === maxVotes && maxVotes > 0){
+        isTie = true;
+      }
+    });
+
+    if (!accused || maxVotes === 0 || isTie){
+      // No majority / Tie
+      gameState.eliminatedPlayer = {
+        name: isTie ? "Tie Vote (No Majority)" : "No Votes Cast",
+        wasImposter: false,
+        isTie: true,
+        remainingImposters: countRemainingImposters()
+      };
+      gameState.screen = "roundResult";
+    } else {
+      // Player is eliminated
+      accused.alive = false;
+      const wasImp = (myPrivateCard.role === "imposter" && accused.id === myPlayerId) || 
+                     (isHost && checkHostIfImposter(accused.id));
+      
+      const rem = countRemainingImposters();
+      gameState.eliminatedPlayer = {
+        name: accused.name,
+        wasImposter: wasImp,
+        isTie: false,
+        remainingImposters: rem
+      };
+
+      // Check Win conditions
+      if (rem === 0){
+        gameState.winner = "crew";
+        gameState.screen = "results";
+      } else {
+        const remAlive = gameState.players.filter(p => p.alive).length;
+        if (remAlive <= 2){
+          gameState.winner = "imposter";
+          gameState.screen = "results";
+        } else {
+          gameState.screen = "roundResult";
+        }
+      }
+    }
+
+    broadcastGameState();
+    render();
+  }
+
+  function checkHostIfImposter(pid){
+    // In host state, check if player got the decoy word
+    return gameState.decoyWord && myPrivateCard.word === gameState.decoyWord && pid === myPlayerId ? true : false;
+  }
+
+  function countRemainingImposters(){
+    // In host tracking:
+    const alivePlayers = gameState.players.filter(p => p.alive);
+    return Math.max(0, gameState.numImposters - (gameState.eliminatedPlayer && gameState.eliminatedPlayer.wasImposter ? 1 : 0));
+  }
+
+  function formatTime(s){
+    const m = Math.floor(s / 60), sec = s % 60;
+    return String(m).padStart(2,"0") + ":" + String(sec).padStart(2,"0");
+  }
+
+  // ==========================================
+  // RENDER UI SCREENS
+  // ==========================================
+  function render(){
+    const app = document.getElementById("app");
+    app.innerHTML = "";
+
+    // App Header
+    const h1 = el("h1", {}, [
+      el("img", {class:"header-icon", src:"imposter-pwa/icons/boy_hoodie_specs_imposter.png", alt:"Icon"}),
+      document.createTextNode("Imposter")
+    ]);
+    app.appendChild(h1);
+    app.appendChild(el("div", {class:"subtitle"}, [document.createTextNode("Multiplayer LAN / Web Party Game")]));
+
+    // Network status badge if in room
+    if (appMode === "multiplayer" && roomCode){
+      const topBar = el("div", {class:"top-bar"});
+      const netBadge = el("div", {class:"net-badge " + (netStatus === "connected" ? "online" : netStatus === "connecting" ? "connecting" : "error")}, [
+        el("div", {class:"dot"}),
+        document.createTextNode(roomCode + " · " + (isHost ? "Host" : "Player"))
+      ]);
+      topBar.appendChild(netBadge);
+      topBar.appendChild(el("button", {onclick: exitToMenu}, [document.createTextNode("✕ Leave")]));
+      app.appendChild(topBar);
+    }
+
+    if (appMode === "menu") renderMenu(app);
+    else if (appMode === "multiplayer"){
+      if (gameState.screen === "lobby") renderLobby(app);
+      else if (gameState.screen === "card") renderMultiplayerCard(app);
+      else if (gameState.screen === "discuss") renderMultiplayerDiscuss(app);
+      else if (gameState.screen === "vote") renderMultiplayerVote(app);
+      else if (gameState.screen === "roundResult") renderMultiplayerRoundResult(app);
+      else if (gameState.screen === "results") renderMultiplayerResults(app);
+    }
+
+    app.appendChild(el("footer", {}, [document.createTextNode("Imposter · Kerala Themed Multiplayer & Offline Game")]));
+  }
+
+  function exitToMenu(){
+    if (peer) { try { peer.destroy(); } catch(e){} }
+    appMode = "menu";
+    roomCode = "";
+    isHost = false;
+    render();
+  }
+
+  // ---------- Menu Screen ----------
+  function renderMenu(app){
+    const screen = el("div", {class:"screen"});
+
+    screen.appendChild(el("img", {
+      class:"title-mascot",
+      src:"imposter-pwa/icons/boy_hoodie_specs_imposter.png",
+      alt:"Imposter Mascot"
+    }));
+    screen.appendChild(el("h2", {class:"title-heading"}, [document.createTextNode("Find the Imposter")]));
+    screen.appendChild(el("p", {class:"title-tagline"}, [document.createTextNode(
+      "Play on multiple phones via Room Code or single phone offline"
+    )]));
+
+    // Player Name Input
+    const namePanel = el("div", {class:"panel", style:"width:100%"});
+    namePanel.appendChild(el("label", {}, [document.createTextNode("Your Player Name")]));
+    const nameInput = el("input", {
+      type:"text",
+      placeholder:"Enter your name (e.g. Rahul)",
+      value: myPlayerName
+    });
+    nameInput.addEventListener("input", (e) => {
+      myPlayerName = e.target.value;
+      localStorage.setItem("imposter_my_name", myPlayerName);
+    });
+    namePanel.appendChild(nameInput);
+    screen.appendChild(namePanel);
+
+    // Host or Join options
+    const actionPanel = el("div", {class:"panel", style:"width:100%; display:flex; flex-direction:column; gap:10px"});
+    
+    // Create Room button
+    actionPanel.appendChild(el("button", {
+      class:"primary",
+      onclick: () => {
+        if (!myPlayerName.trim()) myPlayerName = "Host";
+        appMode = "multiplayer";
+        initHostRoom();
+      }
+    }, [document.createTextNode("👑 Create Room (Host Game)")]));
+
+    // Join with Code
+    const joinRow = el("div", {style:"display:flex; gap:8px; margin-top:4px"});
+    const codeInput = el("input", {
+      type:"text",
+      placeholder:"Room Code (e.g. IMP-49)",
+      style:"text-transform:uppercase; font-weight:bold; letter-spacing:2px;"
+    });
+    
+    // Pre-fill from URL param if available
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("room")) codeInput.value = urlParams.get("room");
+
+    const joinBtn = el("button", {
+      class:"primary accent-btn",
+      style:"width:120px",
+      onclick: () => {
+        if (!codeInput.value.trim()){ alert("Please enter a Room Code!"); return; }
+        if (!myPlayerName.trim()) myPlayerName = "Player " + Math.floor(Math.random()*100);
+        appMode = "multiplayer";
+        initClientJoin(codeInput.value.trim());
+      }
+    }, [document.createTextNode("Join ▶")]);
+
+    joinRow.appendChild(codeInput);
+    joinRow.appendChild(joinBtn);
+    actionPanel.appendChild(joinRow);
+
+    screen.appendChild(actionPanel);
+
+    // Pass and play offline fallback
+    screen.appendChild(el("button", {
+      class:"secondary",
+      onclick: () => {
+        window.location.href = "Imposter.html";
+      }
+    }, [document.createTextNode("📱 Switch to Single-Phone Pass & Play Mode")]));
+
+    app.appendChild(screen);
+  }
+
+  // ---------- Multiplayer Lobby Screen ----------
+  function renderLobby(app){
+    const screen = el("div", {class:"screen"});
+
+    // Room info box
+    const roomBox = el("div", {class:"room-code-box", style:"width:100%"});
+    roomBox.appendChild(el("div", {style:"font-size:.8rem; text-transform:uppercase; opacity:.8"}, [document.createTextNode("Room Code")]));
+    roomBox.appendChild(el("div", {class:"room-code-text"}, [document.createTextNode(roomCode)]));
+    
+    // QR Code Container
+    const qrDiv = el("div", {id:"qrcodeContainer"});
+    roomBox.appendChild(qrDiv);
+    setTimeout(() => {
+      qrDiv.innerHTML = "";
+      const joinUrl = window.location.origin + window.location.pathname + "?room=" + encodeURIComponent(roomCode);
+      if (window.QRCode) {
+        new QRCode(qrDiv, { text: joinUrl, width: 140, height: 140 });
+      }
+    }, 100);
+
+    // Copy invite link button
+    roomBox.appendChild(el("button", {
+      class:"link-btn",
+      style:"margin-top:6px; color:var(--gold); font-size:.85rem;",
+      onclick: () => {
+        const joinUrl = window.location.origin + window.location.pathname + "?room=" + encodeURIComponent(roomCode);
+        navigator.clipboard.writeText(joinUrl).then(() => alert("Invite link copied to clipboard!"));
+      }
+    }, [document.createTextNode("📋 Copy Invite Link")]));
+
+    screen.appendChild(roomBox);
+
+    // Players in lobby
+    const playerPanel = el("div", {class:"panel", style:"width:100%"});
+    playerPanel.appendChild(el("div", {style:"display:flex; justify-content:space-between; align-items:center"}, [
+      el("label", {style:"margin:0"}, [document.createTextNode("Players in Lobby (" + gameState.players.length + ")")]),
+      el("span", {style:"font-size:.78rem; opacity:.7"}, [document.createTextNode("Min 3 required")])
+    ]));
+
+    const pGrid = el("div", {class:"player-lobby-grid"});
+    gameState.players.forEach(p => {
+      const pill = el("div", {class:"player-pill" + (p.isHost ? " is-host" : "") + (p.id === myPlayerId ? " is-me" : "")});
+      pill.appendChild(el("span", {class:"player-avatar"}, [document.createTextNode(p.avatar || "👤")]));
+      pill.appendChild(el("span", {style:"overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"}, [
+        document.createTextNode(p.name + (p.id === myPlayerId ? " (You)" : ""))
+      ]));
+      if (isHost && !p.isHost){
+        pill.appendChild(el("button", {
+          class:"kick-btn",
+          title:"Kick player",
+          onclick: (e) => {
+            e.stopPropagation();
+            gameState.players = gameState.players.filter(x => x.id !== p.id);
+            broadcastGameState();
+            render();
+          }
+        }, [document.createTextNode("✕")]));
+      }
+      pGrid.appendChild(pill);
+    });
+    playerPanel.appendChild(pGrid);
+    screen.appendChild(playerPanel);
+
+    // Host Settings
+    if (isHost){
+      const settingsPanel = el("div", {class:"panel", style:"width:100%"});
+      
+      // Imposter Count
+      settingsPanel.appendChild(el("label", {}, [document.createTextNode("Number of Imposters")]));
+      const stepper = el("div", {class:"stepper"});
+      stepper.appendChild(el("button", {onclick: () => { if (gameState.numImposters > 1) { gameState.numImposters--; broadcastGameState(); render(); }}}, [document.createTextNode("−")]));
+      stepper.appendChild(el("div", {class:"value"}, [document.createTextNode(String(gameState.numImposters))]));
+      stepper.appendChild(el("button", {onclick: () => { if (gameState.numImposters < Math.floor(gameState.players.length / 2)) { gameState.numImposters++; broadcastGameState(); render(); }}}, [document.createTextNode("+")]));
+      settingsPanel.appendChild(stepper);
+
+      // Category filter
+      settingsPanel.appendChild(el("label", {style:"margin-top:12px"}, [document.createTextNode("Word Category")]));
+      const chipRow = el("div", {class:"chip-row"});
+      CATEGORIES.forEach(cat => {
+        chipRow.appendChild(el("button", {
+          class:"chip" + (gameState.categoryFilter === cat ? " active" : ""),
+          onclick: () => { gameState.categoryFilter = cat; broadcastGameState(); render(); }
+        }, [document.createTextNode(cat)]));
+      });
+      settingsPanel.appendChild(chipRow);
+
+      screen.appendChild(settingsPanel);
+
+      // Start button
+      screen.appendChild(el("button", {
+        class:"primary",
+        onclick: hostStartMultiplayerGame,
+        disabled: gameState.players.length < 3
+      }, [document.createTextNode("🚀 Start Multiplayer Game ▶")]));
+    } else {
+      // Waiting for host message
+      const waitBox = el("div", {class:"panel", style:"width:100%; text-align:center; padding:20px"});
+      waitBox.appendChild(el("div", {style:"font-size:2rem; animation:pulse 1.5s infinite"}, [document.createTextNode("⏳")]));
+      waitBox.appendChild(el("div", {style:"font-weight:600; margin-top:8px; color:var(--gold)"}, [document.createTextNode("Waiting for Host to start...")]));
+      screen.appendChild(waitBox);
+    }
+
+    app.appendChild(screen);
+  }
+
+  // ---------- Private Card Reveal Screen ----------
+  function renderMultiplayerCard(app){
+    const screen = el("div", {class:"screen"});
+
+    // Card Container
+    const wrap = el("div", {class:"card-wrap"});
+    const card = el("div", {class:"card", id:"pCard"});
+    
+    // Front face
+    const front = el("div", {class:"face front"});
+    front.appendChild(el("div", {style:"font-size:3.5rem"}, [document.createTextNode("🥥")]));
+    front.appendChild(el("div", {style:"font-weight:bold; font-size:1.2rem; color:var(--gold); margin-top:10px"}, [document.createTextNode("TAP TO REVEAL WORD")]));
+    front.appendChild(el("div", {style:"font-size:.8rem; opacity:.7; margin-top:4px"}, [document.createTextNode("Keep your screen private")]));
+    card.appendChild(front);
+
+    // Back face
+    const back = el("div", {class:"face back"});
+    back.appendChild(el("div", {class:"card-role-badge"}, [
+      document.createTextNode(myPrivateCard.role === "imposter" ? "🤫 Imposter" : "🛡️ Crew")
+    ]));
+
+    if (myPrivateCard.imageUrl){
+      back.appendChild(el("img", {class:"secret-photo", src:myPrivateCard.imageUrl, alt:myPrivateCard.word}));
+    } else {
+      back.appendChild(el("div", {class:"big-emoji"}, [document.createTextNode(myPrivateCard.emoji || "🥥")]));
+    }
+
+    back.appendChild(el("div", {class:"secret-word"}, [document.createTextNode(myPrivateCard.word)]));
+    back.appendChild(el("div", {class:"secret-category"}, [document.createTextNode("Category: " + myPrivateCard.category)]));
+    card.appendChild(back);
+
+    wrap.appendChild(card);
+    wrap.addEventListener("click", () => {
+      card.classList.toggle("flipped");
+      playBeep(card.classList.contains("flipped") ? 580 : 440, 'sine', 0.08);
+    });
+    screen.appendChild(wrap);
+
+    // Ready button
+    if (!myPrivateCard.revealed){
+      screen.appendChild(el("button", {
+        class:"primary",
+        onclick: markMyCardReady
+      }, [document.createTextNode("✓ I Saw My Word (I'm Ready)")]));
+    } else {
+      const readyBanner = el("div", {class:"outcome-banner success", style:"margin-bottom:0"}, [
+        document.createTextNode("✓ You are ready! Waiting for other players...")
+      ]);
+      screen.appendChild(readyBanner);
+    }
+
+    // Ready progress
+    const readyCount = gameState.players.filter(p => p.ready).length;
+    screen.appendChild(el("div", {class:"hint"}, [
+      document.createTextNode("Ready Players: " + readyCount + " / " + gameState.players.length)
+    ]));
+
+    // Host can advance when ready
+    if (isHost){
+      screen.appendChild(el("button", {
+        class:"secondary",
+        style:"margin-top:6px",
+        onclick: hostProceedToDiscussion
+      }, [document.createTextNode("Proceed to Discussion Phase →")]));
+    }
+
+    app.appendChild(screen);
+  }
+
+  // ---------- Discussion Screen ----------
+  function renderMultiplayerDiscuss(app){
+    const screen = el("div", {class:"screen"});
+
+    // First player spotlight banner
+    if (gameState.firstPlayerName){
+      const banner = el("div", {class:"outcome-banner success"}, [
+        el("div", {style:"font-size:1.5rem"}, [document.createTextNode("👑")]),
+        el("div", {style:"font-weight:bold; font-size:1.1rem; margin-top:2px"}, [
+          document.createTextNode(gameState.firstPlayerName + " gives the first clue!")
+        ]),
+        el("div", {style:"font-size:.8rem; opacity:.85"}, [document.createTextNode("Describe your word without saying it.")])
+      ]);
+      screen.appendChild(banner);
+    }
+
+    const panel = el("div", {class:"panel", style:"width:100%; text-align:center"});
+    panel.appendChild(el("h3", {style:"margin:0; color:var(--gold)"}, [document.createTextNode("Discussion Phase")]));
+    panel.appendChild(el("div", {class:"timer-box", id:"timerVal"}, [document.createTextNode(formatTime(gameState.timerSeconds))]));
+    panel.appendChild(el("p", {style:"font-size:.85rem; opacity:.8; margin:0"}, [
+      document.createTextNode("Listen carefully to everyone's descriptions to catch the odd one out.")
+    ]));
+    screen.appendChild(panel);
+
+    // Host control to proceed to vote
+    if (isHost){
+      screen.appendChild(el("button", {
+        class:"primary",
+        onclick: hostProceedToVoting
+      }, [document.createTextNode("🗳️ Open Live Voting Ballot ▶")]));
+    } else {
+      screen.appendChild(el("div", {class:"hint"}, [document.createTextNode("Waiting for host to initiate voting...")]));
+    }
+
+    app.appendChild(screen);
+  }
+
+  // ---------- Voting Screen ----------
+  function renderMultiplayerVote(app){
+    const screen = el("div", {class:"screen"});
+
+    const panel = el("div", {class:"panel", style:"width:100%"});
+    panel.appendChild(el("h3", {style:"margin:0 0 6px; color:var(--gold); text-align:center"}, [document.createTextNode("Cast Your Vote")]));
+    panel.appendChild(el("p", {style:"font-size:.85rem; opacity:.8; text-align:center; margin:0 0 10px"}, [
+      document.createTextNode(myVotedId ? "✓ Your vote has been cast!" : "Tap the player you suspect is the Imposter:")
+    ]));
+
+    const alivePlayers = gameState.players.filter(p => p.alive);
+    const totalVotes = alivePlayers.reduce((sum, p) => sum + (p.votesReceived || 0), 0);
+
+    const vGrid = el("div", {class:"vote-grid"});
+    alivePlayers.forEach(p => {
+      const pct = totalVotes > 0 ? Math.round(((p.votesReceived || 0) / totalVotes) * 100) : 0;
+      const isSelected = myVotedId === p.id;
+      const row = el("div", {
+        class:"vote-card" + (isSelected ? " selected" : ""),
+        onclick: () => {
+          if (!myVotedId) castVoteOnPhone(p.id);
+        }
+      });
+
+      row.appendChild(el("div", {class:"vote-fill", style:"width:" + pct + "%"}));
+      row.appendChild(el("div", {class:"vote-info"}, [
+        el("span", {style:"font-size:1.3rem"}, [document.createTextNode(p.avatar || "👤")]),
+        el("span", {style:"font-weight:600; font-size:.95rem"}, [document.createTextNode(p.name + (p.id === myPlayerId ? " (You)" : ""))])
+      ]));
+      row.appendChild(el("div", {class:"vote-count-badge"}, [document.createTextNode(String(p.votesReceived || 0))]));
+      vGrid.appendChild(row);
+    });
+    panel.appendChild(vGrid);
+    screen.appendChild(panel);
+
+    // Host action to tally and reveal
+    if (isHost){
+      screen.appendChild(el("button", {
+        class:"primary",
+        onclick: hostCalculateVoteOutcome
+      }, [document.createTextNode("⚡ Reveal Voting Outcome ▶")]));
+    } else {
+      screen.appendChild(el("div", {class:"hint"}, [document.createTextNode("Waiting for host to tally and reveal results...")]));
+    }
+
+    app.appendChild(screen);
+  }
+
+  // ---------- Round Result Screen ----------
+  function renderMultiplayerRoundResult(app){
+    const screen = el("div", {class:"screen"});
+
+    const info = gameState.eliminatedPlayer || {};
+    if (info.isTie){
+      const banner = el("div", {class:"outcome-banner danger"}, [
+        el("div", {style:"font-size:2rem"}, [document.createTextNode("⚖️")]),
+        el("h3", {style:"margin:4px 0"}, [document.createTextNode("Tie Vote / No Majority!")]),
+        el("p", {style:"font-size:.85rem; margin:0"}, [document.createTextNode("No one was eliminated. Discussion continues!")])
+      ]);
+      screen.appendChild(banner);
+    } else {
+      const banner = el("div", {class:"outcome-banner " + (info.wasImposter ? "success" : "danger")}, [
+        el("div", {style:"font-size:2rem"}, [document.createTextNode(info.wasImposter ? "🎉" : "😱")]),
+        el("h3", {style:"margin:4px 0"}, [document.createTextNode(info.name + " was eliminated!")]),
+        el("div", {class:"role-reveal-tag"}, [
+          document.createTextNode(info.wasImposter ? "THEY WERE AN IMPOSTER!" : "THEY WERE INNOCENT CREW!")
+        ]),
+        el("div", {style:"font-size:.85rem; margin-top:6px; opacity:.9"}, [
+          document.createTextNode("Imposters remaining: " + (info.remainingImposters || 0))
+        ])
+      ]);
+      screen.appendChild(banner);
+    }
+
+    if (isHost){
+      screen.appendChild(el("button", {
+        class:"primary",
+        onclick: hostProceedToDiscussion
+      }, [document.createTextNode("Next Discussion Round ▶")]));
+    }
+
+    app.appendChild(screen);
+  }
+
+  // ---------- Game Over Results Screen ----------
+  function renderMultiplayerResults(app){
+    const screen = el("div", {class:"screen"});
+
+    const crewWon = gameState.winner === "crew";
+    const banner = el("div", {class:"outcome-banner " + (crewWon ? "success" : "danger")}, [
+      el("div", {style:"font-size:3rem"}, [document.createTextNode(crewWon ? "🏆" : "😈")]),
+      el("h2", {style:"margin:4px 0"}, [document.createTextNode(crewWon ? "CREW VICTORY!" : "IMPOSTER VICTORY!")]),
+      el("p", {style:"font-size:.9rem; margin:0"}, [
+        document.createTextNode(crewWon ? "All imposters were caught!" : "Imposters overpowered the crew!")
+      ])
+    ]);
+    screen.appendChild(banner);
+
+    // Secret Word reveal
+    const wordPanel = el("div", {class:"panel", style:"width:100%; text-align:center"});
+    wordPanel.appendChild(el("label", {}, [document.createTextNode("Words This Round")]));
+    wordPanel.appendChild(el("div", {style:"font-size:1.1rem; margin:4px 0"}, [
+      document.createTextNode("🛡️ Crew Word: "),
+      el("b", {style:"color:var(--gold)"}, [document.createTextNode(gameState.secretWord + " " + gameState.secretEmoji)])
+    ]));
+    wordPanel.appendChild(el("div", {style:"font-size:1.1rem; margin:4px 0"}, [
+      document.createTextNode("🤫 Imposter Word: "),
+      el("b", {style:"color:var(--danger)"}, [document.createTextNode(gameState.decoyWord + " " + gameState.decoyEmoji)])
+    ]));
+    screen.appendChild(wordPanel);
+
+    if (isHost){
+      screen.appendChild(el("button", {
+        class:"primary",
+        onclick: () => {
+          gameState.screen = "lobby";
+          broadcastGameState();
+          render();
+        }
+      }, [document.createTextNode("🔄 Play Again (Same Lobby)")]));
+    }
+
+    screen.appendChild(el("button", {
+      class:"secondary",
+      onclick: exitToMenu
+    }, [document.createTextNode("Main Menu")]));
+
+    app.appendChild(screen);
+  }
+
+  // ==========================================
+  // URL Auto-join detection on startup
+  // ==========================================
+  window.addEventListener("DOMContentLoaded", () => {
+    const params = new URLSearchParams(window.location.search);
+    const roomParam = params.get("room");
+    if (roomParam){
+      // Pre-fill or auto switch to join
+      appMode = "menu";
+    }
+    render();
+  });
+
+})();
+</script>
+</body>
+</html>
