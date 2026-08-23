@@ -414,6 +414,17 @@
     margin:8px 0;
   }
 
+  /* Timer & Discussion */
+  .timer-box{
+    font-size:3.2rem;
+    font-weight:bold;
+    color:var(--gold);
+    text-shadow:0 0 20px rgba(232,185,58,.4);
+    text-align:center;
+    font-variant-numeric:tabular-nums;
+    margin:8px 0;
+  }
+
   /* Voting ballot */
   .vote-grid{
     display:flex;
@@ -434,12 +445,14 @@
     cursor:pointer;
     overflow:hidden;
     transition:all 0.15s;
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
   }
   .vote-card:active{ transform:scale(0.98); }
   .vote-card.selected{
     border-color:var(--gold);
-    background:rgba(232,185,58,.2);
-    box-shadow:0 0 14px rgba(232,185,58,.3);
+    background:rgba(232,185,58,.22);
+    box-shadow:0 0 16px rgba(232,185,58,.4);
   }
   .vote-fill{
     position:absolute;
@@ -461,9 +474,20 @@
     font-weight:bold;
     font-size:1.1rem;
     color:var(--gold);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .my-vote-tag{
+    font-size:.72rem;
+    padding:2px 8px;
+    border-radius:8px;
+    background:var(--gold);
+    color:var(--ink);
+    font-weight:700;
   }
 
-  /* Vote & Outcome Banners matching Imposter.html */
+  /* Vote & Outcome Banners */
   .vote-banner{
     display:flex;
     align-items:center;
@@ -483,6 +507,11 @@
   .vote-banner.wrong{
     background:rgba(192,57,43,.25);
     border:1px solid var(--danger);
+    color:var(--cream);
+  }
+  .vote-banner.neutral{
+    background:rgba(232,185,58,.2);
+    border:1px solid var(--gold);
     color:var(--cream);
   }
 
@@ -512,6 +541,119 @@
     font-size:1.3rem;
     font-weight:bold;
     margin-top:6px;
+  }
+
+  /* Scorecard & Leaderboard */
+  .scorecard-panel{
+    width:100%;
+    margin-top:10px;
+  }
+  .scorecard-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .scorecard-table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:4px;
+    font-size:.88rem;
+  }
+  .scorecard-table th{
+    text-align:left;
+    padding:6px 8px;
+    border-bottom:1px solid rgba(255,255,255,.2);
+    color:var(--gold);
+    font-size:.75rem;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+  }
+  .scorecard-table td{
+    padding:8px 8px;
+    border-bottom:1px solid rgba(255,255,255,.07);
+    vertical-align:middle;
+  }
+  .scorecard-row.is-me{
+    background:rgba(0,210,211,.1);
+    font-weight:600;
+  }
+  .score-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    padding:3px 8px;
+    border-radius:10px;
+    font-weight:700;
+    font-size:.85rem;
+    background:rgba(232,185,58,.2);
+    color:var(--gold);
+    border:1px solid rgba(232,185,58,.4);
+  }
+  .rank-badge{
+    font-weight:bold;
+    min-width:24px;
+    display:inline-block;
+    text-align:center;
+    font-size:.95rem;
+  }
+  .score-events-box{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin:10px 0;
+  }
+  .score-event-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:8px 12px;
+    border-radius:10px;
+    background:rgba(46,204,113,.15);
+    border:1px solid rgba(46,204,113,.4);
+    font-size:.85rem;
+    color:var(--cream);
+  }
+  .score-event-pts{
+    font-weight:bold;
+    color:#2ecc71;
+  }
+  .modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.75);
+    backdrop-filter:blur(6px);
+    z-index:999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    animation:fadeIn 0.2s ease;
+  }
+  .modal-panel{
+    width:100%;
+    max-width:420px;
+    max-height:85vh;
+    overflow-y:auto;
+    background:#121212;
+    border:2px solid var(--gold);
+    border-radius:20px;
+    padding:18px;
+    box-shadow:0 12px 36px rgba(0,0,0,.8);
+  }
+  .score-btn-top{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    padding:4px 10px;
+    border-radius:12px;
+    font-size:.78rem;
+    background:rgba(232,185,58,.15);
+    border:1px solid var(--gold);
+    color:var(--gold);
+    cursor:pointer;
+    font-weight:600;
   }
 
   footer{
@@ -667,19 +809,23 @@
   let myAvatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
   let netStatus = "idle"; // "idle" | "connecting" | "connected" | "error"
   let netStatusMsg = "";
+  let showScoreModal = false; // toggleable scorecard modal
 
   // WebRTC PeerJS instances
   let peer = null;
   let hostConn = null;              // Client -> Host connection
   let clientConns = new Map();       // Host -> Map of Client connections (id -> conn)
 
-  // Synchronized Game State (Controlled by Host in Multiplayer, or local in Pass-and-Play)
+  // Synchronized Game State (Controlled by Host in Multiplayer)
   let gameState = {
-    screen: "lobby", // "lobby" | "card" | "discuss" | "vote" | "roundResult" | "results"
+    screen: "lobby", // "lobby" | "card" | "discuss" | "vote" | "voteTie" | "roundResult" | "results"
     categoryFilter: "All",
     numImposters: 1,
+    roundNumber: 1,
     imposterIds: [],
-    players: [], // [{ id, name, avatar, isHost, ready, alive, votesReceived }]
+    players: [], // [{ id, connId, name, avatar, isHost, ready, alive, votesReceived, score, roundsSurvived, gamesWon }]
+    votes: {},   // { [voterId]: targetId } Authoritative vote registry
+    voteRoundId: 0,
     firstPlayerName: "",
     secretWord: "",
     secretEmoji: "",
@@ -690,7 +836,8 @@
     decoyImageUrl: null,
     timerSeconds: 0,
     timerRunning: false,
-    eliminatedPlayer: null, // { name, wasImposter, remainingImposters }
+    voteOutcome: null, // { ejected, isTie, name, avatar, wasImposter, remainingImposters, aliveCount, maxVotes, totalVotes, topNames, scoreEvents }
+    gameOverReason: null, // "crewWin" | "floorReached"
     winner: null // "crew" | "imposter"
   };
 
@@ -779,6 +926,153 @@
     } catch(e){ callback(null); }
   }
 
+  function formatTime(s){
+    const m = Math.floor(s / 60), sec = s % 60;
+    return String(m).padStart(2,"0") + ":" + String(sec).padStart(2,"0");
+  }
+
+  // ==========================================
+  // SCORECARD & LEADERBOARD COMPONENT
+  // ==========================================
+  function createScorecardElement(options){
+    options = options || {};
+    const wrap = el("div", {class:"panel scorecard-panel"});
+    const header = el("div", {class:"scorecard-header"});
+    header.appendChild(el("label", {style:"margin:0; font-weight:700; color:var(--gold); font-size:.95rem;"}, [
+      document.createTextNode("🏆 Tournament Scorecard")
+    ]));
+
+    if (isHost && options.showResetBtn){
+      header.appendChild(el("button", {
+        class:"link-btn",
+        style:"color:var(--danger); font-size:.78rem; padding:2px 6px;",
+        onclick: () => {
+          if (confirm("Reset all player scores in this room to 0?")){
+            gameState.players.forEach(p => {
+              p.score = 0;
+              p.roundsSurvived = 0;
+              p.gamesWon = 0;
+            });
+            broadcastGameState();
+            render();
+          }
+        }
+      }, [document.createTextNode("Reset Scores")]));
+    }
+    wrap.appendChild(header);
+
+    const sorted = [...(gameState.players || [])].sort((a, b) => (b.score || 0) - (a.score || 0));
+    
+    if (sorted.length === 0){
+      wrap.appendChild(el("div", {class:"hint", style:"margin:8px 0;"}, [document.createTextNode("No players yet.")]));
+      return wrap;
+    }
+
+    const table = el("table", {class:"scorecard-table"});
+    const thead = el("thead");
+    const trHead = el("tr");
+    trHead.appendChild(el("th", {style:"width:38px; text-align:center;"}, [document.createTextNode("Rank")]));
+    trHead.appendChild(el("th", {}, [document.createTextNode("Player")]));
+    trHead.appendChild(el("th", {style:"text-align:center; width:55px;"}, [document.createTextNode("Survived")]));
+    trHead.appendChild(el("th", {style:"text-align:center; width:45px;"}, [document.createTextNode("Wins")]));
+    trHead.appendChild(el("th", {style:"text-align:right; width:70px;"}, [document.createTextNode("Points")]));
+    thead.appendChild(trHead);
+    table.appendChild(thead);
+
+    const tbody = el("tbody");
+    sorted.forEach((p, idx) => {
+      const isMe = p.id === myPlayerId;
+      const row = el("tr", {class:"scorecard-row" + (isMe ? " is-me" : "")});
+      
+      // Rank badge
+      const rankCell = el("td", {style:"text-align:center;"});
+      const rankText = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : String(idx + 1);
+      rankCell.appendChild(el("span", {class:"rank-badge"}, [document.createTextNode(rankText)]));
+      row.appendChild(rankCell);
+
+      // Player info
+      const nameCell = el("td");
+      nameCell.appendChild(el("span", {style:"margin-right:6px;"}, [document.createTextNode(p.avatar || "👤")]));
+      nameCell.appendChild(el("span", {style:"font-weight:" + (isMe ? "700" : "500")}, [
+        document.createTextNode(p.name + (isMe ? " (You)" : "") + (p.isHost ? " 👑" : ""))
+      ]));
+      row.appendChild(nameCell);
+
+      // Imposter Rounds Survived
+      const survCell = el("td", {style:"text-align:center; opacity:.85;"}, [
+        document.createTextNode(String(p.roundsSurvived || 0))
+      ]);
+      row.appendChild(survCell);
+
+      // Games Won
+      const winCell = el("td", {style:"text-align:center; opacity:.85;"}, [
+        document.createTextNode(String(p.gamesWon || 0))
+      ]);
+      row.appendChild(winCell);
+
+      // Score pill
+      const scoreCell = el("td", {style:"text-align:right;"});
+      scoreCell.appendChild(el("span", {class:"score-badge"}, [
+        document.createTextNode(String(p.score || 0) + " pts")
+      ]));
+      row.appendChild(scoreCell);
+
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+
+    // Scoring explanation note
+    wrap.appendChild(el("div", {class:"hint", style:"margin-top:8px; text-align:left; font-size:.74rem; opacity:.75;"}, [
+      document.createTextNode("⭐ Scoring: Imposters earn +10 pts for every voting round survived! +10 pts for match victory.")
+    ]));
+
+    return wrap;
+  }
+
+  function renderScoreModal(){
+    if (!showScoreModal) return null;
+
+    const overlay = el("div", {
+      class:"modal-overlay",
+      onclick: (e) => {
+        if (e.target === overlay){
+          showScoreModal = false;
+          render();
+        }
+      }
+    });
+
+    const panel = el("div", {class:"modal-panel"});
+    const topRow = el("div", {style:"display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;"});
+    topRow.appendChild(el("h3", {style:"margin:0; color:var(--gold); display:flex; align-items:center; gap:6px;"}, [
+      document.createTextNode("🏆 Live Game Scorecard")
+    ]));
+    topRow.appendChild(el("button", {
+      class:"link-btn",
+      style:"font-size:1.1rem; color:var(--cream); padding:4px 8px;",
+      onclick: () => {
+        showScoreModal = false;
+        render();
+      }
+    }, [document.createTextNode("✕")]));
+    panel.appendChild(topRow);
+
+    panel.appendChild(createScorecardElement({ showResetBtn: false }));
+
+    panel.appendChild(el("button", {
+      class:"secondary",
+      style:"margin-top:14px;",
+      onclick: () => {
+        showScoreModal = false;
+        render();
+      }
+    }, [document.createTextNode("Close Scorecard")]));
+
+    overlay.appendChild(panel);
+    return overlay;
+  }
+
   // ==========================================
   // PEERJS NETWORKING
   // ==========================================
@@ -793,12 +1087,21 @@
     }
   };
 
+  function pushInGameState(){
+    try {
+      if (window.history && window.history.pushState){
+        window.history.pushState({ inGame: true, room: roomCode }, "");
+      }
+    } catch(e){}
+  }
+
   function initHostRoom(){
     isHost = true;
     roomCode = generateRoomCode();
     myPlayerId = "host-" + Math.random().toString(36).substring(2, 7);
     netStatus = "connecting";
     netStatusMsg = "Setting up room...";
+    pushInGameState();
     render();
 
     const peerId = "imposter-p2p-" + roomCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
@@ -816,7 +1119,10 @@
         isHost: true,
         ready: false,
         alive: true,
-        votesReceived: 0
+        votesReceived: 0,
+        score: 0,
+        roundsSurvived: 0,
+        gamesWon: 0
       }];
       render();
     });
@@ -855,6 +1161,7 @@
     myPlayerId = "player-" + Math.random().toString(36).substring(2, 7);
     netStatus = "connecting";
     netStatusMsg = "Connecting to room " + roomCode + "...";
+    pushInGameState();
     render();
 
     if (peer) { try { peer.destroy(); } catch(e){} }
@@ -898,9 +1205,13 @@
   // Host: process incoming messages from clients
   function handleHostReceivedData(peerId, data){
     if (data.type === "JOIN"){
-      // Prevent duplicates
-      const exists = gameState.players.find(p => p.id === data.id);
-      if (!exists){
+      // Prevent duplicates or handle reconnect
+      const existing = gameState.players.find(p => p.id === data.id);
+      if (existing){
+        existing.connId = peerId;
+        existing.name = data.name;
+        existing.avatar = data.avatar;
+      } else {
         gameState.players.push({
           id: data.id,
           connId: peerId,
@@ -909,7 +1220,10 @@
           isHost: false,
           ready: false,
           alive: true,
-          votesReceived: 0
+          votesReceived: 0,
+          score: 0,
+          roundsSurvived: 0,
+          gamesWon: 0
         });
         playBeep(600, 'sine', 0.1);
       }
@@ -930,6 +1244,12 @@
   function handleClientReceivedData(data){
     if (data.type === "STATE_SYNC"){
       gameState = data.state;
+      // Authoritative sync of voter's current selection
+      if (gameState.screen === "vote"){
+        myVotedId = (gameState.votes && gameState.votes[myPlayerId]) ? gameState.votes[myPlayerId] : null;
+      } else {
+        myVotedId = null;
+      }
       render();
     } else if (data.type === "PRIVATE_CARD"){
       myPrivateCard = data.card;
@@ -988,14 +1308,23 @@
     gameState.decoyWord = decoy.word;
     gameState.decoyEmoji = decoy.emoji;
     gameState.winner = null;
-    gameState.eliminatedPlayer = null;
+    gameState.gameOverReason = null;
+    gameState.voteOutcome = null;
+    gameState.roundNumber = 1;
+    gameState.votes = {};
+    gameState.voteRoundId = 1;
 
+    // Reset round-specific player properties while preserving score & wins
     gameState.players.forEach(p => {
       p.ready = false;
       p.alive = true;
       p.votesReceived = 0;
+      p.score = p.score || 0;
+      p.roundsSurvived = p.roundsSurvived || 0;
+      p.gamesWon = p.gamesWon || 0;
     });
 
+    myVotedId = null;
     gameState.screen = "card";
 
     // Fetch images and send private cards
@@ -1042,9 +1371,16 @@
   }
 
   function hostProceedToDiscussion(){
+    // Increment round number if coming from a previous vote outcome
+    if (gameState.screen === "voteTie" || gameState.screen === "roundResult"){
+      gameState.roundNumber = (gameState.roundNumber || 1) + 1;
+    }
     gameState.screen = "discuss";
     gameState.timerSeconds = 0;
     gameState.timerRunning = true;
+    gameState.votes = {};
+    gameState.players.forEach(p => p.votesReceived = 0);
+    myVotedId = null;
     startSyncTimer();
     broadcastGameState();
     render();
@@ -1066,17 +1402,30 @@
   function hostProceedToVoting(){
     if (timerInterval) clearInterval(timerInterval);
     gameState.timerRunning = false;
+    gameState.votes = {};
+    gameState.voteRoundId = (gameState.voteRoundId || 0) + 1;
     gameState.players.forEach(p => p.votesReceived = 0);
     gameState.screen = "vote";
+    myVotedId = null;
     broadcastGameState();
     render();
   }
 
   function handlePlayerVote(voterId, targetId){
     if (!isHost) return;
+    const voter = gameState.players.find(p => p.id === voterId);
     const target = gameState.players.find(p => p.id === targetId);
-    if (target && target.alive){
-      target.votesReceived = (target.votesReceived || 0) + 1;
+
+    // Only alive voters and alive targets
+    if (voter && voter.alive && target && target.alive){
+      gameState.votes = gameState.votes || {};
+      gameState.votes[voterId] = targetId;
+
+      // Recalculate votesReceived for all players dynamically
+      gameState.players.forEach(p => {
+        p.votesReceived = Object.values(gameState.votes).filter(tid => tid === p.id).length;
+      });
+
       playBeep(480, 'sine', 0.08);
       broadcastGameState();
       render();
@@ -1084,7 +1433,10 @@
   }
 
   function castVoteOnPhone(targetId){
-    if (myVotedId) return; // already voted
+    const me = gameState.players.find(p => p.id === myPlayerId);
+    if (me && !me.alive) return; // Spectators cannot vote
+
+    // Allow changing vote or selecting new target
     myVotedId = targetId;
     vibrate(50);
     playBeep(700, 'sine', 0.12);
@@ -1097,60 +1449,130 @@
     render();
   }
 
+  // ==========================================
+  // VOTE OUTCOME (Authoritative on Host)
+  // Maximum voted person is ejected (Plurality)
+  // Surviving Imposter gets +10 points per round!
+  // ==========================================
   function hostCalculateVoteOutcome(){
     if (!isHost) return;
     const alivePlayers = gameState.players.filter(p => p.alive);
-    const totalVotes = alivePlayers.reduce((sum, p) => sum + (p.votesReceived || 0), 0);
+    const totalVotes = Object.keys(gameState.votes || {}).length;
     const maxVotes = Math.max(...alivePlayers.map(p => p.votesReceived || 0), 0);
-    const topPlayers = totalVotes > 0 ? alivePlayers.filter(p => p.votesReceived === maxVotes) : [];
-    const hasMajority = totalVotes > 0 && topPlayers.length === 1 && maxVotes > (totalVotes / 2);
+    
+    // Players tied for the maximum votes (must have at least 1 vote)
+    const topPlayers = (totalVotes > 0 && maxVotes > 0)
+      ? alivePlayers.filter(p => (p.votesReceived || 0) === maxVotes)
+      : [];
 
-    if (!hasMajority){
+    const scoreEvents = []; // [{ name, avatar, pts, reason }]
+
+    if (topPlayers.length !== 1){
+      // TIE or 0 votes => NO EJECTION!
+      // Surviving Imposters get +10 points for surviving this round!
+      const aliveImposters = alivePlayers.filter(p => (gameState.imposterIds || []).includes(p.id));
+      aliveImposters.forEach(imp => {
+        imp.score = (imp.score || 0) + 10;
+        imp.roundsSurvived = (imp.roundsSurvived || 0) + 1;
+        scoreEvents.push({
+          id: imp.id,
+          name: imp.name,
+          avatar: imp.avatar,
+          pts: 10,
+          reason: "Survived Round " + (gameState.roundNumber || 1) + " as Imposter 🤫"
+        });
+      });
+
       gameState.voteOutcome = {
-        majority: false,
+        ejected: false,
+        isTie: topPlayers.length > 1,
         total: totalVotes,
-        topNames: topPlayers.map(p => p.name)
+        maxVotes: maxVotes,
+        topNames: topPlayers.map(p => p.name),
+        scoreEvents: scoreEvents,
+        aliveCount: alivePlayers.length
       };
-      gameState.screen = "voteNoMajority";
+      gameState.screen = "voteTie";
     } else {
+      // Single player has maximum votes => EJECTED!
       const accused = topPlayers[0];
       const wasImposter = (gameState.imposterIds || []).includes(accused.id);
       accused.alive = false;
 
       const aliveAfter = gameState.players.filter(p => p.alive);
-      const remainingImposters = (gameState.imposterIds || []).filter(id => {
-        const p = gameState.players.find(x => x.id === id);
-        return p && p.alive;
-      }).length;
+      const aliveImpostersAfter = aliveAfter.filter(p => (gameState.imposterIds || []).includes(p.id));
+      const remainingImposters = aliveImpostersAfter.length;
+
+      // Surviving imposters get +10 points for surviving this round!
+      aliveImpostersAfter.forEach(imp => {
+        imp.score = (imp.score || 0) + 10;
+        imp.roundsSurvived = (imp.roundsSurvived || 0) + 1;
+        scoreEvents.push({
+          id: imp.id,
+          name: imp.name,
+          avatar: imp.avatar,
+          pts: 10,
+          reason: "Survived Round " + (gameState.roundNumber || 1) + " as Imposter 🤫"
+        });
+      });
 
       gameState.voteOutcome = {
-        majority: true,
+        ejected: true,
         name: accused.name,
+        avatar: accused.avatar,
         wasImposter: wasImposter,
         remainingImposters: remainingImposters,
-        aliveCount: aliveAfter.length
+        aliveCount: aliveAfter.length,
+        maxVotes: maxVotes,
+        totalVotes: totalVotes,
+        scoreEvents: scoreEvents
       };
 
       if (remainingImposters === 0){
+        // All imposters caught => Crew Win!
         gameState.gameOverReason = "crewWin";
         gameState.winner = "crew";
         gameState.screen = "results";
-      } else if (aliveAfter.length <= 3){
+
+        // Award Crew victory points (+10 pts to all Crew members)
+        const crewMembers = gameState.players.filter(p => !(gameState.imposterIds || []).includes(p.id));
+        crewMembers.forEach(c => {
+          c.score = (c.score || 0) + 10;
+          c.gamesWon = (c.gamesWon || 0) + 1;
+          scoreEvents.push({
+            id: c.id,
+            name: c.name,
+            avatar: c.avatar,
+            pts: 10,
+            reason: "Crew Victory 🛡️"
+          });
+        });
+      } else if (aliveAfter.length <= remainingImposters * 2){
+        // Parity reached (crew count <= imposter count) => Imposters Win!
         gameState.gameOverReason = "floorReached";
         gameState.winner = "imposter";
         gameState.screen = "results";
+
+        // Award Imposter victory bonus (+10 pts to surviving Imposters)
+        aliveImpostersAfter.forEach(imp => {
+          imp.score = (imp.score || 0) + 10;
+          imp.gamesWon = (imp.gamesWon || 0) + 1;
+          scoreEvents.push({
+            id: imp.id,
+            name: imp.name,
+            avatar: imp.avatar,
+            pts: 10,
+            reason: "Imposter Match Victory 🏆"
+          });
+        });
       } else {
+        // Game continues to next round
         gameState.screen = "roundResult";
       }
     }
 
     broadcastGameState();
     render();
-  }
-
-  function formatTime(s){
-    const m = Math.floor(s / 60), sec = s % 60;
-    return String(m).padStart(2,"0") + ":" + String(sec).padStart(2,"0");
   }
 
   // ==========================================
@@ -1168,15 +1590,32 @@
     app.appendChild(h1);
     app.appendChild(el("div", {class:"subtitle"}, [document.createTextNode("Multiplayer LAN / Web Party Game")]));
 
-    // Network status badge if in room
+    // Top Bar if in room
     if (appMode === "multiplayer" && roomCode){
       const topBar = el("div", {class:"top-bar"});
+      
       const netBadge = el("div", {class:"net-badge " + (netStatus === "connected" ? "online" : netStatus === "connecting" ? "connecting" : "error")}, [
         el("div", {class:"dot"}),
         document.createTextNode(roomCode + " · " + (isHost ? "Host" : "Player"))
       ]);
       topBar.appendChild(netBadge);
-      topBar.appendChild(el("button", {onclick: exitToMenu}, [document.createTextNode("✕ Leave")]));
+
+      const rightControls = el("div", {style:"display:flex; align-items:center; gap:8px;"});
+
+      // Quick Scorecard Button
+      const scoreBtn = el("button", {
+        class:"score-btn-top",
+        onclick: () => {
+          showScoreModal = !showScoreModal;
+          render();
+        }
+      }, [document.createTextNode("🏆 Scores")]);
+      rightControls.appendChild(scoreBtn);
+
+      // Leave room button
+      rightControls.appendChild(el("button", {onclick: () => exitToMenu(true)}, [document.createTextNode("✕ Leave")]));
+      topBar.appendChild(rightControls);
+
       app.appendChild(topBar);
     }
 
@@ -1186,19 +1625,27 @@
       else if (gameState.screen === "card") renderMultiplayerCard(app);
       else if (gameState.screen === "discuss") renderMultiplayerDiscuss(app);
       else if (gameState.screen === "vote") renderMultiplayerVote(app);
-      else if (gameState.screen === "voteNoMajority") renderMultiplayerVoteNoMajority(app);
+      else if (gameState.screen === "voteTie") renderMultiplayerVoteTie(app);
       else if (gameState.screen === "roundResult") renderMultiplayerRoundResult(app);
       else if (gameState.screen === "results") renderMultiplayerResults(app);
     }
 
+    // Render modal overlay if open
+    const modal = renderScoreModal();
+    if (modal) app.appendChild(modal);
+
     app.appendChild(el("footer", {}, [document.createTextNode("Imposter · Kerala Themed Multiplayer & Offline Game")]));
   }
 
-  function exitToMenu(){
+  function exitToMenu(confirmFirst){
+    if (confirmFirst && appMode === "multiplayer" && roomCode){
+      if (!confirm("Are you sure you want to leave room " + roomCode + "?")) return;
+    }
     if (peer) { try { peer.destroy(); } catch(e){} }
     appMode = "menu";
     roomCode = "";
     isHost = false;
+    showScoreModal = false;
     render();
   }
 
@@ -1347,6 +1794,9 @@
     playerPanel.appendChild(pGrid);
     screen.appendChild(playerPanel);
 
+    // Scorecard / Leaderboard in Lobby
+    screen.appendChild(createScorecardElement({ showResetBtn: true }));
+
     // Host Settings
     if (isHost){
       const settingsPanel = el("div", {class:"panel", style:"width:100%"});
@@ -1468,8 +1918,8 @@
   function renderMultiplayerDiscuss(app){
     const screen = el("div", {class:"screen"});
 
-    // First player spotlight banner
-    if (gameState.firstPlayerName){
+    // First player spotlight banner (Round 1)
+    if (gameState.roundNumber === 1 && gameState.firstPlayerName){
       const banner = el("div", {class:"outcome-banner success"}, [
         el("div", {style:"font-size:1.5rem"}, [document.createTextNode("👑")]),
         el("div", {style:"font-weight:bold; font-size:1.1rem; margin-top:2px"}, [
@@ -1481,10 +1931,12 @@
     }
 
     const panel = el("div", {class:"panel", style:"width:100%; text-align:center"});
-    panel.appendChild(el("h3", {style:"margin:0; color:var(--gold)"}, [document.createTextNode("Discussion Phase")]));
+    panel.appendChild(el("div", {style:"font-size:.8rem; text-transform:uppercase; letter-spacing:1px; color:var(--gold); opacity:.9;"}, [
+      document.createTextNode("Round " + (gameState.roundNumber || 1) + " Discussion")
+    ]));
     panel.appendChild(el("div", {class:"timer-box", id:"timerVal"}, [document.createTextNode(formatTime(gameState.timerSeconds))]));
-    panel.appendChild(el("p", {style:"font-size:.85rem; opacity:.8; margin:0"}, [
-      document.createTextNode("Listen carefully to everyone's descriptions to catch the odd one out.")
+    panel.appendChild(el("p", {style:"font-size:.85rem; opacity:.85; margin:0"}, [
+      document.createTextNode("Listen to clues, look for suspicious behavior, and discuss before voting.")
     ]));
     screen.appendChild(panel);
 
@@ -1495,7 +1947,7 @@
         onclick: hostProceedToVoting
       }, [document.createTextNode("🗳️ Open Live Voting Ballot ▶")]));
     } else {
-      screen.appendChild(el("div", {class:"hint"}, [document.createTextNode("Waiting for host to initiate voting...")]));
+      screen.appendChild(el("div", {class:"hint"}, [document.createTextNode("Waiting for host to open voting...")]));
     }
 
     app.appendChild(screen);
@@ -1505,32 +1957,63 @@
   function renderMultiplayerVote(app){
     const screen = el("div", {class:"screen"});
 
+    const alivePlayers = gameState.players.filter(p => p.alive);
+    const votesMap = gameState.votes || {};
+    const totalVotes = Object.keys(votesMap).length;
+    const me = gameState.players.find(p => p.id === myPlayerId);
+    const isAlive = me && me.alive;
+
     const panel = el("div", {class:"panel", style:"width:100%"});
-    panel.appendChild(el("h3", {style:"margin:0 0 6px; color:var(--gold); text-align:center"}, [document.createTextNode("Cast Your Vote")]));
-    panel.appendChild(el("p", {style:"font-size:.85rem; opacity:.8; text-align:center; margin:0 0 10px"}, [
-      document.createTextNode(myVotedId ? "✓ Your vote has been cast!" : "Tap the player you suspect is the Imposter:")
+    panel.appendChild(el("h3", {style:"margin:0 0 4px; color:var(--gold); text-align:center"}, [
+      document.createTextNode("Round " + (gameState.roundNumber || 1) + " · Cast Your Vote")
     ]));
 
-    const alivePlayers = gameState.players.filter(p => p.alive);
-    const totalVotes = alivePlayers.reduce((sum, p) => sum + (p.votesReceived || 0), 0);
+    let promptText = "Tap a player suspected of being the Imposter:";
+    if (!isAlive){
+      promptText = "You are eliminated. Watching alive players vote:";
+    } else if (myVotedId){
+      const votedPlayer = gameState.players.find(p => p.id === myVotedId);
+      promptText = "✓ You voted for " + (votedPlayer ? votedPlayer.name : "a player") + ". Tap another card to change vote:";
+    }
+
+    panel.appendChild(el("p", {style:"font-size:.85rem; opacity:.85; text-align:center; margin:0 0 10px"}, [
+      document.createTextNode(promptText)
+    ]));
+
+    // Live votes count progress bar
+    const progBox = el("div", {style:"margin-bottom:10px; text-align:center;"});
+    progBox.appendChild(el("div", {class:"hint", style:"margin:0 0 4px; font-weight:600; color:var(--gold);"}, [
+      document.createTextNode("Votes Cast: " + totalVotes + " / " + alivePlayers.length + " alive players")
+    ]));
+    panel.appendChild(progBox);
 
     const vGrid = el("div", {class:"vote-grid"});
     alivePlayers.forEach(p => {
-      const pct = totalVotes > 0 ? Math.round(((p.votesReceived || 0) / totalVotes) * 100) : 0;
+      const pVotes = p.votesReceived || 0;
+      const pct = totalVotes > 0 ? Math.round((pVotes / totalVotes) * 100) : 0;
       const isSelected = myVotedId === p.id;
       const row = el("div", {
         class:"vote-card" + (isSelected ? " selected" : ""),
         onclick: () => {
-          if (!myVotedId) castVoteOnPhone(p.id);
+          if (isAlive) castVoteOnPhone(p.id);
         }
       });
 
       row.appendChild(el("div", {class:"vote-fill", style:"width:" + pct + "%"}));
-      row.appendChild(el("div", {class:"vote-info"}, [
-        el("span", {style:"font-size:1.3rem"}, [document.createTextNode(p.avatar || "👤")]),
-        el("span", {style:"font-weight:600; font-size:.95rem"}, [document.createTextNode(p.name + (p.id === myPlayerId ? " (You)" : ""))])
+      
+      const info = el("div", {class:"vote-info"});
+      info.appendChild(el("span", {style:"font-size:1.3rem"}, [document.createTextNode(p.avatar || "👤")]));
+      info.appendChild(el("span", {style:"font-weight:600; font-size:.95rem"}, [
+        document.createTextNode(p.name + (p.id === myPlayerId ? " (You)" : ""))
       ]));
-      row.appendChild(el("div", {class:"vote-count-badge"}, [document.createTextNode(String(p.votesReceived || 0))]));
+      if (isSelected){
+        info.appendChild(el("span", {class:"my-vote-tag"}, [document.createTextNode("YOUR VOTE")]));
+      }
+      row.appendChild(info);
+
+      row.appendChild(el("div", {class:"vote-count-badge"}, [
+        document.createTextNode(String(pVotes))
+      ]));
       vGrid.appendChild(row);
     });
     panel.appendChild(vGrid);
@@ -1543,44 +2026,80 @@
         onclick: hostCalculateVoteOutcome
       }, [document.createTextNode("⚡ Reveal Voting Outcome ▶")]));
     } else {
-      screen.appendChild(el("div", {class:"hint"}, [document.createTextNode("Waiting for host to tally and reveal results...")]));
+      screen.appendChild(el("div", {class:"hint"}, [document.createTextNode("Waiting for host to reveal results...")]));
     }
 
     app.appendChild(screen);
   }
 
-  // ---------- No-majority screen ----------
-  function renderMultiplayerVoteNoMajority(app){
+  // ---------- Tie / No Ejection Screen ----------
+  function renderMultiplayerVoteTie(app){
     const screen = el("div", {class:"screen"});
     const panel = el("div", {class:"panel"});
     const o = gameState.voteOutcome || {};
 
-    panel.appendChild(el("div", {style:"font-size:2.6rem;text-align:center"}, [document.createTextNode("🤷")]));
-    panel.appendChild(el("h2", {style:"color:var(--gold);text-align:center;margin:6px 0"}, [document.createTextNode("No Majority")]));
+    let titleIcon = "⚖️";
+    let titleText = "Vote Tie — No Ejection";
+    let bannerText = "";
 
-    let msg;
     if (!o.total || o.total === 0){
-      msg = "No votes were cast. No one was voted out as the imposter.";
+      titleIcon = "🤷";
+      titleText = "No Votes Cast";
+      bannerText = "No votes were cast. No player was ejected!";
     } else if (o.topNames && o.topNames.length > 1){
-      msg = o.topNames.join(", ") + " tied for the most votes, but no majority was reached. No one was voted out as the imposter.";
-    } else if (o.topNames && o.topNames.length === 1){
-      msg = o.topNames[0] + " got the most votes, but not a strict majority (>50%). " + o.topNames[0] + " was NOT voted out as the imposter.";
+      titleIcon = "⚖️";
+      titleText = "Tie for Most Votes";
+      bannerText = o.topNames.join(" and ") + " tied with " + o.maxVotes + " votes each! No one was ejected.";
     } else {
-      msg = "No majority was reached. No one was voted out.";
+      bannerText = "No single player had the most votes. No one was ejected.";
     }
-    panel.appendChild(el("p", {style:"text-align:center;opacity:.9"}, [document.createTextNode(msg)]));
-    panel.appendChild(el("p", {style:"text-align:center;opacity:.7;font-size:.85rem"}, [document.createTextNode("Keep discussing and vote again when ready.")]));
+
+    const banner = el("div", {class:"vote-banner neutral"});
+    banner.appendChild(el("div", {style:"font-size:1.8rem"}, [document.createTextNode(titleIcon)]));
+    banner.appendChild(el("div", {}, [
+      el("div", {style:"font-weight:700; font-size:1.05rem;"}, [document.createTextNode(titleText)]),
+      el("div", {style:"font-size:.85rem; opacity:.9; margin-top:2px;"}, [document.createTextNode(bannerText)])
+    ]));
+    panel.appendChild(banner);
+
+    // Point Awards for Imposters Surviving
+    if (o.scoreEvents && o.scoreEvents.length > 0){
+      const eventsBox = el("div", {class:"score-events-box"});
+      o.scoreEvents.forEach(ev => {
+        const item = el("div", {class:"score-event-item"});
+        item.appendChild(el("span", {}, [
+          document.createTextNode(ev.avatar + " " + ev.name + " · " + ev.reason)
+        ]));
+        item.appendChild(el("span", {class:"score-event-pts"}, [
+          document.createTextNode("+" + ev.pts + " pts")
+        ]));
+        eventsBox.appendChild(item);
+      });
+      panel.appendChild(eventsBox);
+    }
+
+    panel.appendChild(el("p", {style:"text-align:center; opacity:.85; font-size:.85rem; margin:10px 0 0;"}, [
+      document.createTextNode(o.aliveCount + " players remain. Keep discussing clues and vote again in Round " + ((gameState.roundNumber || 1) + 1) + "!")
+    ]));
 
     screen.appendChild(panel);
+
+    // Scorecard preview
+    screen.appendChild(createScorecardElement({ showResetBtn: false }));
+
     if (isHost){
-      screen.appendChild(el("button", {class:"primary", onclick: hostProceedToDiscussion}, [document.createTextNode("Continue Discussion →")]));
+      screen.appendChild(el("button", {
+        class:"primary",
+        onclick: hostProceedToDiscussion
+      }, [document.createTextNode("Continue Discussion (Round " + ((gameState.roundNumber || 1) + 1) + ") →")]));
     } else {
       screen.appendChild(el("div", {class:"hint"}, [document.createTextNode("Waiting for host to continue discussion...")]));
     }
+
     app.appendChild(screen);
   }
 
-  // ---------- Round Result Screen (Game Continues) ----------
+  // ---------- Round Result Screen (Player Ejected & Game Continues) ----------
   function renderMultiplayerRoundResult(app){
     const screen = el("div", {class:"screen"});
     const panel = el("div", {class:"panel"});
@@ -1589,24 +2108,51 @@
 
     const banner = el("div", {class:"vote-banner " + (o.wasImposter ? "correct" : "wrong")});
     banner.appendChild(el("div", {style:"font-size:1.8rem"}, [document.createTextNode(o.wasImposter ? "✅" : "❌")]));
-    banner.appendChild(el("div", {}, [document.createTextNode(
-      o.wasImposter
-        ? name + " was voted out — and WAS an imposter!"
-        : name + " was voted out — but was NOT the imposter."
-    )]));
+    banner.appendChild(el("div", {}, [
+      el("div", {style:"font-weight:700; font-size:1.05rem;"}, [
+        document.createTextNode(name + " was ejected with " + (o.maxVotes || 1) + " vote" + (o.maxVotes > 1 ? "s" : "") + "!")
+      ]),
+      el("div", {style:"font-size:.88rem; opacity:.9; margin-top:2px;"}, [
+        document.createTextNode(o.wasImposter ? (name + " WAS an Imposter! 🤫") : (name + " was NOT the Imposter. 🛡️"))
+      ])
+    ]));
     panel.appendChild(banner);
 
+    // Score Awards for Surviving Imposters
+    if (o.scoreEvents && o.scoreEvents.length > 0){
+      const eventsBox = el("div", {class:"score-events-box"});
+      o.scoreEvents.forEach(ev => {
+        const item = el("div", {class:"score-event-item"});
+        item.appendChild(el("span", {}, [
+          document.createTextNode(ev.avatar + " " + ev.name + " · " + ev.reason)
+        ]));
+        item.appendChild(el("span", {class:"score-event-pts"}, [
+          document.createTextNode("+" + ev.pts + " pts")
+        ]));
+        eventsBox.appendChild(item);
+      });
+      panel.appendChild(eventsBox);
+    }
+
     const msg = o.wasImposter
-      ? o.remainingImposters + " imposter" + (o.remainingImposters > 1 ? "s" : "") + " still remain among the " + o.aliveCount + " players left. Keep going!"
-      : o.aliveCount + " players remain. Keep discussing and vote again.";
-    panel.appendChild(el("p", {style:"text-align:center;opacity:.9;margin-top:8px"}, [document.createTextNode(msg)]));
+      ? (o.remainingImposters + " imposter" + (o.remainingImposters > 1 ? "s" : "") + " still remain among the " + o.aliveCount + " players left. Keep going!")
+      : (o.aliveCount + " players remain. Catch the imposter before too many crew are eliminated!");
+    panel.appendChild(el("p", {style:"text-align:center; opacity:.9; font-size:.88rem; margin:8px 0 0;"}, [document.createTextNode(msg)]));
 
     screen.appendChild(panel);
+
+    // Scorecard preview
+    screen.appendChild(createScorecardElement({ showResetBtn: false }));
+
     if (isHost){
-      screen.appendChild(el("button", {class:"primary", onclick: hostProceedToDiscussion}, [document.createTextNode("Continue Discussion →")]));
+      screen.appendChild(el("button", {
+        class:"primary",
+        onclick: hostProceedToDiscussion
+      }, [document.createTextNode("Continue Discussion (Round " + ((gameState.roundNumber || 1) + 1) + ") →")]));
     } else {
       screen.appendChild(el("div", {class:"hint"}, [document.createTextNode("Waiting for host to continue discussion...")]));
     }
+
     app.appendChild(screen);
   }
 
@@ -1617,34 +2163,50 @@
     const o = gameState.voteOutcome || {};
     const name = o.name || "Player";
 
-    if (o.majority){
-      let icon, text, bannerClass;
-      if (gameState.gameOverReason === "crewWin"){
-        icon = "🎉"; bannerClass = "correct";
-        text = name + " was voted out and WAS an imposter — all imposters caught! Crew wins! Congrats!";
-      } else if (o.wasImposter){
-        icon = "🎉"; bannerClass = "correct";
-        text = name + " was voted out and WAS an imposter, but other imposters remain — too few players left to continue. Imposters win!";
-      } else {
-        icon = "😈"; bannerClass = "wrong";
-        text = name + " was voted out but was NOT the imposter — too few players left to continue. Imposters win!";
-      }
-
-      const banner = el("div", {class:"vote-banner " + bannerClass});
-      banner.appendChild(el("div", {style:"font-size:1.8rem"}, [document.createTextNode(icon)]));
-      banner.appendChild(el("div", {}, [document.createTextNode(text)]));
-      panel.appendChild(banner);
+    let icon = "🎉", text = "", bannerClass = "correct";
+    if (gameState.gameOverReason === "crewWin"){
+      icon = "🎉"; bannerClass = "correct";
+      text = name + " was ejected and WAS an imposter — all imposters caught! Crew wins! (+10 pts to Crew)";
+    } else if (gameState.winner === "imposter"){
+      icon = "😈"; bannerClass = "wrong";
+      text = o.wasImposter
+        ? (name + " was ejected and was an imposter, but other imposters remain — too few crew left. Imposters win! (+10 victory bonus)")
+        : (name + " was ejected but was NOT an imposter — too few crew left. Imposters win! (+10 victory bonus)");
+    } else {
+      icon = "🏆"; bannerClass = "correct";
+      text = "Game Finished!";
     }
 
-    panel.appendChild(el("div", {style:"opacity:.7;font-size:.85rem;text-align:center;margin-top:10px;"}, [document.createTextNode("Crew's word")]));
-    const crewDiv = el("div", {style:"text-align:center;margin:6px 0 14px;"}, [
+    const banner = el("div", {class:"vote-banner " + bannerClass});
+    banner.appendChild(el("div", {style:"font-size:1.8rem"}, [document.createTextNode(icon)]));
+    banner.appendChild(el("div", {style:"font-size:.95rem;"}, [document.createTextNode(text)]));
+    panel.appendChild(banner);
+
+    // Points earned summary
+    if (o.scoreEvents && o.scoreEvents.length > 0){
+      const eventsBox = el("div", {class:"score-events-box"});
+      o.scoreEvents.forEach(ev => {
+        const item = el("div", {class:"score-event-item"});
+        item.appendChild(el("span", {}, [
+          document.createTextNode(ev.avatar + " " + ev.name + " · " + ev.reason)
+        ]));
+        item.appendChild(el("span", {class:"score-event-pts"}, [
+          document.createTextNode("+" + ev.pts + " pts")
+        ]));
+        eventsBox.appendChild(item);
+      });
+      panel.appendChild(eventsBox);
+    }
+
+    panel.appendChild(el("div", {style:"opacity:.7; font-size:.85rem; text-align:center; margin-top:10px;"}, [document.createTextNode("Crew's Word")]));
+    const crewDiv = el("div", {style:"text-align:center; margin:6px 0 14px;"}, [
       gameState.secretImageUrl ? el("img", {class:"secret-photo", src:gameState.secretImageUrl, alt:gameState.secretWord}) : el("div", {class:"big-emoji"}, [document.createTextNode(gameState.secretEmoji || "🥥")]),
       el("div", {class:"secret-word"}, [document.createTextNode(gameState.secretWord)])
     ]);
     panel.appendChild(crewDiv);
 
-    panel.appendChild(el("div", {style:"opacity:.7;font-size:.85rem;text-align:center;"}, [document.createTextNode("Imposter's word")]));
-    const impDiv = el("div", {style:"text-align:center;margin:6px 0 14px;"}, [
+    panel.appendChild(el("div", {style:"opacity:.7; font-size:.85rem; text-align:center;"}, [document.createTextNode("Imposter's Word")]));
+    const impDiv = el("div", {style:"text-align:center; margin:6px 0 14px;"}, [
       gameState.decoyImageUrl ? el("img", {class:"secret-photo", src:gameState.decoyImageUrl, alt:gameState.decoyWord}) : el("div", {class:"big-emoji"}, [document.createTextNode(gameState.decoyEmoji || "🥥")]),
       el("div", {class:"secret-word", style:"color:var(--danger)"}, [document.createTextNode(gameState.decoyWord)])
     ]);
@@ -1652,13 +2214,16 @@
 
     const imposterPlayers = (gameState.players || []).filter(p => (gameState.imposterIds || []).includes(p.id));
     const imposterNames = imposterPlayers.map(p => p.name);
-    const listDiv = el("div", {style:"text-align:center;margin-top:8px;font-size:.95rem;"}, [
+    const listDiv = el("div", {style:"text-align:center; margin-top:8px; font-size:.95rem;"}, [
       document.createTextNode(imposterNames.length > 1 ? "The imposters were: " : "The imposter was: "),
       el("b", {style:"color:var(--gold)"}, [document.createTextNode(imposterNames.join(", "))])
     ]);
     panel.appendChild(listDiv);
 
     screen.appendChild(panel);
+
+    // Full Scorecard Table
+    screen.appendChild(createScorecardElement({ showResetBtn: true }));
 
     if (isHost){
       screen.appendChild(el("button", {
@@ -1668,7 +2233,7 @@
           broadcastGameState();
           render();
         }
-      }, [document.createTextNode("🔄 Play Again (Same Lobby)")]));
+      }, [document.createTextNode("🔄 Play Again (Same Lobby & Scores) ▶")]));
     }
 
     screen.appendChild(el("button", {
@@ -1680,13 +2245,42 @@
   }
 
   // ==========================================
+  // Navigation & Back-button Safety Guard
+  // ==========================================
+  window.addEventListener("popstate", (e) => {
+    // If scorecard modal is open, back button closes the modal
+    if (showScoreModal){
+      showScoreModal = false;
+      pushInGameState();
+      render();
+      return;
+    }
+    // If in an active multiplayer room, prevent losing the game accidentally
+    if (appMode === "multiplayer" && roomCode){
+      if (confirm("You are currently in game room " + roomCode + ".\n\nDo you really want to exit the game?")){
+        exitToMenu(false);
+      } else {
+        // Stay in game safely
+        pushInGameState();
+      }
+    }
+  });
+
+  window.addEventListener("beforeunload", (e) => {
+    if (appMode === "multiplayer" && roomCode){
+      e.preventDefault();
+      e.returnValue = "You have an active game in progress (" + roomCode + "). Leaving will disconnect you.";
+      return e.returnValue;
+    }
+  });
+
+  // ==========================================
   // URL Auto-join detection on startup
   // ==========================================
   window.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
     const roomParam = params.get("room");
     if (roomParam){
-      // Pre-fill or auto switch to join
       appMode = "menu";
     }
     render();
