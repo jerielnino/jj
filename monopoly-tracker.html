@@ -296,9 +296,119 @@
     margin-top: 30px;
   }
 
+  /* Toast notifications */
+  .toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 280px;
+    max-width: 420px;
+    animation: toastIn 0.3s ease-out;
+    pointer-events: auto;
+  }
+  .toast.removing {
+    animation: toastOut 0.3s ease-in forwards;
+  }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes toastOut {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(100%); }
+  }
+  .toast-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .toast-success .toast-icon { background: rgba(62, 207, 142, 0.2); color: var(--good); }
+  .toast-warning .toast-icon { background: rgba(255, 184, 79, 0.2); color: var(--bank); }
+  .toast-error .toast-icon { background: rgba(255, 107, 107, 0.2); color: var(--bad); }
+  .toast-info .toast-icon { background: rgba(79, 140, 255, 0.2); color: var(--accent); }
+  .toast-content { flex: 1; min-width: 0; }
+  .toast-title { font-weight: 700; font-size: 0.85rem; }
+  .toast-detail { font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .toast-close {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 4px;
+    font-size: 1rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .toast-close:hover { color: var(--text); }
+
   @media (max-width: 600px) {
+    .toast-container { top: 12px; right: 12px; left: 12px; }
+    .toast { min-width: 0; width: 100%; max-width: 100%; }
     .transfer-row { flex-direction: column; align-items: stretch; }
     .swap-btn { align-self: flex-start; margin: -4px 0 4px; }
+  }
+
+  /* ROI & Payer breakdown */
+  .payer-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+  }
+  .payer-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+  .payer-chip .payer-amt {
+    font-weight: 700;
+    color: var(--good);
+  }
+  .roi-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+  .roi-badge.roi-profit {
+    background: rgba(62, 207, 142, 0.18);
+    color: var(--good);
+    border: 1px solid rgba(62, 207, 142, 0.35);
+  }
+  .roi-badge.roi-partial {
+    background: rgba(79, 140, 255, 0.15);
+    color: var(--accent);
+    border: 1px solid rgba(79, 140, 255, 0.3);
+  }
+  .roi-badge.roi-zero {
+    color: var(--text-dim);
   }
 
   .chip {
@@ -309,6 +419,54 @@
     font-weight: 700;
     color: #10151f;
     margin: 2px 4px 0 0;
+  }
+  .card.eliminated {
+    opacity: 0.55;
+    border: 1px dashed var(--bad);
+    filter: saturate(0.7);
+  }
+  .card.eliminated::before {
+    background: var(--bad);
+  }
+  .eliminated-tag {
+    background: var(--bad);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: auto;
+  }
+  .btn-eliminate {
+    background: transparent;
+    border: 1px solid rgba(255, 107, 107, 0.4);
+    color: var(--bad);
+    padding: 2px 6px;
+    font-size: 0.65rem;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: auto;
+    font-weight: 600;
+    transition: background 0.15s, color 0.15s;
+  }
+  .btn-eliminate:hover {
+    background: var(--bad);
+    color: white;
+  }
+  .btn-restore {
+    background: rgba(62, 207, 142, 0.2);
+    border: 1px solid var(--good);
+    color: var(--good);
+    padding: 2px 6px;
+    font-size: 0.65rem;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 6px;
+    font-weight: 600;
+  }
+  .btn-restore:hover {
+    background: var(--good);
+    color: #10151f;
   }
   .mortgage-tag {
     display: inline-block;
@@ -471,10 +629,21 @@
 </style>
 </head>
 <body>
+<div class="toast-container" id="toastContainer"></div>
 <div class="wrap">
   <header>
     <h1><span class="dot">🎲</span> Monopoly Money Tracker</h1>
     <div class="toolbar">
+      <label for="playerCountSelect">Players</label>
+      <select id="playerCountSelect" style="width:110px">
+        <option value="2">2 Players</option>
+        <option value="3">3 Players</option>
+        <option value="4">4 Players</option>
+        <option value="5">5 Players</option>
+        <option value="6">6 Players</option>
+        <option value="7">7 Players</option>
+        <option value="8">8 Players</option>
+      </select>
       <label for="startBalance">Starting balance</label>
       <input type="text" id="startBalance" value="1.5m" placeholder="e.g. 1.5m" style="width:100px">
       <button class="secondary" id="newGameBtn">New Game</button>
@@ -559,6 +728,17 @@
   </div>
 
   <div class="panel">
+    <h2 style="display:flex;justify-content:space-between;align-items:center;">
+      <span>Transaction History</span>
+      <span style="display:flex;gap:8px;">
+        <button class="secondary small" id="undoBtn">Undo Last</button>
+        <button class="danger small" id="clearHistoryBtn">Clear History</button>
+      </span>
+    </h2>
+    <div class="history" id="history"></div>
+  </div>
+
+  <div class="panel">
     <h2>Properties</h2>
     <div class="setup-row">
       <label><input type="checkbox" id="setupModeToggle"> Setup mode (assign without payment)</label>
@@ -577,24 +757,13 @@
     </p>
   </div>
 
-  <div class="panel">
-    <h2 style="display:flex;justify-content:space-between;align-items:center;">
-      <span>Transaction History</span>
-      <span style="display:flex;gap:8px;">
-        <button class="secondary small" id="undoBtn">Undo Last</button>
-        <button class="danger small" id="clearHistoryBtn">Clear History</button>
-      </span>
-    </h2>
-    <div class="history" id="history"></div>
-  </div>
-
   <footer>Data is saved locally in this browser (localStorage). Nothing leaves your machine.</footer>
 </div>
 
 <script>
 const STORAGE_KEY = 'monopolyTrackerState_v1';
 const BANK = '__BANK__';
-const COLORS = ['#f0c93d', '#e05d5d', '#a06bf0', '#4f8cff', '#3ecf8e', '#f2a93b']; // yellow, red, purple, blue, green, orange
+const COLORS = ['#f0c93d', '#e05d5d', '#a06bf0', '#4f8cff', '#3ecf8e', '#f2a93b', '#ff6bb5', '#2dd4bf']; // 8 distinct player colors
 const BANK_COLOR = '#c9a24b';
 const PASS_GO_AMOUNT = 2000000;
 const DEFAULT_STARTING_BALANCE = 1500000;
@@ -663,19 +832,29 @@ let landPlayerId = null;
 let fromEntityId = null;
 let toEntityId = null;
 
-function defaultState() {
+function createPlayer(idx, startingBalance) {
   return {
-    startingBalance: DEFAULT_STARTING_BALANCE,
-    players: [
-      { id: 'p1', name: 'Player 1', balance: DEFAULT_STARTING_BALANCE, color: COLORS[0], inJail: false },
-      { id: 'p2', name: 'Player 2', balance: DEFAULT_STARTING_BALANCE, color: COLORS[1], inJail: false },
-      { id: 'p3', name: 'Player 3', balance: DEFAULT_STARTING_BALANCE, color: COLORS[2], inJail: false },
-      { id: 'p4', name: 'Player 4', balance: DEFAULT_STARTING_BALANCE, color: COLORS[3], inJail: false },
-      { id: 'p5', name: 'Player 5', balance: DEFAULT_STARTING_BALANCE, color: COLORS[4], inJail: false },
-      { id: 'p6', name: 'Player 6', balance: DEFAULT_STARTING_BALANCE, color: COLORS[5], inJail: false },
-    ],
+    id: 'p' + (idx + 1),
+    name: 'Player ' + (idx + 1),
+    balance: startingBalance,
+    color: COLORS[idx % COLORS.length],
+    inJail: false,
+    eliminated: false,
+  };
+}
+
+function defaultState(numPlayers = 6) {
+  const startBal = DEFAULT_STARTING_BALANCE;
+  const players = [];
+  for (let i = 0; i < numPlayers; i++) {
+    players.push(createPlayer(i, startBal));
+  }
+  return {
+    startingBalance: startBal,
+    players,
     history: [],
     properties: {},
+    playerMeta: {},
   };
 }
 
@@ -704,18 +883,32 @@ function shortLabel(n) {
 }
 
 let state = load();
+syncPlayerMeta();
 ensurePropertyState();
+
+function syncPlayerMeta() {
+  if (!state.playerMeta) state.playerMeta = {};
+  if (Array.isArray(state.players)) {
+    state.players.forEach(p => {
+      state.playerMeta[p.id] = { name: p.name, color: p.color };
+    });
+  }
+}
 
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      parsed.players.forEach((p, i) => {
-        p.color = COLORS[i] || p.color;
-        if (typeof p.inJail !== 'boolean') p.inJail = false;
-      });
+      if (Array.isArray(parsed.players)) {
+        parsed.players.forEach((p, i) => {
+          p.color = COLORS[i % COLORS.length] || p.color;
+          if (typeof p.inJail !== 'boolean') p.inJail = false;
+          if (typeof p.eliminated !== 'boolean') p.eliminated = false;
+        });
+      }
       if (!parsed.properties) parsed.properties = {};
+      if (!parsed.playerMeta) parsed.playerMeta = {};
       return parsed;
     }
   } catch (e) {}
@@ -723,6 +916,7 @@ function load() {
 }
 
 function save() {
+  syncPlayerMeta();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
@@ -744,10 +938,24 @@ function findPlayer(id) {
   return state.players.find(p => p.id === id);
 }
 
+function activePlayers() {
+  return state.players.filter(p => !p.eliminated);
+}
+
 function entityName(id) {
   if (id === BANK) return 'Bank';
   const p = findPlayer(id);
-  return p ? p.name : id;
+  if (p) return p.name;
+  if (state.playerMeta && state.playerMeta[id]) return state.playerMeta[id].name;
+  return id;
+}
+
+function entityColor(id) {
+  if (id === BANK) return BANK_COLOR;
+  const p = findPlayer(id);
+  if (p) return p.color;
+  if (state.playerMeta && state.playerMeta[id]) return state.playerMeta[id].color;
+  return '#9aabc2';
 }
 
 function propDef(id) {
@@ -770,11 +978,20 @@ function ensurePropertyState() {
   if (!state.properties) state.properties = {};
   ownableDefs().forEach(def => {
     if (!state.properties[def.id]) {
-      state.properties[def.id] = { ownerId: null, houses: 0, mortgaged: false, rentCollected: 0 };
+      state.properties[def.id] = { ownerId: null, houses: 0, mortgaged: false, rentCollected: 0, rentByPlayer: {} };
     } else {
       const st = state.properties[def.id];
       if (typeof st.mortgaged !== 'boolean') st.mortgaged = false;
       if (typeof st.rentCollected !== 'number') st.rentCollected = 0;
+      if (!st.rentByPlayer || typeof st.rentByPlayer !== 'object') st.rentByPlayer = {};
+      // Backfill rentByPlayer from history if rent was collected previously without per-player tracking
+      if (st.rentCollected > 0 && Object.keys(st.rentByPlayer).length === 0 && Array.isArray(state.history)) {
+        state.history.forEach(h => {
+          if (h.propId === def.id || (h.note && h.note.startsWith('Rent: ' + def.name))) {
+            st.rentByPlayer[h.from] = (st.rentByPlayer[h.from] || 0) + h.amount;
+          }
+        });
+      }
     }
   });
 }
@@ -829,9 +1046,15 @@ function ownedPropsFor(playerId) {
   return ownableDefs().filter(def => state.properties[def.id].ownerId === playerId);
 }
 
-function applyTransfer(fromId, toId, amount, note, record = true) {
-  if (fromId !== BANK) findPlayer(fromId).balance -= amount;
-  if (toId !== BANK) findPlayer(toId).balance += amount;
+function applyTransfer(fromId, toId, amount, note, record = true, extra = {}) {
+  if (fromId !== BANK) {
+    const p = findPlayer(fromId);
+    if (p) p.balance -= amount;
+  }
+  if (toId !== BANK) {
+    const p = findPlayer(toId);
+    if (p) p.balance += amount;
+  }
   if (record) {
     state.history.push({
       from: fromId,
@@ -839,7 +1062,18 @@ function applyTransfer(fromId, toId, amount, note, record = true) {
       amount,
       note: note || '',
       ts: Date.now(),
+      ...extra,
     });
+    // Show toast notification
+    const fromName = entityName(fromId);
+    const toName = entityName(toId);
+    if (fromId === BANK) {
+      showToast('success', `${toName} received ${fmt(amount)} from Bank`, note || 'Bank payout');
+    } else if (toId === BANK) {
+      showToast('warning', `${fromName} paid ${fmt(amount)} to Bank`, note || 'Bank payment');
+    } else {
+      showToast('info', `${fromName} sent ${fmt(amount)} to ${toName}`, note || 'Player transfer');
+    }
   }
   save();
   renderAll();
@@ -852,6 +1086,7 @@ function buyProperty(id, playerId, free) {
   if (st.ownerId) return;
   st.ownerId = playerId;
   if (free) {
+    showToast('info', `${entityName(playerId)} assigned ${def.name}`, 'Setup mode — no payment');
     save();
     renderAll();
   } else {
@@ -935,8 +1170,10 @@ function payRent(id, visitorId, diceRoll) {
   const owner = findPlayer(st.ownerId);
   const halved = !!(owner && owner.inJail);
   const rent = halved ? Math.floor(base / 2) : base;
-  st.rentCollected += rent;
-  applyTransfer(visitorId, st.ownerId, rent, 'Rent: ' + def.name + (halved ? ' (owner in jail)' : ''));
+  st.rentCollected = (st.rentCollected || 0) + rent;
+  if (!st.rentByPlayer) st.rentByPlayer = {};
+  st.rentByPlayer[visitorId] = (st.rentByPlayer[visitorId] || 0) + rent;
+  applyTransfer(visitorId, st.ownerId, rent, 'Rent: ' + def.name + (halved ? ' (owner in jail)' : ''), true, { propId: def.id });
 }
 
 function payTax(playerId, taxId) {
@@ -956,28 +1193,162 @@ function unassignProperty(id) {
 
 function toggleJail(playerId) {
   const p = findPlayer(playerId);
-  if (!p) return;
+  if (!p || p.eliminated) return;
   p.inJail = !p.inJail;
   save();
   renderAll();
 }
 
+function eliminatePlayer(playerId) {
+  const p = findPlayer(playerId);
+  if (!p || p.eliminated) return;
+  const owned = ownedPropsFor(playerId);
+  const propCount = owned.length;
+  const msg = `Eliminate ${p.name}?\n` +
+    (propCount > 0 ? `• ${propCount} propert${propCount === 1 ? 'y' : 'ies'} and all houses will return to the Bank.\n` : '') +
+    `• Player will be marked as eliminated and excluded from active actions.`;
+
+  if (!confirm(msg)) return;
+
+  // Return all properties and houses to Bank
+  owned.forEach(def => {
+    const pst = state.properties[def.id];
+    pst.ownerId = null;
+    pst.houses = 0;
+    pst.mortgaged = false;
+  });
+
+  p.eliminated = true;
+  p.inJail = false;
+
+  state.history.push({
+    from: p.id,
+    to: BANK,
+    amount: 0,
+    note: 'Eliminated / Bankrupt — ' + propCount + ' properties returned to Bank',
+    ts: Date.now(),
+  });
+
+  showToast('error', `${p.name} eliminated`, propCount > 0 ? `${propCount} properties returned to Bank` : 'Marked as eliminated');
+  save();
+  renderAll();
+}
+
+function restorePlayer(playerId) {
+  const p = findPlayer(playerId);
+  if (!p || !p.eliminated) return;
+  p.eliminated = false;
+  if (p.balance <= 0) {
+    p.balance = state.startingBalance;
+  }
+  showToast('success', `${p.name} restored`, 'Player is back in the game');
+  save();
+  renderAll();
+}
+
+function setPlayerCount(newCount) {
+  newCount = parseInt(newCount, 10);
+  if (isNaN(newCount) || newCount < 2 || newCount > 8) return;
+  const currentCount = state.players.length;
+  if (newCount === currentCount) return;
+
+  if (newCount > currentCount) {
+    for (let i = currentCount; i < newCount; i++) {
+      state.players.push(createPlayer(i, state.startingBalance));
+    }
+    syncPlayerMeta();
+    showToast('info', `Player count: ${newCount}`, `Added ${newCount - currentCount} player(s)`);
+    save();
+    renderAll();
+  } else {
+    const playersToRemove = state.players.slice(newCount);
+    let totalProps = 0;
+    playersToRemove.forEach(p => {
+      totalProps += ownedPropsFor(p.id).length;
+    });
+
+    const msg = `Reduce number of players from ${currentCount} to ${newCount}?\n` +
+      (totalProps > 0 ? `Warning: ${totalProps} propert${totalProps === 1 ? 'y' : 'ies'} owned by removed players will return to Bank.\n` : '') +
+      `Players ${playersToRemove.map(p => p.name).join(', ')} will be removed.`;
+
+    if (!confirm(msg)) {
+      const pcSelect = document.getElementById('playerCountSelect');
+      if (pcSelect) pcSelect.value = currentCount;
+      return;
+    }
+
+    playersToRemove.forEach(p => {
+      ownedPropsFor(p.id).forEach(def => {
+        const st = propState(def.id);
+        st.ownerId = null;
+        st.houses = 0;
+        st.mortgaged = false;
+      });
+    });
+
+    state.players = state.players.slice(0, newCount);
+    syncPlayerMeta();
+    showToast('warning', `Player count: ${newCount}`, `Removed ${currentCount - newCount} player(s)`);
+    save();
+    renderAll();
+  }
+}
+
 function undoLast() {
   const last = state.history.pop();
   if (!last) return;
-  if (last.from !== BANK) findPlayer(last.from).balance += last.amount;
-  if (last.to !== BANK) findPlayer(last.to).balance -= last.amount;
+  if (last.from !== BANK) {
+    const p = findPlayer(last.from);
+    if (p) p.balance += last.amount;
+  }
+  if (last.to !== BANK) {
+    const p = findPlayer(last.to);
+    if (p) p.balance -= last.amount;
+  }
+  const propId = last.propId || (last.note && last.note.startsWith('Rent: ')
+    ? (ownableDefs().find(d => last.note.includes(d.name)) || {}).id
+    : null);
+  if (propId && state.properties[propId]) {
+    const pst = state.properties[propId];
+    pst.rentCollected = Math.max(0, (pst.rentCollected || 0) - last.amount);
+    if (pst.rentByPlayer && pst.rentByPlayer[last.from]) {
+      pst.rentByPlayer[last.from] = Math.max(0, pst.rentByPlayer[last.from] - last.amount);
+      if (pst.rentByPlayer[last.from] <= 0) delete pst.rentByPlayer[last.from];
+    }
+  }
   save();
   renderAll();
 }
 
 function newGame() {
   const startBalance = parseAmount(document.getElementById('startBalance').value) || DEFAULT_STARTING_BALANCE;
+  const pcSelect = document.getElementById('playerCountSelect');
+  const numPlayers = pcSelect ? parseInt(pcSelect.value, 10) || state.players.length : state.players.length;
   if (!confirm('Start a new game? Balances reset to ' + fmt(startBalance) + '. Player names are kept.')) return;
   state.startingBalance = startBalance;
-  state.players.forEach(p => { p.balance = startBalance; p.inJail = false; });
+  if (state.players.length !== numPlayers) {
+    if (numPlayers > state.players.length) {
+      for (let i = state.players.length; i < numPlayers; i++) {
+        state.players.push(createPlayer(i, startBalance));
+      }
+    } else {
+      state.players = state.players.slice(0, numPlayers);
+    }
+  }
+  state.players.forEach(p => {
+    p.balance = startBalance;
+    p.inJail = false;
+    p.eliminated = false;
+  });
   state.history = [];
-  Object.values(state.properties).forEach(st => { st.ownerId = null; st.houses = 0; st.mortgaged = false; st.rentCollected = 0; });
+  Object.values(state.properties).forEach(st => {
+    st.ownerId = null;
+    st.houses = 0;
+    st.mortgaged = false;
+    st.rentCollected = 0;
+    st.rentByPlayer = {};
+  });
+  syncPlayerMeta();
   save();
   renderAll();
 }
@@ -1017,22 +1388,37 @@ function renderPlayers() {
       return `<span class="chip" style="background:${GROUP_COLORS[def.group]};${mortgageStyle}" title="${titleBits.join(' - ')}">${label}</span>`;
     }).join('');
     const card = document.createElement('div');
-    card.className = 'card';
+    card.className = 'card' + (p.eliminated ? ' eliminated' : '');
     card.style.setProperty('--pcolor', p.color);
     card.dataset.playerId = p.id;
-    card.innerHTML = `
-      <div class="name-row">
-        <span class="swatch"></span>
-        <input class="name-input" value="${escapeHtml(p.name)}" data-id="${p.id}">
-        ${p.inJail ? `<span class="jail-badge" data-jail-badge="${p.id}" title="Click to release from jail">🔒 Jail</span>` : ''}
-      </div>
-      <div class="balance ${p.balance < 0 ? 'negative' : ''}">${fmt(p.balance)}</div>
-      <div class="subrow">
-        <button class="secondary small" data-quick-pay="${p.id}">Pay Bank</button>
-        <button class="secondary small" data-quick-receive="${p.id}">Receive</button>
-      </div>
-      ${chips ? `<div class="owned-props">${chips}</div>` : ''}
-    `;
+
+    if (p.eliminated) {
+      card.innerHTML = `
+        <div class="name-row">
+          <span class="swatch"></span>
+          <span style="font-weight:700;text-decoration:line-through;color:var(--text-dim);">${escapeHtml(p.name)}</span>
+          <span class="eliminated-tag">💀 Eliminated</span>
+          <button class="btn-restore" data-restore="${p.id}" title="Restore player back to game">Restore</button>
+        </div>
+        <div class="balance negative">${fmt(p.balance)}</div>
+        <div style="font-size:0.75rem;color:var(--text-dim);margin-top:6px;">Out of game &bull; Properties returned to Bank</div>
+      `;
+    } else {
+      card.innerHTML = `
+        <div class="name-row">
+          <span class="swatch"></span>
+          <input class="name-input" value="${escapeHtml(p.name)}" data-id="${p.id}">
+          ${p.inJail ? `<span class="jail-badge" data-jail-badge="${p.id}" title="Click to release from jail">🔒 Jail</span>` : ''}
+          <button class="btn-eliminate" data-eliminate="${p.id}" title="Eliminate player and return properties to Bank">✕ Out</button>
+        </div>
+        <div class="balance ${p.balance < 0 ? 'negative' : ''}">${fmt(p.balance)}</div>
+        <div class="subrow">
+          <button class="secondary small" data-quick-pay="${p.id}">Pay Bank</button>
+          <button class="secondary small" data-quick-receive="${p.id}">Receive</button>
+        </div>
+        ${chips ? `<div class="owned-props">${chips}</div>` : ''}
+      `;
+    }
     el.appendChild(card);
   });
 
@@ -1056,12 +1442,15 @@ function renderPlayers() {
   el.querySelectorAll('.name-input').forEach(input => {
     input.addEventListener('change', e => {
       const p = findPlayer(e.target.dataset.id);
-      p.name = e.target.value.trim() || p.name;
+      if (p) p.name = e.target.value.trim() || p.name;
+      syncPlayerMeta();
       save();
       renderTransferSelects();
       renderHistory();
       renderLedger();
       renderLandingPanel();
+      renderProperties();
+      renderOverview();
     });
   });
   el.querySelectorAll('[data-quick-pay]').forEach(btn => {
@@ -1079,7 +1468,13 @@ function renderPlayers() {
   el.querySelectorAll('[data-jail-badge]').forEach(badge => {
     badge.addEventListener('click', () => toggleJail(badge.dataset.jailBadge));
   });
-  el.querySelectorAll('.card[data-player-id]').forEach(card => {
+  el.querySelectorAll('[data-eliminate]').forEach(btn => {
+    btn.addEventListener('click', () => eliminatePlayer(btn.dataset.eliminate));
+  });
+  el.querySelectorAll('[data-restore]').forEach(btn => {
+    btn.addEventListener('click', () => restorePlayer(btn.dataset.restore));
+  });
+  el.querySelectorAll('.card[data-player-id]:not(.eliminated)').forEach(card => {
     card.addEventListener('dragover', e => {
       e.preventDefault();
       card.classList.add('drag-over');
@@ -1114,8 +1509,10 @@ function promptAmount(msg) {
 }
 
 function entityOptions() {
+  const active = activePlayers();
+  const list = active.length > 0 ? active : state.players;
   return [{ id: BANK, name: 'Bank', color: BANK_COLOR }].concat(
-    state.players.map(p => ({ id: p.id, name: p.name, color: p.color }))
+    list.map(p => ({ id: p.id, name: p.name, color: p.color }))
   );
 }
 
@@ -1167,11 +1564,13 @@ function renderLedger() {
   const players = state.players.concat([{ id: BANK, name: 'Bank', color: BANK_COLOR }]);
   let html = '<thead><tr><th>Give ↓ / Get →</th>';
   players.forEach(p => {
-    html += `<th><span class="dot" style="background:${p.color}"></span>${escapeHtml(p.name)}</th>`;
+    const elim = p.eliminated ? ' (Out)' : '';
+    html += `<th><span class="dot" style="background:${p.color}"></span>${escapeHtml(p.name)}${elim}</th>`;
   });
   html += '</tr></thead><tbody>';
   players.forEach(rowP => {
-    html += `<tr><td class="row-label"><span class="dot" style="background:${rowP.color}"></span>${escapeHtml(rowP.name)}</td>`;
+    const rowElim = rowP.eliminated ? ' (Out)' : '';
+    html += `<tr><td class="row-label"><span class="dot" style="background:${rowP.color}"></span>${escapeHtml(rowP.name)}${rowElim}</td>`;
     players.forEach(colP => {
       if (rowP.id === colP.id) {
         html += '<td class="self">—</td>';
@@ -1256,7 +1655,8 @@ function renderQuickAmounts() {
 
 function renderQuickActions() {
   const el = document.getElementById('quickActions');
-  el.innerHTML = state.players.map(p =>
+  const active = activePlayers();
+  el.innerHTML = active.map(p =>
     `<button class="secondary small" data-passgo="${p.id}" style="border-color:${p.color}">${escapeHtml(p.name)}: Pass GO (+${shortLabel(PASS_GO_AMOUNT)})</button>`
   ).join('');
   el.querySelectorAll('[data-passgo]').forEach(btn => {
@@ -1321,7 +1721,8 @@ function renderPropCard(def) {
 
   let buyControls = '';
   if (!st.ownerId) {
-    const opts = state.players.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    const active = activePlayers();
+    const opts = (active.length > 0 ? active : state.players).map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
     buyControls = `
       <div class="buy-row">
         <select data-buy-select>${opts}</select>
@@ -1396,18 +1797,52 @@ function renderPropCard(def) {
 
 function renderOverview() {
   const table = document.getElementById('overviewTable');
-  let html = '<thead><tr><th style="text-align:left;">Property</th><th>Price</th><th>Owner</th><th>Rent Collected</th><th>% of Price</th></tr></thead><tbody>';
+  let html = `<thead><tr>
+    <th style="text-align:left;">Property</th>
+    <th>Price</th>
+    <th>Owner</th>
+    <th>Rent Collected</th>
+    <th>% of Price</th>
+    <th style="text-align:left;">Paid By (Breakdown)</th>
+  </tr></thead><tbody>`;
   ownableDefs().forEach(def => {
     const st = propState(def.id);
-    const received = st.rentCollected;
+    const received = st.rentCollected || 0;
     const pct = def.price > 0 ? Math.round((received / def.price) * 100) : 0;
     const ownerLabel = st.ownerId ? escapeHtml(entityName(st.ownerId)) : 'Bank';
+
+    let payersHtml = '';
+    if (st.rentByPlayer && Object.keys(st.rentByPlayer).length > 0) {
+      const payerEntries = Object.entries(st.rentByPlayer)
+        .filter(([_, amt]) => amt > 0)
+        .sort((a, b) => b[1] - a[1]);
+
+      if (payerEntries.length > 0) {
+        payersHtml = '<div class="payer-breakdown">' + payerEntries.map(([playerId, amt]) => {
+          const pName = entityName(playerId);
+          const pColor = entityColor(playerId);
+          return `<span class="payer-chip" title="${escapeHtml(pName)} paid ${fmt(amt)} in rent">`
+            + `<span class="dot" style="background:${pColor};margin-right:2px;width:6px;height:6px;"></span>`
+            + `<span>${escapeHtml(pName)}:</span>`
+            + `<span class="payer-amt">${fmt(amt)}</span>`
+            + `</span>`;
+        }).join('') + '</div>';
+      }
+    }
+
+    if (!payersHtml) {
+      payersHtml = '<span style="color:var(--text-dim);font-size:0.75rem;">—</span>';
+    }
+
+    const roiClass = pct >= 100 ? 'roi-profit' : pct > 0 ? 'roi-partial' : 'roi-zero';
+
     html += `<tr>
       <td class="row-label"><span class="dot" style="background:${propColor(def)}"></span>${escapeHtml(def.name)}${st.mortgaged ? ' <span class="mortgage-tag">Mortgaged</span>' : ''}</td>
       <td>${fmt(def.price)}</td>
       <td>${ownerLabel}</td>
-      <td>${fmt(received)}</td>
-      <td>${pct}%</td>
+      <td style="font-weight:${received > 0 ? '700' : 'normal'};color:${received > 0 ? 'var(--good)' : 'inherit'}">${fmt(received)}</td>
+      <td><span class="roi-badge ${roiClass}">${pct}%</span></td>
+      <td style="text-align:left;">${payersHtml}</td>
     </tr>`;
   });
   html += '</tbody>';
@@ -1494,7 +1929,10 @@ function initCombobox(opts) {
 const landPlayerCombo = initCombobox({
   inputId: 'landPlayerInput',
   dropdownId: 'landPlayerDropdown',
-  getOptions: () => state.players.map(p => ({ id: p.id, name: p.name, color: p.color })),
+  getOptions: () => {
+    const active = activePlayers();
+    return (active.length > 0 ? active : state.players).map(p => ({ id: p.id, name: p.name, color: p.color }));
+  },
   getSelectedId: () => landPlayerId,
   setSelectedId: id => { landPlayerId = id; },
   onChange: () => updateLandingAction(),
@@ -1601,7 +2039,33 @@ function escapeHtml(str) {
   return d.innerHTML;
 }
 
+function showToast(type, title, detail) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
+  const icons = { success: '✓', warning: '⚠', error: '✕', info: 'ℹ' };
+  toast.innerHTML = `
+    <div class="toast-icon">${icons[type] || icons.info}</div>
+    <div class="toast-content">
+      <div class="toast-title">${escapeHtml(title)}</div>
+      <div class="toast-detail">${escapeHtml(detail)}</div>
+    </div>
+    <button class="toast-close" aria-label="Dismiss">✕</button>
+  `;
+  const closeBtn = toast.querySelector('.toast-close');
+  closeBtn.addEventListener('click', () => removeToast(toast));
+  container.appendChild(toast);
+  setTimeout(() => removeToast(toast), 4000);
+}
+
+function removeToast(toast) {
+  if (toast.classList.contains('removing')) return;
+  toast.classList.add('removing');
+  toast.addEventListener('animationend', () => toast.remove());
+}
+
 function renderAll() {
+  syncPlayerMeta();
   renderPlayers();
   renderTransferSelects();
   renderHistory();
@@ -1612,7 +2076,13 @@ function renderAll() {
   renderOverview();
   renderLandingPanel();
   document.getElementById('startBalance').value = shortLabel(state.startingBalance);
+  const pcSelect = document.getElementById('playerCountSelect');
+  if (pcSelect) pcSelect.value = state.players.length;
 }
+
+document.getElementById('playerCountSelect').addEventListener('change', e => {
+  setPlayerCount(e.target.value);
+});
 
 document.getElementById('sendBtn').addEventListener('click', () => {
   const from = fromEntityId;
