@@ -24,3 +24,6 @@ http://127.0.0.1:6095/stream?url=https://www.youtube.com/@News18Kerala/live
 
 #EXTINF:-1 tvg-id="Sport" tvg-logo="" group-title="Xtra",Sport1
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/@drmsportstvnetwork/live
+
+#EXTINF:-1 tvg-id="Hindi 24/7" tvg-logo="" group-title="Music",Hindi 24/7
+http://127.0.0.1:6095/stream?url=https://www.youtube.com/@dilharmony/live
