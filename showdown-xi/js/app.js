@@ -169,12 +169,16 @@ class ShowdownApp {
         const btnCreateRoom = document.getElementById('btnOpenCreateRoomModal');
         const btnJoinRoom = document.getElementById('btnOpenJoinRoomModal');
         const btnSyncFPL = document.getElementById('btnSyncFPL');
+        const btnClearCache = document.getElementById('btnClearCache');
 
         if (btnCreateRoom) {
             btnCreateRoom.addEventListener('click', () => this.openModal('createRoomModal'));
         }
         if (btnJoinRoom) {
             btnJoinRoom.addEventListener('click', () => this.openModal('joinRoomModal'));
+        }
+        if (btnClearCache) {
+            btnClearCache.addEventListener('click', () => this.clearAppCache());
         }
         if (btnSyncFPL) {
             btnSyncFPL.addEventListener('click', async () => {
@@ -189,6 +193,31 @@ class ShowdownApp {
                 }
             });
         }
+    }
+
+    async clearAppCache() {
+        if (!confirm('🧹 Clear browser cache & reload with fresh data?\n\nThis will purge cached assets, drafts, and force a fresh fetch.')) {
+            return;
+        }
+
+        try {
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+            }
+            sessionStorage.clear();
+            const authUsers = localStorage.getItem('showdown_xi_auth_users');
+            const loggedUser = localStorage.getItem('showdown_xi_logged_user');
+            localStorage.clear();
+            if (authUsers) localStorage.setItem('showdown_xi_auth_users', authUsers);
+            if (loggedUser) localStorage.setItem('showdown_xi_logged_user', loggedUser);
+        } catch (e) {
+            console.error('Error clearing cache:', e);
+        }
+
+        const url = new URL(window.location.href);
+        url.searchParams.set('nocache', Date.now().toString());
+        window.location.href = url.toString();
     }
 
     switchTab(tabName) {

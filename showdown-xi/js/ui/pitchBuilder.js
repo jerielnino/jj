@@ -333,7 +333,6 @@ class PitchBuilderUI {
                             slotCard.classList.remove('is-dragging');
                             this.clearDragOverStates();
                         });
-                        this.bindTouchDraggable(slotCard, assignedPlayer, slotIdx);
                     }
 
                     slotCard.addEventListener('dragover', (e) => {
@@ -508,13 +507,13 @@ class PitchBuilderUI {
             `;
         }).join('');
 
-        // Bind drag & touch listeners to dock cards
+        // Bind drag listeners to dock cards (Desktop Mouse Drag only)
         track.querySelectorAll('.dock-player-card').forEach(card => {
             const pId = card.getAttribute('data-dock-player-id');
             const player = getPlayerById(pId);
             if (!player) return;
 
-            // HTML5 Drag
+            // HTML5 Drag (Desktop)
             card.addEventListener('dragstart', (e) => {
                 this.draggedPlayer = player;
                 this.draggedSourceSlotIdx = null;
@@ -527,9 +526,6 @@ class PitchBuilderUI {
                 card.classList.remove('is-dragging');
                 this.clearDragOverStates();
             });
-
-            // Mobile Touch Drag Support
-            this.bindTouchDraggable(card, player, null);
         });
 
         // Bind Click / Tap on player card
@@ -763,83 +759,6 @@ class PitchBuilderUI {
         this.renderPitch();
         this.renderBottomDock();
         this.updateStatsBar();
-    }
-
-    bindTouchDraggable(element, player, sourceSlotIdx = null) {
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let isDragging = false;
-        let ghostEl = null;
-
-        element.addEventListener('touchstart', (e) => {
-            if (this.isLocked) return;
-            const touch = e.touches[0];
-            touchStartX = touch.clientX;
-            touchStartY = touch.clientY;
-            isDragging = false;
-        }, { passive: true });
-
-        element.addEventListener('touchmove', (e) => {
-            if (this.isLocked) return;
-            const touch = e.touches[0];
-            const dx = Math.abs(touch.clientX - touchStartX);
-            const dy = Math.abs(touch.clientY - touchStartY);
-
-            if (!isDragging && (dx > 12 || dy > 12)) {
-                isDragging = true;
-                this.draggedPlayer = player;
-                this.draggedSourceSlotIdx = sourceSlotIdx;
-
-                ghostEl = document.createElement('div');
-                ghostEl.className = 'touch-drag-ghost';
-                ghostEl.innerHTML = `
-                    <div class="ghost-inner">
-                        <img src="${player.photo || ''}" class="ghost-img">
-                        <span class="ghost-badge">${player.pos}</span>
-                    </div>
-                `;
-                document.body.appendChild(ghostEl);
-            }
-
-            if (isDragging) {
-                // Prevent browser screen scrolling while actively dragging a player!
-                e.preventDefault();
-                if (ghostEl) {
-                    ghostEl.style.left = `${touch.clientX - 35}px`;
-                    ghostEl.style.top = `${touch.clientY - 35}px`;
-                }
-
-                // Highlight slot under touch point
-                const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-                const slot = targetEl?.closest('.pitch-player-slot');
-                document.querySelectorAll('.pitch-player-slot').forEach(s => s.classList.remove('drag-hover'));
-                if (slot) slot.classList.add('drag-hover');
-            }
-        }, { passive: false });
-
-        element.addEventListener('touchend', (e) => {
-            if (ghostEl) {
-                ghostEl.remove();
-                ghostEl = null;
-            }
-            if (isDragging) {
-                const touch = e.changedTouches[0];
-                const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-                const slot = targetEl?.closest('.pitch-player-slot');
-                document.querySelectorAll('.pitch-player-slot').forEach(s => s.classList.remove('drag-hover'));
-
-                if (slot) {
-                    const slotIdx = parseInt(slot.getAttribute('data-slot-index'), 10);
-                    const slotPos = slot.getAttribute('data-slot-pos');
-                    if (!isNaN(slotIdx) && slotPos) {
-                        this.handleDropOnSlot(player, slotIdx, slotPos);
-                    }
-                }
-                isDragging = false;
-                this.draggedPlayer = null;
-                this.draggedSourceSlotIdx = null;
-            }
-        });
     }
 
     clearDragOverStates() {
