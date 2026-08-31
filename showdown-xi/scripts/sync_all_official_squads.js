@@ -69,8 +69,8 @@ async function syncAllOfficialSquads() {
         // Filter elements belonging to this team
         const plPlayers = bData.elements.filter(e => e.team === t.id);
 
-        // Sort players: active ones first, then by points / price / form
-        plPlayers.sort((a, b) => {
+        // Sort players by total points, then cost, then form
+        const sortByRank = (list) => list.sort((a, b) => {
             const aActive = a.status !== 'u' ? 1 : 0;
             const bActive = b.status !== 'u' ? 1 : 0;
             if (aActive !== bActive) return bActive - aActive;
@@ -78,8 +78,17 @@ async function syncAllOfficialSquads() {
             return b.now_cost - a.now_cost;
         });
 
-        // Take top 20 players
-        plPlayers.slice(0, 20).forEach((p, idx) => {
+        const gks = sortByRank(plPlayers.filter(p => p.element_type === 1)).slice(0, 2);
+        const defs = sortByRank(plPlayers.filter(p => p.element_type === 2)).slice(0, 6);
+        const mids = sortByRank(plPlayers.filter(p => p.element_type === 3));
+        const fwds = sortByRank(plPlayers.filter(p => p.element_type === 4));
+
+        const neededMids = Math.max(7, 18 - (gks.length + defs.length + fwds.length));
+        const selectedMids = mids.slice(0, neededMids);
+
+        const balancedSquad = [...gks, ...defs, ...selectedMids, ...fwds];
+
+        balancedSquad.forEach((p, idx) => {
             teams[code].players.push({
                 id: code.toLowerCase() + '_' + (idx + 1),
                 fplId: p.id,
@@ -89,7 +98,7 @@ async function syncAllOfficialSquads() {
                 pos: posMap[p.element_type],
                 club: code,
                 price: p.now_cost / 10,
-                number: p.squad_number || 0,
+                number: p.squad_number || (idx + 1),
                 form: parseFloat(p.form) || 5.0,
                 status: p.status, // 'a' (available), 'i' (injured), 's' (suspended), 'd' (doubtful), 'u' (unavailable)
                 news: p.news || '',
@@ -158,10 +167,13 @@ async function syncAllOfficialSquads() {
             { id: 'fcb_11', name: 'Dani Olmo', webName: 'Olmo', pos: 'MID', club: 'FCB', price: 7.9, number: 20, form: 7.2, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/688248.png', goals: 6, assists: 3, cleanSheets: 6, saves: 0 },
             { id: 'fcb_12', name: 'Frenkie de Jong', webName: 'De Jong', pos: 'MID', club: 'FCB', price: 6.5, number: 21, form: 6.0, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/602563.png', goals: 1, assists: 2, cleanSheets: 6, saves: 0 },
             { id: 'fcb_13', name: 'Marc Casadó', webName: 'Casadó', pos: 'MID', club: 'FCB', price: 5.2, number: 17, form: 6.2, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1229176.png', goals: 0, assists: 3, cleanSheets: 7, saves: 0 },
-            { id: 'fcb_14', name: 'Lamine Yamal', webName: 'Lamine Yamal', pos: 'MID', club: 'FCB', price: 9.6, number: 19, form: 9.0, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1202110.png', goals: 8, assists: 10, cleanSheets: 8, saves: 0 },
-            { id: 'fcb_15', name: 'Raphinha', webName: 'Raphinha', pos: 'MID', club: 'FCB', price: 9.5, number: 11, form: 9.2, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/807744.png', goals: 12, assists: 9, cleanSheets: 8, saves: 0 },
-            { id: 'fcb_16', name: 'Robert Lewandowski', webName: 'Lewandowski', pos: 'FWD', club: 'FCB', price: 11.2, number: 9, form: 9.2, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/501211.png', goals: 17, assists: 3, cleanSheets: 8, saves: 0 },
-            { id: 'fcb_17', name: 'Ferran Torres', webName: 'Ferran', pos: 'FWD', club: 'FCB', price: 6.8, number: 7, form: 5.6, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/933758.png', goals: 3, assists: 2, cleanSheets: 5, saves: 0 }
+            { id: 'fcb_14', name: 'Fermín López', webName: 'Fermín', pos: 'MID', club: 'FCB', price: 5.8, number: 16, form: 6.0, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1428849.png', goals: 4, assists: 2, cleanSheets: 6, saves: 0 },
+            { id: 'fcb_15', name: 'Lamine Yamal', webName: 'Lamine Yamal', pos: 'MID', club: 'FCB', price: 9.6, number: 19, form: 9.0, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1202110.png', goals: 8, assists: 10, cleanSheets: 8, saves: 0 },
+            { id: 'fcb_16', name: 'Raphinha', webName: 'Raphinha', pos: 'MID', club: 'FCB', price: 9.5, number: 11, form: 9.2, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/807744.png', goals: 12, assists: 9, cleanSheets: 8, saves: 0 },
+            { id: 'fcb_17', name: 'Andreas Christensen', webName: 'Christensen', pos: 'DEF', club: 'FCB', price: 5.0, number: 15, form: 4.8, status: 'i', news: 'Achilles tendon irritation', chance: 0, photo: 'https://images.fotmob.com/image_resources/playerimages/373985.png', goals: 0, assists: 0, cleanSheets: 4, saves: 0 },
+            { id: 'fcb_18', name: 'Robert Lewandowski', webName: 'Lewandowski', pos: 'FWD', club: 'FCB', price: 11.2, number: 9, form: 9.2, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/501211.png', goals: 17, assists: 3, cleanSheets: 8, saves: 0 },
+            { id: 'fcb_19', name: 'Ferran Torres', webName: 'Ferran', pos: 'FWD', club: 'FCB', price: 6.8, number: 7, form: 5.6, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/933758.png', goals: 3, assists: 2, cleanSheets: 5, saves: 0 },
+            { id: 'fcb_20', name: 'Pau Víctor', webName: 'Pau Víctor', pos: 'FWD', club: 'FCB', price: 5.0, number: 18, form: 5.0, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1281461.png', goals: 1, assists: 1, cleanSheets: 4, saves: 0 }
         ]
     };
 
@@ -282,6 +294,51 @@ async function syncAllOfficialSquads() {
     });
 
     const laLigaFixtures = [
+        // MW 1
+        {
+            id: 'LALIGA_MW1_FCB_ATH',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'FCB',
+            awayClub: 'ATH',
+            matchweek: 1,
+            venue: 'Estadi Olímpic Lluís Companys, Barcelona',
+            kickoffTime: '2026-08-23T19:00:00Z',
+            status: 'FINISHED',
+            homeScore: 2,
+            awayScore: 1,
+            featured: true
+        },
+        {
+            id: 'LALIGA_MW1_SEV_ATM',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'SEV',
+            awayClub: 'ATM',
+            matchweek: 1,
+            venue: 'Ramón Sánchez-Pizjuán, Seville',
+            kickoffTime: '2026-08-24T19:30:00Z',
+            status: 'FINISHED',
+            homeScore: 1,
+            awayScore: 2,
+            featured: false
+        },
+        // MW 2
+        {
+            id: 'LALIGA_MW2_RMA_ATH',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'RMA',
+            awayClub: 'ATH',
+            matchweek: 2,
+            venue: 'Santiago Bernabéu, Madrid',
+            kickoffTime: '2026-08-28T19:30:00Z',
+            status: 'FINISHED',
+            homeScore: 3,
+            awayScore: 0,
+            featured: true
+        },
+        // MW 4
         {
             id: 'LALIGA_MW4_RMA_SEV',
             league: 'LALIGA',
@@ -296,6 +353,7 @@ async function syncAllOfficialSquads() {
             awayScore: 0,
             featured: true
         },
+        // MW 5
         {
             id: 'LALIGA_MW5_FCB_SEV',
             league: 'LALIGA',
@@ -311,6 +369,21 @@ async function syncAllOfficialSquads() {
             featured: false
         },
         {
+            id: 'LALIGA_MW5_ATH_ATM',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'ATH',
+            awayClub: 'ATM',
+            matchweek: 5,
+            venue: 'San Mamés, Bilbao',
+            kickoffTime: '2026-09-16T19:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: true
+        },
+        // MW 8
+        {
             id: 'LALIGA_MW8_ATM_RMA',
             league: 'LALIGA',
             leagueName: 'La Liga',
@@ -325,19 +398,35 @@ async function syncAllOfficialSquads() {
             featured: true
         },
         {
-            id: 'LALIGA_MW10_FCB_SEV',
+            id: 'LALIGA_MW8_ATH_SEV',
             league: 'LALIGA',
             leagueName: 'La Liga',
-            homeClub: 'FCB',
+            homeClub: 'ATH',
             awayClub: 'SEV',
-            matchweek: 10,
-            venue: 'Estadi Olímpic, Barcelona',
-            kickoffTime: '2026-10-20T19:00:00Z',
+            matchweek: 8,
+            venue: 'San Mamés, Bilbao',
+            kickoffTime: '2026-09-28T17:00:00Z',
             status: 'SCHEDULED',
             homeScore: 0,
             awayScore: 0,
             featured: false
         },
+        // MW 10
+        {
+            id: 'LALIGA_MW10_SEV_FCB',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'SEV',
+            awayClub: 'FCB',
+            matchweek: 10,
+            venue: 'Ramón Sánchez-Pizjuán, Seville',
+            kickoffTime: '2026-10-18T19:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: false
+        },
+        // MW 11
         {
             id: 'LALIGA_MW11_RMA_FCB',
             league: 'LALIGA',
@@ -352,6 +441,66 @@ async function syncAllOfficialSquads() {
             awayScore: 0,
             featured: true
         },
+        // MW 13
+        {
+            id: 'LALIGA_MW13_ATM_SEV',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'ATM',
+            awayClub: 'SEV',
+            matchweek: 13,
+            venue: 'Cívitas Metropolitano, Madrid',
+            kickoffTime: '2026-11-08T19:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: false
+        },
+        {
+            id: 'LALIGA_MW13_ATH_FCB',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'ATH',
+            awayClub: 'FCB',
+            matchweek: 13,
+            venue: 'San Mamés, Bilbao',
+            kickoffTime: '2026-11-09T20:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: true
+        },
+        // MW 15
+        {
+            id: 'LALIGA_MW15_ATH_RMA',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'ATH',
+            awayClub: 'RMA',
+            matchweek: 15,
+            venue: 'San Mamés, Bilbao',
+            kickoffTime: '2026-12-03T20:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: true
+        },
+        // MW 16
+        {
+            id: 'LALIGA_MW16_ATM_ATH',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'ATM',
+            awayClub: 'ATH',
+            matchweek: 16,
+            venue: 'Cívitas Metropolitano, Madrid',
+            kickoffTime: '2026-12-07T19:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: false
+        },
+        // MW 18
         {
             id: 'LALIGA_MW18_FCB_ATM',
             league: 'LALIGA',
@@ -367,19 +516,65 @@ async function syncAllOfficialSquads() {
             featured: true
         },
         {
+            id: 'LALIGA_MW18_SEV_ATH',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'SEV',
+            awayClub: 'ATH',
+            matchweek: 18,
+            venue: 'Ramón Sánchez-Pizjuán, Seville',
+            kickoffTime: '2026-12-21T18:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: false
+        },
+        // MW 20
+        {
+            id: 'LALIGA_MW20_SEV_RMA',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'SEV',
+            awayClub: 'RMA',
+            matchweek: 20,
+            venue: 'Ramón Sánchez-Pizjuán, Seville',
+            kickoffTime: '2027-01-17T19:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: true
+        },
+        // MW 23
+        {
             id: 'LALIGA_MW23_RMA_ATM',
             league: 'LALIGA',
             leagueName: 'La Liga',
             homeClub: 'RMA',
             awayClub: 'ATM',
             matchweek: 23,
-            venue: 'Santiago Bernabéu, Madrid',
+            venue: 'Santiago Bernabéu, Madrid (Madrid Derby)',
             kickoffTime: '2027-02-07T20:00:00Z',
             status: 'SCHEDULED',
             homeScore: 0,
             awayScore: 0,
             featured: true
         },
+        // MW 27
+        {
+            id: 'LALIGA_MW27_ATM_FCB',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'ATM',
+            awayClub: 'FCB',
+            matchweek: 27,
+            venue: 'Cívitas Metropolitano, Madrid',
+            kickoffTime: '2027-03-14T20:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: true
+        },
+        // MW 35
         {
             id: 'LALIGA_MW35_FCB_RMA',
             league: 'LALIGA',
@@ -387,7 +582,7 @@ async function syncAllOfficialSquads() {
             homeClub: 'FCB',
             awayClub: 'RMA',
             matchweek: 35,
-            venue: 'Estadi Olímpic, Barcelona (El Clásico Leg 2)',
+            venue: 'Camp Nou / Estadi Olímpic, Barcelona (El Clásico)',
             kickoffTime: '2027-05-09T19:00:00Z',
             status: 'SCHEDULED',
             homeScore: 0,

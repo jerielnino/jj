@@ -165,11 +165,24 @@ async function updateTeamsWithInjuriesAndFixtures() {
         primaryColor: '#FFFFFF',
         secondaryColor: '#D4001F',
         players: [
-            { id: 'sev_1', name: 'Ørjan Nyland', webName: 'Nyland', pos: 'GK', club: 'SEV', price: 4.8, number: 13, form: 4.5, status: 'a', news: '', chance: 100, photo: 'https://resources.premierleague.com/premierleague/photos/players/250x250/p117042.png', goals: 0, assists: 0, cleanSheets: 5, saves: 42 },
-            { id: 'sev_2', name: 'Loïc Badé', webName: 'Badé', pos: 'DEF', club: 'SEV', price: 4.9, number: 22, form: 4.7, status: 'a', news: '', chance: 100, photo: 'https://resources.premierleague.com/premierleague/photos/players/250x250/p443743.png', goals: 1, assists: 0, cleanSheets: 6, saves: 0 },
-            { id: 'sev_3', name: 'Saúl Ñíguez', webName: 'Saúl', pos: 'MID', club: 'SEV', price: 5.5, number: 17, form: 5.0, status: 'a', news: '', chance: 100, photo: 'https://resources.premierleague.com/premierleague/photos/players/250x250/p111490.png', goals: 2, assists: 2, cleanSheets: 5, saves: 0 },
-            { id: 'sev_4', name: 'Dodi Lukebakio', webName: 'Lukebakio', pos: 'MID', club: 'SEV', price: 6.2, number: 11, form: 6.1, status: 'a', news: '', chance: 100, photo: 'https://resources.premierleague.com/premierleague/photos/players/250x250/p217482.png', goals: 5, assists: 2, cleanSheets: 4, saves: 0 },
-            { id: 'sev_5', name: 'Isaac Romero', webName: 'Isaac', pos: 'FWD', club: 'SEV', price: 5.8, number: 20, form: 5.2, status: 'a', news: '', chance: 100, photo: 'https://resources.premierleague.com/premierleague/photos/players/250x250/p544837.png', goals: 3, assists: 2, cleanSheets: 4, saves: 0 }
+            { id: 'sev_1', name: 'Ørjan Nyland', webName: 'Nyland', pos: 'GK', club: 'SEV', price: 4.8, number: 13, form: 4.8, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/73409.png', goals: 0, assists: 0, cleanSheets: 5, saves: 42 },
+            { id: 'sev_2', name: 'Álvaro Fernández', webName: 'Á.Fernández', pos: 'GK', club: 'SEV', price: 4.4, number: 1, form: 4.5, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1148810.png', goals: 0, assists: 0, cleanSheets: 2, saves: 14 },
+            { id: 'sev_3', name: 'Loïc Badé', webName: 'Badé', pos: 'DEF', club: 'SEV', price: 4.9, number: 22, form: 5.0, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1119461.png', goals: 1, assists: 0, cleanSheets: 6, saves: 0 },
+            { id: 'sev_4', name: 'Adrià Pedrosa', webName: 'Pedrosa', pos: 'DEF', club: 'SEV', price: 4.7, number: 3, form: 4.8, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/927646.png', goals: 0, assists: 2, cleanSheets: 5, saves: 0 },
+            { id: 'sev_5', name: 'Kike Salas', webName: 'Salas', pos: 'DEF', club: 'SEV', price: 4.6, number: 4, form: 4.7, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1327489.png', goals: 1, assists: 0, cleanSheets: 5, saves: 0 },
+            { id: 'sev_6', name: 'José Ángel Carmona', webName: 'Carmona', pos: 'DEF', club: 'SEV', price: 4.6, number: 32, form: 4.9, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1281461.png', goals: 0, assists: 1, cleanSheets: 5, saves: 0 },
+            { id: 'sev_7', name: 'Marcão', webName: 'Marcão', pos: 'DEF', club: 'SEV', price: 4.5, number: 23, form: 4.6, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/753593.png', goals: 0, assists: 0, cleanSheets: 4, saves: 0 },
+            { id: 'sev_8', name: 'Nemanja Gudelj', webName: 'Gudelj', pos: 'MID', club: 'SEV', price: 5.0, number: 6, form: 5.1, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/214152.png', goals: 1, assists: 1, cleanSheets: 6, saves: 0 },
+            { id: 'sev_9', name: 'Saúl Ñíguez', webName: 'Saúl', pos: 'MID', club: 'SEV', price: 5.5, number: 17, form: 5.4, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/309334.png', goals: 2, assists: 2, cleanSheets: 5, saves: 0 },
+            { id: 'sev_10', name: 'Lucien Agoumé', webName: 'Agoumé', pos: 'MID', club: 'SEV', price: 5.0, number: 18, form: 5.0, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/971790.png', goals: 0, assists: 1, cleanSheets: 5, saves: 0 },
+            { id: 'sev_11', name: 'Albert Sambi Lokonga', webName: 'Lokonga', pos: 'MID', club: 'SEV', price: 5.2, number: 12, form: 5.0, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/858544.png', goals: 0, assists: 1, cleanSheets: 5, saves: 0 },
+            { id: 'sev_12', name: 'Djibril Sow', webName: 'Sow', pos: 'MID', club: 'SEV', price: 5.0, number: 20, form: 4.8, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/688204.png', goals: 1, assists: 1, cleanSheets: 5, saves: 0 },
+            { id: 'sev_13', name: 'Manu Bueno', webName: 'Bueno', pos: 'MID', club: 'SEV', price: 4.5, number: 28, form: 4.5, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1428849.png', goals: 0, assists: 0, cleanSheets: 3, saves: 0 },
+            { id: 'sev_14', name: 'Dodi Lukébakio', webName: 'Lukébakio', pos: 'FWD', club: 'SEV', price: 6.5, number: 11, form: 6.8, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/688876.png', goals: 6, assists: 2, cleanSheets: 5, saves: 0 },
+            { id: 'sev_15', name: 'Chidera Ejuke', webName: 'Ejuke', pos: 'FWD', club: 'SEV', price: 6.0, number: 21, form: 6.2, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/837270.png', goals: 3, assists: 3, cleanSheets: 5, saves: 0 },
+            { id: 'sev_16', name: 'Peque Fernández', webName: 'Peque', pos: 'FWD', club: 'SEV', price: 5.5, number: 14, form: 5.2, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1132607.png', goals: 1, assists: 2, cleanSheets: 4, saves: 0 },
+            { id: 'sev_17', name: 'Isaac Romero', webName: 'Isaac', pos: 'FWD', club: 'SEV', price: 5.8, number: 7, form: 5.5, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1130991.png', goals: 4, assists: 2, cleanSheets: 5, saves: 0 },
+            { id: 'sev_18', name: 'Kelechi Iheanacho', webName: 'Iheanacho', pos: 'FWD', club: 'SEV', price: 5.8, number: 9, form: 5.0, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/688247.png', goals: 2, assists: 1, cleanSheets: 4, saves: 0 }
         ]
     };
 
@@ -182,11 +195,24 @@ async function updateTeamsWithInjuriesAndFixtures() {
         primaryColor: '#EE2524',
         secondaryColor: '#FFFFFF',
         players: [
-            { id: 'ath_1', name: 'Unai Simón', webName: 'Simón', pos: 'GK', club: 'ATH', price: 5.5, number: 1, form: 5.8, status: 'a', news: '', chance: 100, photo: 'https://resources.premierleague.com/premierleague/photos/players/250x250/p194765.png', goals: 0, assists: 0, cleanSheets: 9, saves: 48 },
-            { id: 'ath_2', name: 'Dani Vivian', webName: 'Vivian', pos: 'DEF', club: 'ATH', price: 5.1, number: 3, form: 5.4, status: 'a', news: '', chance: 100, photo: 'https://resources.premierleague.com/premierleague/photos/players/250x250/p443744.png', goals: 1, assists: 0, cleanSheets: 8, saves: 0 },
-            { id: 'ath_3', name: 'Nico Williams', webName: 'Nico W.', pos: 'MID', club: 'ATH', price: 8.5, number: 10, form: 7.9, status: 'a', news: '', chance: 100, photo: 'https://resources.premierleague.com/premierleague/photos/players/250x250/p493106.png', goals: 6, assists: 8, cleanSheets: 8, saves: 0 },
-            { id: 'ath_4', name: 'Oihan Sancet', webName: 'Sancet', pos: 'MID', club: 'ATH', price: 6.8, number: 8, form: 6.8, status: 'a', news: '', chance: 100, photo: 'https://resources.premierleague.com/premierleague/photos/players/250x250/p443745.png', goals: 7, assists: 3, cleanSheets: 7, saves: 0 },
-            { id: 'ath_5', name: 'Iñaki Williams', webName: 'Iñaki W.', pos: 'FWD', club: 'ATH', price: 7.4, number: 9, form: 6.7, status: 'a', news: '', chance: 100, photo: 'https://resources.premierleague.com/premierleague/photos/players/250x250/p184980.png', goals: 7, assists: 5, cleanSheets: 7, saves: 0 }
+            { id: 'ath_1', name: 'Unai Simón', webName: 'Simón', pos: 'GK', club: 'ATH', price: 5.5, number: 1, form: 5.8, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/660625.png', goals: 0, assists: 0, cleanSheets: 9, saves: 48 },
+            { id: 'ath_2', name: 'Julen Agirrezabala', webName: 'Agirrezabala', pos: 'GK', club: 'ATH', price: 4.6, number: 13, form: 5.0, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1280020.png', goals: 0, assists: 0, cleanSheets: 3, saves: 16 },
+            { id: 'ath_3', name: 'Dani Vivian', webName: 'Vivian', pos: 'DEF', club: 'ATH', price: 5.2, number: 3, form: 5.6, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/940743.png', goals: 1, assists: 0, cleanSheets: 8, saves: 0 },
+            { id: 'ath_4', name: 'Aitor Paredes', webName: 'Paredes', pos: 'DEF', club: 'ATH', price: 5.0, number: 4, form: 5.4, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1191407.png', goals: 1, assists: 1, cleanSheets: 7, saves: 0 },
+            { id: 'ath_5', name: 'Yeray Álvarez', webName: 'Yeray', pos: 'DEF', club: 'ATH', price: 4.9, number: 5, form: 5.0, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/639450.png', goals: 0, assists: 0, cleanSheets: 6, saves: 0 },
+            { id: 'ath_6', name: 'Yuri Berchiche', webName: 'Yuri', pos: 'DEF', club: 'ATH', price: 4.9, number: 17, form: 5.1, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/80295.png', goals: 1, assists: 2, cleanSheets: 7, saves: 0 },
+            { id: 'ath_7', name: 'Andoni Gorosabel', webName: 'Gorosabel', pos: 'DEF', club: 'ATH', price: 4.8, number: 2, form: 4.9, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/839893.png', goals: 0, assists: 1, cleanSheets: 6, saves: 0 },
+            { id: 'ath_8', name: 'Adama Boiro', webName: 'Boiro', pos: 'DEF', club: 'ATH', price: 4.5, number: 32, form: 4.7, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1331249.png', goals: 0, assists: 0, cleanSheets: 4, saves: 0 },
+            { id: 'ath_9', name: 'Oihan Sancet', webName: 'Sancet', pos: 'MID', club: 'ATH', price: 7.2, number: 8, form: 7.4, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/950545.png', goals: 7, assists: 3, cleanSheets: 7, saves: 0 },
+            { id: 'ath_10', name: 'Nico Williams', webName: 'Nico W.', pos: 'MID', club: 'ATH', price: 8.5, number: 10, form: 8.2, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1202110.png', goals: 6, assists: 8, cleanSheets: 8, saves: 0 },
+            { id: 'ath_11', name: 'Álex Berenguer', webName: 'Berenguer', pos: 'MID', club: 'ATH', price: 6.2, number: 7, form: 6.2, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/574629.png', goals: 4, assists: 4, cleanSheets: 7, saves: 0 },
+            { id: 'ath_12', name: 'Íñigo Ruiz de Galarreta', webName: 'Galarreta', pos: 'MID', club: 'ATH', price: 5.2, number: 16, form: 5.2, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/282462.png', goals: 0, assists: 2, cleanSheets: 7, saves: 0 },
+            { id: 'ath_13', name: 'Mikel Vesga', webName: 'Vesga', pos: 'MID', club: 'ATH', price: 5.0, number: 6, form: 4.8, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/616545.png', goals: 1, assists: 1, cleanSheets: 6, saves: 0 },
+            { id: 'ath_14', name: 'Beñat Prados', webName: 'Prados', pos: 'MID', club: 'ATH', price: 5.0, number: 24, form: 5.0, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1229176.png', goals: 1, assists: 0, cleanSheets: 6, saves: 0 },
+            { id: 'ath_15', name: 'Mikel Jauregizar', webName: 'Jauregizar', pos: 'MID', club: 'ATH', price: 4.8, number: 23, form: 5.1, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1553099.png', goals: 1, assists: 1, cleanSheets: 5, saves: 0 },
+            { id: 'ath_16', name: 'Álvaro Djaló', webName: 'Djaló', pos: 'FWD', club: 'ATH', price: 6.2, number: 11, form: 5.5, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/1355668.png', goals: 2, assists: 1, cleanSheets: 5, saves: 0 },
+            { id: 'ath_17', name: 'Iñaki Williams', webName: 'Iñaki W.', pos: 'FWD', club: 'ATH', price: 7.5, number: 9, form: 7.0, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/604105.png', goals: 7, assists: 5, cleanSheets: 7, saves: 0 },
+            { id: 'ath_18', name: 'Gorka Guruzeta', webName: 'Guruzeta', pos: 'FWD', club: 'ATH', price: 7.0, number: 12, form: 6.5, status: 'a', news: '', chance: 100, photo: 'https://images.fotmob.com/image_resources/playerimages/711231.png', goals: 5, assists: 3, cleanSheets: 6, saves: 0 }
         ]
     };
 
@@ -217,6 +243,51 @@ async function updateTeamsWithInjuriesAndFixtures() {
     });
 
     const laLigaFixtures = [
+        // MW 1
+        {
+            id: 'LALIGA_MW1_FCB_ATH',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'FCB',
+            awayClub: 'ATH',
+            matchweek: 1,
+            venue: 'Estadi Olímpic Lluís Companys, Barcelona',
+            kickoffTime: '2026-08-23T19:00:00Z',
+            status: 'FINISHED',
+            homeScore: 2,
+            awayScore: 1,
+            featured: true
+        },
+        {
+            id: 'LALIGA_MW1_SEV_ATM',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'SEV',
+            awayClub: 'ATM',
+            matchweek: 1,
+            venue: 'Ramón Sánchez-Pizjuán, Seville',
+            kickoffTime: '2026-08-24T19:30:00Z',
+            status: 'FINISHED',
+            homeScore: 1,
+            awayScore: 2,
+            featured: false
+        },
+        // MW 2
+        {
+            id: 'LALIGA_MW2_RMA_ATH',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'RMA',
+            awayClub: 'ATH',
+            matchweek: 2,
+            venue: 'Santiago Bernabéu, Madrid',
+            kickoffTime: '2026-08-28T19:30:00Z',
+            status: 'FINISHED',
+            homeScore: 3,
+            awayScore: 0,
+            featured: true
+        },
+        // MW 4
         {
             id: 'LALIGA_MW4_RMA_SEV',
             league: 'LALIGA',
@@ -231,6 +302,7 @@ async function updateTeamsWithInjuriesAndFixtures() {
             awayScore: 0,
             featured: true
         },
+        // MW 5
         {
             id: 'LALIGA_MW5_FCB_SEV',
             league: 'LALIGA',
@@ -246,6 +318,21 @@ async function updateTeamsWithInjuriesAndFixtures() {
             featured: false
         },
         {
+            id: 'LALIGA_MW5_ATH_ATM',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'ATH',
+            awayClub: 'ATM',
+            matchweek: 5,
+            venue: 'San Mamés, Bilbao',
+            kickoffTime: '2026-09-16T19:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: true
+        },
+        // MW 8
+        {
             id: 'LALIGA_MW8_ATM_RMA',
             league: 'LALIGA',
             leagueName: 'La Liga',
@@ -260,19 +347,35 @@ async function updateTeamsWithInjuriesAndFixtures() {
             featured: true
         },
         {
-            id: 'LALIGA_MW10_FCB_SEV',
+            id: 'LALIGA_MW8_ATH_SEV',
             league: 'LALIGA',
             leagueName: 'La Liga',
-            homeClub: 'FCB',
+            homeClub: 'ATH',
             awayClub: 'SEV',
-            matchweek: 10,
-            venue: 'Estadi Olímpic, Barcelona',
-            kickoffTime: '2026-10-20T19:00:00Z',
+            matchweek: 8,
+            venue: 'San Mamés, Bilbao',
+            kickoffTime: '2026-09-28T17:00:00Z',
             status: 'SCHEDULED',
             homeScore: 0,
             awayScore: 0,
             featured: false
         },
+        // MW 10
+        {
+            id: 'LALIGA_MW10_SEV_FCB',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'SEV',
+            awayClub: 'FCB',
+            matchweek: 10,
+            venue: 'Ramón Sánchez-Pizjuán, Seville',
+            kickoffTime: '2026-10-18T19:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: false
+        },
+        // MW 11
         {
             id: 'LALIGA_MW11_RMA_FCB',
             league: 'LALIGA',
@@ -287,6 +390,66 @@ async function updateTeamsWithInjuriesAndFixtures() {
             awayScore: 0,
             featured: true
         },
+        // MW 13
+        {
+            id: 'LALIGA_MW13_ATM_SEV',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'ATM',
+            awayClub: 'SEV',
+            matchweek: 13,
+            venue: 'Cívitas Metropolitano, Madrid',
+            kickoffTime: '2026-11-08T19:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: false
+        },
+        {
+            id: 'LALIGA_MW13_ATH_FCB',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'ATH',
+            awayClub: 'FCB',
+            matchweek: 13,
+            venue: 'San Mamés, Bilbao',
+            kickoffTime: '2026-11-09T20:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: true
+        },
+        // MW 15
+        {
+            id: 'LALIGA_MW15_ATH_RMA',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'ATH',
+            awayClub: 'RMA',
+            matchweek: 15,
+            venue: 'San Mamés, Bilbao',
+            kickoffTime: '2026-12-03T20:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: true
+        },
+        // MW 16
+        {
+            id: 'LALIGA_MW16_ATM_ATH',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'ATM',
+            awayClub: 'ATH',
+            matchweek: 16,
+            venue: 'Cívitas Metropolitano, Madrid',
+            kickoffTime: '2026-12-07T19:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: false
+        },
+        // MW 18
         {
             id: 'LALIGA_MW18_FCB_ATM',
             league: 'LALIGA',
@@ -302,19 +465,65 @@ async function updateTeamsWithInjuriesAndFixtures() {
             featured: true
         },
         {
+            id: 'LALIGA_MW18_SEV_ATH',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'SEV',
+            awayClub: 'ATH',
+            matchweek: 18,
+            venue: 'Ramón Sánchez-Pizjuán, Seville',
+            kickoffTime: '2026-12-21T18:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: false
+        },
+        // MW 20
+        {
+            id: 'LALIGA_MW20_SEV_RMA',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'SEV',
+            awayClub: 'RMA',
+            matchweek: 20,
+            venue: 'Ramón Sánchez-Pizjuán, Seville',
+            kickoffTime: '2027-01-17T19:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: true
+        },
+        // MW 23
+        {
             id: 'LALIGA_MW23_RMA_ATM',
             league: 'LALIGA',
             leagueName: 'La Liga',
             homeClub: 'RMA',
             awayClub: 'ATM',
             matchweek: 23,
-            venue: 'Santiago Bernabéu, Madrid',
+            venue: 'Santiago Bernabéu, Madrid (Madrid Derby)',
             kickoffTime: '2027-02-07T20:00:00Z',
             status: 'SCHEDULED',
             homeScore: 0,
             awayScore: 0,
             featured: true
         },
+        // MW 27
+        {
+            id: 'LALIGA_MW27_ATM_FCB',
+            league: 'LALIGA',
+            leagueName: 'La Liga',
+            homeClub: 'ATM',
+            awayClub: 'FCB',
+            matchweek: 27,
+            venue: 'Cívitas Metropolitano, Madrid',
+            kickoffTime: '2027-03-14T20:00:00Z',
+            status: 'SCHEDULED',
+            homeScore: 0,
+            awayScore: 0,
+            featured: true
+        },
+        // MW 35
         {
             id: 'LALIGA_MW35_FCB_RMA',
             league: 'LALIGA',
@@ -322,7 +531,7 @@ async function updateTeamsWithInjuriesAndFixtures() {
             homeClub: 'FCB',
             awayClub: 'RMA',
             matchweek: 35,
-            venue: 'Estadi Olímpic, Barcelona (El Clásico Leg 2)',
+            venue: 'Camp Nou / Estadi Olímpic, Barcelona (El Clásico)',
             kickoffTime: '2027-05-09T19:00:00Z',
             status: 'SCHEDULED',
             homeScore: 0,

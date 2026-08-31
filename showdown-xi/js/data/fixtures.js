@@ -80,6 +80,20 @@ const FIXTURES_DATA = [
         "featured": false
     },
     {
+        "id": "LALIGA_MW1_FCB_ATH",
+        "league": "LALIGA",
+        "leagueName": "La Liga",
+        "homeClub": "FCB",
+        "awayClub": "ATH",
+        "matchweek": 1,
+        "venue": "Estadi Olímpic Lluís Companys, Barcelona",
+        "kickoffTime": "2026-08-23T19:00:00Z",
+        "status": "FINISHED",
+        "homeScore": 2,
+        "awayScore": 1,
+        "featured": true
+    },
+    {
         "id": "PL_GW1_FUL_CHE",
         "fplFixtureId": 10,
         "league": "PL",
@@ -92,6 +106,20 @@ const FIXTURES_DATA = [
         "status": "FINISHED",
         "homeScore": 2,
         "awayScore": 3,
+        "featured": false
+    },
+    {
+        "id": "LALIGA_MW1_SEV_ATM",
+        "league": "LALIGA",
+        "leagueName": "La Liga",
+        "homeClub": "SEV",
+        "awayClub": "ATM",
+        "matchweek": 1,
+        "venue": "Ramón Sánchez-Pizjuán, Seville",
+        "kickoffTime": "2026-08-24T19:30:00Z",
+        "status": "FINISHED",
+        "homeScore": 1,
+        "awayScore": 2,
         "featured": false
     },
     {
@@ -108,6 +136,20 @@ const FIXTURES_DATA = [
         "homeScore": 1,
         "awayScore": 4,
         "featured": false
+    },
+    {
+        "id": "LALIGA_MW2_RMA_ATH",
+        "league": "LALIGA",
+        "leagueName": "La Liga",
+        "homeClub": "RMA",
+        "awayClub": "ATH",
+        "matchweek": 2,
+        "venue": "Santiago Bernabéu, Madrid",
+        "kickoffTime": "2026-08-28T19:30:00Z",
+        "status": "FINISHED",
+        "homeScore": 3,
+        "awayScore": 0,
+        "featured": true
     },
     {
         "id": "PL_GW2_LIV_NFO",
@@ -363,6 +405,20 @@ const FIXTURES_DATA = [
         "featured": false
     },
     {
+        "id": "LALIGA_MW5_ATH_ATM",
+        "league": "LALIGA",
+        "leagueName": "La Liga",
+        "homeClub": "ATH",
+        "awayClub": "ATM",
+        "matchweek": 5,
+        "venue": "San Mamés, Bilbao",
+        "kickoffTime": "2026-09-16T19:00:00Z",
+        "status": "SCHEDULED",
+        "homeScore": 0,
+        "awayScore": 0,
+        "featured": true
+    },
+    {
         "id": "PL_GW5_BRE_CHE",
         "fplFixtureId": 41,
         "league": "PL",
@@ -465,6 +521,20 @@ const FIXTURES_DATA = [
         "homeScore": 0,
         "awayScore": 0,
         "featured": true
+    },
+    {
+        "id": "LALIGA_MW8_ATH_SEV",
+        "league": "LALIGA",
+        "leagueName": "La Liga",
+        "homeClub": "ATH",
+        "awayClub": "SEV",
+        "matchweek": 8,
+        "venue": "San Mamés, Bilbao",
+        "kickoffTime": "2026-09-28T17:00:00Z",
+        "status": "SCHEDULED",
+        "homeScore": 0,
+        "awayScore": 0,
+        "featured": false
     },
     {
         "id": "PL_GW6_ARS_LEE",
@@ -602,6 +672,20 @@ const FIXTURES_DATA = [
         "featured": false
     },
     {
+        "id": "LALIGA_MW10_SEV_FCB",
+        "league": "LALIGA",
+        "leagueName": "La Liga",
+        "homeClub": "SEV",
+        "awayClub": "FCB",
+        "matchweek": 10,
+        "venue": "Ramón Sánchez-Pizjuán, Seville",
+        "kickoffTime": "2026-10-18T19:00:00Z",
+        "status": "SCHEDULED",
+        "homeScore": 0,
+        "awayScore": 0,
+        "featured": false
+    },
+    {
         "id": "PL_GW7_TOT_COV",
         "fplFixtureId": 70,
         "league": "PL",
@@ -611,20 +695,6 @@ const FIXTURES_DATA = [
         "matchweek": 7,
         "venue": "Spurs Ground",
         "kickoffTime": "2026-10-19T19:00:00Z",
-        "status": "SCHEDULED",
-        "homeScore": 0,
-        "awayScore": 0,
-        "featured": false
-    },
-    {
-        "id": "LALIGA_MW10_FCB_SEV",
-        "league": "LALIGA",
-        "leagueName": "La Liga",
-        "homeClub": "FCB",
-        "awayClub": "SEV",
-        "matchweek": 10,
-        "venue": "Estadi Olímpic, Barcelona",
-        "kickoffTime": "2026-10-20T19:00:00Z",
         "status": "SCHEDULED",
         "homeScore": 0,
         "awayScore": 0,
@@ -870,6 +940,34 @@ const FIXTURES_DATA = [
         "featured": false
     },
     {
+        "id": "LALIGA_MW13_ATM_SEV",
+        "league": "LALIGA",
+        "leagueName": "La Liga",
+        "homeClub": "ATM",
+        "awayClub": "SEV",
+        "matchweek": 13,
+        "venue": "Cívitas Metropolitano, Madrid",
+        "kickoffTime": "2026-11-08T19:00:00Z",
+        "status": "SCHEDULED",
+        "homeScore": 0,
+        "awayScore": 0,
+        "featured": false
+    },
+    {
+        "id": "LALIGA_MW13_ATH_FCB",
+        "league": "LALIGA",
+        "leagueName": "La Liga",
+        "homeClub": "ATH",
+        "awayClub": "FCB",
+        "matchweek": 13,
+        "venue": "San Mamés, Bilbao",
+        "kickoffTime": "2026-11-09T20:00:00Z",
+        "status": "SCHEDULED",
+        "homeScore": 0,
+        "awayScore": 0,
+        "featured": true
+    },
+    {
         "id": "PL_GW11_CHE_LEE",
         "fplFixtureId": 104,
         "league": "PL",
@@ -1110,6 +1208,20 @@ const FIXTURES_DATA = [
         "featured": false
     },
     {
+        "id": "LALIGA_MW15_ATH_RMA",
+        "league": "LALIGA",
+        "leagueName": "La Liga",
+        "homeClub": "ATH",
+        "awayClub": "RMA",
+        "matchweek": 15,
+        "venue": "San Mamés, Bilbao",
+        "kickoffTime": "2026-12-03T20:00:00Z",
+        "status": "SCHEDULED",
+        "homeScore": 0,
+        "awayScore": 0,
+        "featured": true
+    },
+    {
         "id": "PL_GW14_BRE_MCI",
         "fplFixtureId": 133,
         "league": "PL",
@@ -1168,6 +1280,20 @@ const FIXTURES_DATA = [
         "homeScore": 0,
         "awayScore": 0,
         "featured": true
+    },
+    {
+        "id": "LALIGA_MW16_ATM_ATH",
+        "league": "LALIGA",
+        "leagueName": "La Liga",
+        "homeClub": "ATM",
+        "awayClub": "ATH",
+        "matchweek": 16,
+        "venue": "Cívitas Metropolitano, Madrid",
+        "kickoffTime": "2026-12-07T19:00:00Z",
+        "status": "SCHEDULED",
+        "homeScore": 0,
+        "awayScore": 0,
+        "featured": false
     },
     {
         "id": "PL_GW15_ARS_BOU",
@@ -1317,6 +1443,20 @@ const FIXTURES_DATA = [
         "homeScore": 0,
         "awayScore": 0,
         "featured": true
+    },
+    {
+        "id": "LALIGA_MW18_SEV_ATH",
+        "league": "LALIGA",
+        "leagueName": "La Liga",
+        "homeClub": "SEV",
+        "awayClub": "ATH",
+        "matchweek": 18,
+        "venue": "Ramón Sánchez-Pizjuán, Seville",
+        "kickoffTime": "2026-12-21T18:00:00Z",
+        "status": "SCHEDULED",
+        "homeScore": 0,
+        "awayScore": 0,
+        "featured": false
     },
     {
         "id": "PL_GW17_COV_CHE",
@@ -1754,6 +1894,20 @@ const FIXTURES_DATA = [
         "featured": false
     },
     {
+        "id": "LALIGA_MW20_SEV_RMA",
+        "league": "LALIGA",
+        "leagueName": "La Liga",
+        "homeClub": "SEV",
+        "awayClub": "RMA",
+        "matchweek": 20,
+        "venue": "Ramón Sánchez-Pizjuán, Seville",
+        "kickoffTime": "2027-01-17T19:00:00Z",
+        "status": "SCHEDULED",
+        "homeScore": 0,
+        "awayScore": 0,
+        "featured": true
+    },
+    {
         "id": "PL_GW22_ARS_NEW",
         "fplFixtureId": 211,
         "league": "PL",
@@ -1970,7 +2124,7 @@ const FIXTURES_DATA = [
         "homeClub": "RMA",
         "awayClub": "ATM",
         "matchweek": 23,
-        "venue": "Santiago Bernabéu, Madrid",
+        "venue": "Santiago Bernabéu, Madrid (Madrid Derby)",
         "kickoffTime": "2027-02-07T20:00:00Z",
         "status": "SCHEDULED",
         "homeScore": 0,
@@ -2366,6 +2520,20 @@ const FIXTURES_DATA = [
         "homeScore": 0,
         "awayScore": 0,
         "featured": false
+    },
+    {
+        "id": "LALIGA_MW27_ATM_FCB",
+        "league": "LALIGA",
+        "leagueName": "La Liga",
+        "homeClub": "ATM",
+        "awayClub": "FCB",
+        "matchweek": 27,
+        "venue": "Cívitas Metropolitano, Madrid",
+        "kickoffTime": "2027-03-14T20:00:00Z",
+        "status": "SCHEDULED",
+        "homeScore": 0,
+        "awayScore": 0,
+        "featured": true
     },
     {
         "id": "PL_GW30_ARS_SUN",
@@ -2824,7 +2992,7 @@ const FIXTURES_DATA = [
         "homeClub": "FCB",
         "awayClub": "RMA",
         "matchweek": 35,
-        "venue": "Estadi Olímpic, Barcelona (El Clásico Leg 2)",
+        "venue": "Camp Nou / Estadi Olímpic, Barcelona (El Clásico)",
         "kickoffTime": "2027-05-09T19:00:00Z",
         "status": "SCHEDULED",
         "homeScore": 0,
