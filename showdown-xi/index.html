@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Showdown XI - Match Clash Fantasy (EPL & La Liga)</title>
+    <meta name="description" content="Pick your Best 11 5 hours before kickoff in authentic Premier League and La Liga clashes. Compete against friends in real-time with official FPL scoring.">
+
+    <!-- Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/pitch.css">
+    <link rel="stylesheet" href="css/components.css">
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#090D16">
+</head>
+<body>
+
+    <!-- Full-Screen Auth Login Overlay -->
+    <div class="auth-screen-overlay" id="authScreenOverlay">
+        <div class="auth-card">
+            <div class="auth-brand">
+                <span class="auth-logo-icon">⚽⚡</span>
+                <h2>SHOWDOWN XI</h2>
+                <p>Premier League & La Liga Match Clash Fantasy</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button class="auth-tab-btn active" id="tabBtnLogin">Login</button>
+                <button class="auth-tab-btn" id="tabBtnRegister">Request Access</button>
+            </div>
+
+            <!-- Login Form Panel -->
+            <form id="loginForm" class="auth-form-panel active">
+                <div class="auth-form-group">
+                    <label>Username</label>
+                    <input type="text" id="loginUsername" placeholder="e.g. jj7758" required autocomplete="username">
+                </div>
+                <div class="auth-form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                    Sign In
+                </button>
+                <div class="quick-admin-fill" id="btnQuickLoginAdmin">
+                    <span>👑 Quick Login as Admin (jj7758)</span>
+                </div>
+            </form>
+
+            <!-- Register / Request Access Form Panel -->
+            <form id="registerForm" class="auth-form-panel">
+                <div class="auth-form-group">
+                    <label>Desired Username</label>
+                    <input type="text" id="regUsername" placeholder="e.g. alex_fpl" required>
+                </div>
+                <div class="auth-form-group">
+                    <label>Display Name / Manager Name</label>
+                    <input type="text" id="regDisplayName" placeholder="e.g. Alex Ferguson" required>
+                </div>
+                <div class="auth-form-group">
+                    <label>Password</label>
+                    <input type="password" id="regPassword" placeholder="Create password" required>
+                </div>
+                <div class="auth-notice">
+                    ℹ️ New registrations are reviewed by the commissioner (<strong>jj7758</strong>). You will be approved before entering rooms.
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                    Submit for Approval
+                </button>
+            </form>
+
+            <div class="auth-error-msg" id="authErrorMsg"></div>
+        </div>
+    </div>
+
+    <!-- Main App Header -->
+    <header class="app-header">
+        <div class="brand-container">
+            <span class="brand-logo-icon">⚽⚡</span>
+            <div>
+                <h1 class="brand-title">SHOWDOWN XI</h1>
+                <p class="brand-tagline">Official Clashes • 5h Deadline • FPL Pointing</p>
+            </div>
+        </div>
+
+        <div class="header-right-actions">
+            <button class="btn btn-secondary btn-sm" id="btnSyncFPL" title="Fetch live stats & form from Official FPL API">
+                ⚡ Sync Live Data
+            </button>
+            <button class="btn btn-warning btn-sm" id="btnOpenAdminPanel" style="display: none;">
+                👑 Admin Panel <span class="admin-badge-count" id="adminPendingBadge">0</span>
+            </button>
+            <div id="userProfileHeader"></div>
+            <button class="btn btn-secondary btn-sm" id="btnOpenJoinRoomModal">
+                🔑 Join Room
+            </button>
+            <button class="btn btn-primary btn-sm" id="btnOpenCreateRoomModal">
+                ➕ New Room
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btnLogoutBtn" title="Logout">
+                🚪 Logout
+            </button>
+        </div>
+    </header>
+
+    <!-- Fixtures Carousel Strip -->
+    <section class="fixtures-strip-section">
+        <div class="fixtures-header">
+            <div class="fixtures-main-tabs">
+                <button class="fixture-view-tab active" data-view-status="UPCOMING">⏳ Upcoming Matches</button>
+                <button class="fixture-view-tab" data-view-status="FINISHED">🏁 Finished Matches</button>
+            </div>
+            <div class="league-filter-tabs">
+                <button class="league-filter-btn active" data-league="ALL">All</button>
+                <button class="league-filter-btn" data-league="PL">Premier League</button>
+                <button class="league-filter-btn" data-league="LALIGA">La Liga</button>
+            </div>
+        </div>
+        <div class="fixtures-scroll-container" id="fixturesListContainer">
+            <!-- Populated dynamically by app.js -->
+        </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="main-nav-tabs-wrapper">
+        <div class="nav-tabs-container">
+            <button class="nav-tab-btn active" data-tab="pitch">
+                ⚽ Tactical Pitch
+            </button>
+            <button class="nav-tab-btn" data-tab="matchCenter">
+                ⏱️ Match Center
+            </button>
+            <button class="nav-tab-btn" data-tab="leaderboard">
+                🏆 Room Standings
+            </button>
+            <button class="nav-tab-btn" data-tab="rules">
+                📖 FPL Rules
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main App Content Panels -->
+    <main class="main-app-content">
+
+        <!-- Tab 1: Tactical Pitch & Best 11 Squad Builder -->
+        <section class="tab-content-panel active" id="tab-pitch">
+            <div id="pitchBuilderSection">
+                <!-- Injected by pitchBuilder.js -->
+            </div>
+        </section>
+
+        <!-- Tab 2: Match Center & Live Countdown -->
+        <section class="tab-content-panel" id="tab-matchCenter">
+            <div id="matchCenterSection">
+                <!-- Injected by matchCenter.js -->
+            </div>
+        </section>
+
+        <!-- Tab 3: Room Standings & Squad Duels -->
+        <section class="tab-content-panel" id="tab-leaderboard">
+            <div id="leaderboardSection">
+                <!-- Injected by leaderboard.js -->
+            </div>
+        </section>
+
+        <!-- Tab 4: Official FPL Rules Matrix -->
+        <section class="tab-content-panel" id="tab-rules">
+            <div class="rules-grid">
+                <div class="rule-card">
+                    <h3>⏱️ The 5-Hour Lock Rule</h3>
+                    <ul class="rule-list">
+                        <li><span>Lock Deadline:</span> <span class="rule-pts">Kickoff - 5 Hours</span></li>
+                        <li><span>Opponent Lineups:</span> <span class="rule-pts">Hidden before lock</span></li>
+                        <li><span>Live Reveal:</span> <span class="rule-pts">Revealed upon lock</span></li>
+                        <li><span>Substitutions:</span> <span class="rule-pts">Locked after 5h</span></li>
+                    </ul>
+                </div>
+
+                <div class="rule-card">
+                    <h3>⚽ Goal & Assist Scoring</h3>
+                    <ul class="rule-list">
+                        <li><span>Forward Goal:</span> <span class="rule-pts">+4 pts</span></li>
+                        <li><span>Midfielder Goal:</span> <span class="rule-pts">+5 pts</span></li>
+                        <li><span>Defender / GK Goal:</span> <span class="rule-pts">+6 pts</span></li>
+                        <li><span>Any Assist:</span> <span class="rule-pts">+3 pts</span></li>
+                        <li><span>Captain Multiplier:</span> <span class="rule-pts">2x Total</span></li>
+                    </ul>
+                </div>
+
+                <div class="rule-card">
+                    <h3>🛡️ Defense & Goalkeeping</h3>
+                    <ul class="rule-list">
+                        <li><span>Clean Sheet (DEF/GK, 60+m):</span> <span class="rule-pts">+4 pts</span></li>
+                        <li><span>Clean Sheet (MID, 60+m):</span> <span class="rule-pts">+1 pt</span></li>
+                        <li><span>Every 3 Saves (GK):</span> <span class="rule-pts">+1 pt</span></li>
+                        <li><span>Penalty Save:</span> <span class="rule-pts">+5 pts</span></li>
+                        <li><span>Every 2 Goals Conceded:</span> <span class="rule-pts" style="color:#EF4444">-1 pt</span></li>
+                    </ul>
+                </div>
+
+                <div class="rule-card">
+                    <h3>⚠️ Discipline & Deductions</h3>
+                    <ul class="rule-list">
+                        <li><span>Playing 1 - 59 mins:</span> <span class="rule-pts">+1 pt</span></li>
+                        <li><span>Playing 60+ mins:</span> <span class="rule-pts">+2 pts</span></li>
+                        <li><span>Yellow Card:</span> <span class="rule-pts" style="color:#EF4444">-1 pt</span></li>
+                        <li><span>Red Card:</span> <span class="rule-pts" style="color:#EF4444">-3 pts</span></li>
+                        <li><span>Penalty Miss / Own Goal:</span> <span class="rule-pts" style="color:#EF4444">-2 pts</span></li>
+                        <li><span>Bonus Points (BPS):</span> <span class="rule-pts">+1 to +3 pts</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: Commissioner Admin Panel -->
+    <div class="app-modal" id="adminPanelModal">
+        <div class="modal-dialog admin-dialog">
+            <div class="modal-header">
+                <h3>👑 Commissioner User Management</h3>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            
+            <div class="admin-panel-content">
+                <!-- Pending Approvals Section -->
+                <div class="admin-section">
+                    <h4>⏳ Pending User Approvals (<span id="adminPendingCount">0</span>)</h4>
+                    <div class="admin-user-list" id="adminPendingList">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Add New User Directly -->
+                <div class="admin-section">
+                    <h4>➕ Create Pre-Approved User</h4>
+                    <div class="admin-add-user-row">
+                        <input type="text" id="adminAddUsername" placeholder="Username (e.g. david7)">
+                        <input type="text" id="adminAddDisplayName" placeholder="Display Name">
+                        <input type="password" id="adminAddPassword" placeholder="Password">
+                        <button class="btn btn-primary btn-sm" id="btnAdminAddUser">+ Add User</button>
+                    </div>
+                </div>
+
+                <!-- Active Approved Users -->
+                <div class="admin-section">
+                    <h4>👥 Approved Users Database</h4>
+                    <div class="admin-user-list" id="adminApprovedList">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Plain JSON Persistence Tools -->
+                <div class="admin-section">
+                    <h4>📄 Plain JSON Database (Git / Storage Sync)</h4>
+                    <p class="admin-json-help">Export or paste plain JSON to sync user credentials across devices and GitHub hosting.</p>
+                    <textarea id="adminUsersJsonTextarea" rows="6" style="width: 100%; font-family: monospace; font-size: 0.75rem; background: var(--bg-dark); color: #fff; border: 1px solid var(--border-glass); border-radius: var(--radius-sm); padding: 0.5rem;"></textarea>
+                    <div class="admin-json-actions">
+                        <button class="btn btn-secondary btn-sm" id="btnAdminExportJson">📋 Refresh / Copy JSON</button>
+                        <button class="btn btn-warning btn-sm" id="btnAdminImportJson">📥 Save / Import JSON</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Create Room -->
+    <div class="app-modal" id="createRoomModal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3>Create Showdown Room</h3>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-form-group">
+                <label>Room Name (Optional):</label>
+                <input type="text" id="newRoomNameInput" placeholder="e.g. London Derby Masterminds">
+            </div>
+            <button class="btn btn-primary" id="btnSubmitCreateRoom" style="width: 100%;">
+                Create & Generate Code
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal: Join Room -->
+    <div class="app-modal" id="joinRoomModal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3>Join Showdown Room</h3>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-form-group">
+                <label>Room Code:</label>
+                <input type="text" id="joinRoomCodeInput" placeholder="e.g. ARS-CHE-789" style="text-transform: uppercase;">
+            </div>
+            <button class="btn btn-primary" id="btnSubmitJoinRoom" style="width: 100%;">
+                Join Room
+            </button>
+        </div>
+    </div>
+
+    <!-- Application Scripts -->
+    <script src="js/auth/authManager.js"></script>
+    <script src="js/data/teams.js"></script>
+    <script src="js/data/fixtures.js"></script>
+    <script src="js/engine/scoring.js"></script>
+    <script src="js/engine/apiSync.js"></script>
+    <script src="js/multiplayer/roomManager.js"></script>
+    <script src="js/ui/pitchBuilder.js"></script>
+    <script src="js/ui/leaderboard.js"></script>
+    <script src="js/ui/matchCenter.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

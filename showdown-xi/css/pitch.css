@@ -1,0 +1,779 @@
+/**
+ * Showdown XI - Tactical 2D Football Pitch & Bottom Player Dock Styles
+ * Lawn grass textures, pitch geometry, player cutout photos, responsive bottom player dock & mobile swipe.
+ */
+
+.pitch-builder-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* Match Banner */
+.builder-match-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-lg);
+    padding: 1.2rem 1.8rem;
+}
+
+.banner-club {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.banner-club.away {
+    justify-content: flex-end;
+}
+
+.banner-crest-img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+}
+
+.club-meta h3 {
+    font-size: 1.3rem;
+    font-weight: 800;
+}
+
+.club-role {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+}
+
+.banner-vs-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.vs-pill {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: var(--text-muted);
+}
+
+.lock-status-chip {
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.3rem 0.8rem;
+    border-radius: var(--radius-full);
+}
+
+.status-open {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--primary-green);
+    border: 1px solid var(--primary-green);
+}
+
+.status-locked {
+    background: rgba(239, 68, 68, 0.15);
+    color: #F87171;
+    border: 1px solid var(--danger-red);
+}
+
+/* Controls Bar */
+.builder-controls-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1.2rem;
+}
+
+.formation-select-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.formation-select-group select {
+    background: var(--bg-surface-elevated);
+    color: #fff;
+    border: 1px solid var(--border-glass);
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.builder-actions-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Stats Info Bar */
+.squad-stats-bar {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.stat-pill {
+    flex: 1;
+    min-width: 130px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.pill-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+}
+
+.pill-val {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.pill-val.valid {
+    color: var(--primary-green);
+}
+
+.pill-val.pending {
+    color: var(--gold-accent);
+}
+
+.pill-val.highlight {
+    color: var(--gold-accent);
+}
+
+.pill-val.highlight-green {
+    color: var(--primary-green);
+}
+
+.pill-val.over-budget {
+    color: #F87171;
+    font-weight: 900;
+    text-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
+/* 2D Realistic Stadium Pitch Container */
+.pitch-container {
+    position: relative;
+    width: 100%;
+    max-width: 860px;
+    margin: 0 auto;
+    border-radius: var(--radius-lg);
+    padding: 1.5rem 1rem;
+    background: #0d3b1e url('../assets/pitch_turf.jpg') center center / 100% 100% no-repeat;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), inset 0 0 50px rgba(0, 0, 0, 0.6);
+    border: 3px solid rgba(255, 255, 255, 0.25);
+    overflow: hidden;
+}
+
+/* Pitch Field Ambient Sheen & Rows Wrapper */
+.pitch-field {
+    position: relative;
+    width: 100%;
+    min-height: 560px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.06) 0%, rgba(0, 0, 0, 0.25) 100%);
+    border-radius: var(--radius-md);
+}
+
+/* Pitch Rows */
+.pitch-row {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    z-index: 2;
+    padding: 0.25rem 0;
+}
+
+/* Player Slot Nodes */
+.pitch-player-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s ease, filter 0.2s ease, border-color 0.2s ease;
+    user-select: none;
+}
+
+.pitch-player-slot:hover {
+    transform: translateY(-4px) scale(1.05);
+}
+
+.pitch-player-slot.is-dragging {
+    opacity: 0.4;
+    transform: scale(0.95);
+}
+
+.pitch-player-slot.drag-hover {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 16px var(--primary-green));
+}
+
+.pitch-player-slot.slot-highlighted {
+    animation: slotGlow 1.2s infinite alternate;
+}
+
+@keyframes slotGlow {
+    from { filter: drop-shadow(0 0 4px var(--gold-accent)); transform: scale(1.04); }
+    to { filter: drop-shadow(0 0 14px var(--gold-accent)); transform: scale(1.08); }
+}
+
+.pitch-player-slot.empty {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    border: 2px dashed rgba(255, 255, 255, 0.45);
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.pitch-player-slot.empty:hover, .pitch-player-slot.empty.drag-hover {
+    border-color: var(--primary-green);
+    background: rgba(16, 185, 129, 0.3);
+}
+
+.empty-slot-plus {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.empty-slot-label {
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Filled Slot with Official Cutout Photos */
+.player-photo-container {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.6) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.player-pitch-photo {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 50%;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+.player-fallback-kit {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    color: #fff;
+    font-size: 0.85rem;
+}
+
+.player-club-mini-crest {
+    position: absolute;
+    bottom: -3px;
+    left: -3px;
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 50%;
+    padding: 1px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.captain-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--gold-accent);
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: 900;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+    box-shadow: 0 0 8px var(--gold-glow);
+    z-index: 5;
+}
+
+.vc-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #3B82F6;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 900;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+    z-index: 5;
+}
+
+.player-slot-meta {
+    background: rgba(9, 13, 22, 0.88);
+    backdrop-filter: blur(8px);
+    border-radius: var(--radius-sm);
+    padding: 0.2rem 0.45rem;
+    margin-top: 0.25rem;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+    min-width: 68px;
+}
+
+.slot-player-name {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 76px;
+}
+
+.slot-player-price {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: var(--primary-green);
+}
+
+/* Quick Actions Overlay */
+.slot-actions-overlay {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    gap: 0.25rem;
+    background: rgba(0, 0, 0, 0.95);
+    padding: 0.2rem 0.3rem;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-glass);
+    z-index: 10;
+}
+
+.pitch-player-slot:hover .slot-actions-overlay {
+    display: flex;
+}
+
+.btn-slot-action {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    font-size: 0.65rem;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-slot-action.cap {
+    background: var(--gold-accent);
+    color: #000;
+}
+
+.btn-slot-action.vc {
+    background: #3B82F6;
+    color: #fff;
+}
+
+.btn-slot-action.remove {
+    background: var(--danger-red);
+    color: #fff;
+}
+
+/* =========================================================================
+   BOTTOM PLAYER DOCK (Responsive Persistent Tray)
+   ========================================================================= */
+.bottom-player-dock {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.dock-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    border-bottom: 1px solid var(--border-glass);
+    padding-bottom: 0.6rem;
+}
+
+.dock-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dock-main-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.dock-hint {
+    font-size: 0.72rem;
+    color: var(--gold-accent);
+    font-weight: 600;
+}
+
+.dock-filter-pills {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+
+.dock-filter-btn {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-glass);
+    background: var(--bg-surface-elevated);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.dock-filter-btn:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.dock-filter-btn.active {
+    background: var(--primary-green);
+    color: #000;
+    border-color: var(--primary-green);
+}
+
+.dock-sep {
+    color: var(--border-glass);
+    margin: 0 0.2rem;
+}
+
+/* Horizontal Scrollable Players Track */
+.dock-players-track {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding: 0.4rem 0.2rem;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+.dock-players-track::-webkit-scrollbar {
+    height: 6px;
+}
+
+.dock-players-track::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.dock-players-track::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+/* Individual Dock Player Card */
+.dock-player-card {
+    flex: 0 0 115px;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: grab;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+    user-select: none;
+}
+
+.dock-player-card:active {
+    cursor: grabbing;
+}
+
+.dock-player-card:hover {
+    border-color: var(--primary-green);
+    transform: translateY(-2px);
+}
+
+.dock-player-card.is-picked {
+    opacity: 0.45;
+    background: rgba(0, 0, 0, 0.3);
+    cursor: default;
+}
+
+.dock-card-top {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    pointer-events: none;
+}
+
+.dock-player-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    pointer-events: none;
+    -webkit-user-drag: none;
+}
+
+.dock-fallback-kit {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    color: #fff;
+    font-size: 0.8rem;
+    pointer-events: none;
+}
+
+.dock-club-crest {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 50%;
+    padding: 1px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+}
+
+.dock-pos-badge {
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    font-size: 0.55rem;
+    font-weight: 900;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    color: #fff;
+    background: #374151;
+    pointer-events: none;
+}
+
+.dock-pos-badge.gk { background: #D97706; }
+.dock-pos-badge.def { background: #2563EB; }
+.dock-pos-badge.mid { background: #059669; }
+.dock-pos-badge.fwd { background: #DC2626; }
+
+.dock-player-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    pointer-events: none;
+}
+
+.dock-pname {
+    font-size: 0.76rem;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 105px;
+    text-align: center;
+}
+
+/* Injury & Suspension Status Tags in Dock */
+.dock-status-tag {
+    font-size: 0.58rem;
+    font-weight: 900;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    margin: 0.15rem 0;
+    text-align: center;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.tag-injured {
+    background: rgba(239, 68, 68, 0.25);
+    color: #F87171;
+    border: 1px solid var(--danger-red);
+}
+
+.tag-suspended {
+    background: rgba(249, 115, 22, 0.25);
+    color: #FB923C;
+    border: 1px solid #F97316;
+}
+
+.tag-doubtful {
+    background: rgba(245, 158, 11, 0.25);
+    color: var(--gold-accent);
+    border: 1px solid var(--gold-accent);
+}
+
+.dock-player-card.card-injured {
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+.dock-player-card.card-suspended {
+    border-color: rgba(249, 115, 22, 0.4);
+}
+
+/* Pitch Slot Injury Badges */
+.injury-slot-badge, .suspended-slot-badge, .doubtful-slot-badge {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    font-size: 0.65rem;
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 50%;
+    padding: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    z-index: 6;
+}
+
+.dock-pstats {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+    padding: 0 0.2rem;
+}
+
+.dock-card-action {
+    width: 100%;
+    margin-top: 0.2rem;
+}
+
+.btn-dock-add {
+    width: 100%;
+    background: rgba(16, 185, 129, 0.18);
+    color: var(--primary-green);
+    border: 1px solid var(--primary-green);
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 0.25rem 0;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-dock-add:hover {
+    background: var(--primary-green);
+    color: #000;
+}
+
+.dock-badge-picked {
+    display: block;
+    text-align: center;
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: var(--text-dim);
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.2rem 0;
+    border-radius: 4px;
+}
+
+.dock-empty {
+    padding: 1.5rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: center;
+    width: 100%;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .dock-main-title {
+        font-size: 0.9rem;
+    }
+    .dock-hint {
+        display: none;
+    }
+    .dock-player-card {
+        flex: 0 0 100px;
+        padding: 0.5rem 0.35rem;
+    }
+    .dock-card-top {
+        width: 38px;
+        height: 38px;
+    }
+    .dock-pname {
+        font-size: 0.72rem;
+        max-width: 90px;
+    }
+}

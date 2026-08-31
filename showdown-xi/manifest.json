@@ -1,0 +1,21 @@
+{
+  "name": "Showdown XI - Match Clash Fantasy",
+  "short_name": "Showdown XI",
+  "description": "Pick your Best 11 5 hours before kickoff in marquee Premier League and La Liga clashes.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#090D16",
+  "theme_color": "#10B981",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
