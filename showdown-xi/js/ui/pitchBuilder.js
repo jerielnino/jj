@@ -318,7 +318,7 @@ class PitchBuilderUI {
                 slotCard.setAttribute('data-slot-index', slotIdx);
                 slotCard.setAttribute('data-slot-pos', row.pos);
 
-                // Setup Drag & Drop
+                // Setup Drag & Drop (Desktop + Mobile Touch)
                 if (!this.isLocked) {
                     if (assignedPlayer) {
                         slotCard.setAttribute('draggable', 'true');
@@ -333,6 +333,7 @@ class PitchBuilderUI {
                             slotCard.classList.remove('is-dragging');
                             this.clearDragOverStates();
                         });
+                        this.bindTouchDraggable(slotCard, assignedPlayer, slotIdx);
                     }
 
                     slotCard.addEventListener('dragover', (e) => {
@@ -507,34 +508,48 @@ class PitchBuilderUI {
             `;
         }).join('');
 
-        // Bind drag listener to dock cards
+        // Bind drag & touch listeners to dock cards
         track.querySelectorAll('.dock-player-card').forEach(card => {
+            const pId = card.getAttribute('data-dock-player-id');
+            const player = getPlayerById(pId);
+            if (!player) return;
+
+            // HTML5 Drag
             card.addEventListener('dragstart', (e) => {
-                const pId = card.getAttribute('data-dock-player-id');
-                const player = getPlayerById(pId);
-                if (player) {
-                    this.draggedPlayer = player;
-                    this.draggedSourceSlotIdx = null;
-                    e.dataTransfer.setData('text/plain', pId);
-                    e.dataTransfer.effectAllowed = 'move';
-                    card.classList.add('is-dragging');
-                }
+                this.draggedPlayer = player;
+                this.draggedSourceSlotIdx = null;
+                e.dataTransfer.setData('text/plain', pId);
+                e.dataTransfer.effectAllowed = 'move';
+                card.classList.add('is-dragging');
             });
 
             card.addEventListener('dragend', () => {
                 card.classList.remove('is-dragging');
                 this.clearDragOverStates();
             });
+
+            // Mobile Touch Drag Support
+            this.bindTouchDraggable(card, player, null);
         });
 
-        // Bind Click / Add button
-        track.querySelectorAll('[data-add-player-id]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const pId = btn.getAttribute('data-add-player-id');
-                const player = getPlayerById(pId);
-                if (player) {
-                    this.autoAssignPlayer(player);
+        // Bind Click / Tap on player card
+        track.querySelectorAll('.dock-player-card').forEach(card => {
+            const pId = card.getAttribute('data-dock-player-id');
+            const player = getPlayerById(pId);
+            if (!player) return;
+
+            card.addEventListener('click', () => {
+                if (this.isLocked) return;
+                const isPicked = this.selectedPlayers.some(p => p && p.id === player.id);
+                if (isPicked) {
+                    // Highlight their slot on the pitch
+                    const slotIdx = this.selectedPlayers.findIndex(p => p && p.id === player.id);
+                    if (slotIdx !== -1) {
+                        this.selectSlot(slotIdx, player.pos);
+                    }
+                    return;
                 }
+                this.autoAssignPlayer(player);
             });
         });
     }
@@ -549,12 +564,28 @@ class PitchBuilderUI {
 
         this.renderPitch();
         this.renderBottomDock();
+
+        const dock = document.getElementById('bottomPlayerDock');
+        if (dock) {
+            dock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     }
 
     handleDropOnSlot(player, targetSlotIdx, targetSlotPos) {
         // STRICT POSITION VALIDATION
         if (player.pos !== targetSlotPos) {
             alert(`⚠️ Position Mismatch!\n\n${player.name} is a ${player.pos} and can ONLY be placed in a ${player.pos} slot.`);
+            return;
+        }
+
+        // MAXIMUM 6 PLAYERS FROM A TEAM LIMIT
+        const targetExistingPlayer = this.selectedPlayers[targetSlotIdx];
+        const isSameClubReplacement = targetExistingPlayer && targetExistingPlayer.club === player.club;
+        const currentClubPicks = this.selectedPlayers.filter(p => p && p.club === player.club && p.id !== player.id).length;
+
+        if (currentClubPicks >= 6 && !isSameClubReplacement) {
+            const clubName = TEAMS_DATA[player.club]?.name || player.club;
+            alert(`⚠️ Club Limit Exceeded!\n\nA maximum of 6 players from ${clubName} can be selected.\n\nYou already have ${currentClubPicks} ${clubName} players in your Best 11.`);
             return;
         }
 
@@ -605,7 +636,7 @@ class PitchBuilderUI {
     autoAssignPlayer(player) {
         const slotPositions = this.getSlotPositionsArray();
 
-        // If user tapped on a specific slot earlier
+        // 1. If user previously tapped on a specific slot on the pitch
         if (this.highlightedSlotIdx !== null) {
             const targetPos = slotPositions[this.highlightedSlotIdx];
             if (targetPos === player.pos) {
@@ -614,14 +645,33 @@ class PitchBuilderUI {
             }
         }
 
-        // Find first empty slot matching exact position
+        // 2. Find first empty slot matching exact position
         const matchingEmptyIdx = slotPositions.findIndex((pos, idx) => pos === player.pos && !this.selectedPlayers[idx]);
         if (matchingEmptyIdx !== -1) {
             this.handleDropOnSlot(player, matchingEmptyIdx, player.pos);
             return;
         }
 
-        alert(`⚠️ All ${player.pos} slots are already full!\n\nTap on an existing ${player.pos} on the pitch to replace them, or choose a different player.`);
+        // 3. If all slots for this position are full, allow 1-click replacement
+        const currentPosPlayers = [];
+        slotPositions.forEach((pos, idx) => {
+            if (pos === player.pos && this.selectedPlayers[idx]) {
+                currentPosPlayers.push({ idx, player: this.selectedPlayers[idx] });
+            }
+        });
+
+        if (currentPosPlayers.length > 0) {
+            const optionsStr = currentPosPlayers.map((item, i) => `${i + 1}. Replace ${item.player.webName || item.player.name} (£${item.player.price}m, ${item.player.club})`).join('\n');
+            const choice = prompt(`⚠️ All ${player.pos} slots are full in your Best 11.\n\nWho would you like to replace with ${player.name} (£${player.price}m)?\n\n${optionsStr}\n\nEnter number (1-${currentPosPlayers.length}) or click Cancel:`);
+            if (choice) {
+                const choiceNum = parseInt(choice.trim(), 10);
+                if (!isNaN(choiceNum) && choiceNum >= 1 && choiceNum <= currentPosPlayers.length) {
+                    const chosenSlot = currentPosPlayers[choiceNum - 1];
+                    this.handleDropOnSlot(player, chosenSlot.idx, player.pos);
+                    return;
+                }
+            }
+        }
     }
 
     removePlayer(slotIdx) {
@@ -656,16 +706,47 @@ class PitchBuilderUI {
         const fitPlayers = allPlayers.filter(p => p.status !== 'i' && p.status !== 's');
         const pool = fitPlayers.length >= 11 ? fitPlayers : allPlayers;
 
-        const gks = pool.filter(p => p.pos === 'GK').sort((a, b) => b.form - a.form);
-        const defs = pool.filter(p => p.pos === 'DEF').sort((a, b) => b.form - a.form);
-        const mids = pool.filter(p => p.pos === 'MID').sort((a, b) => b.form - a.form);
-        const fwds = pool.filter(p => p.pos === 'FWD').sort((a, b) => b.form - a.form);
+        const homeCode = this.activeFixture.homeClub;
+        const awayCode = this.activeFixture.awayClub;
+
+        let homeCount = 0;
+        let awayCount = 0;
+        const picked = [];
+
+        const tryPick = (posGroup, maxCount) => {
+            const sorted = [...posGroup].sort((a, b) => b.form - a.form);
+            const selected = [];
+            for (const p of sorted) {
+                if (selected.length >= maxCount) break;
+                if (p.club === homeCode && homeCount >= 6) continue;
+                if (p.club === awayCode && awayCount >= 6) continue;
+
+                selected.push(p);
+                if (p.club === homeCode) homeCount++;
+                if (p.club === awayCode) awayCount++;
+            }
+            // If still unfilled, pick remaining available
+            for (const p of sorted) {
+                if (selected.length >= maxCount) break;
+                if (!selected.some(s => s.id === p.id)) {
+                    selected.push(p);
+                    if (p.club === homeCode) homeCount++;
+                    if (p.club === awayCode) awayCount++;
+                }
+            }
+            return selected;
+        };
+
+        const gks = pool.filter(p => p.pos === 'GK');
+        const defs = pool.filter(p => p.pos === 'DEF');
+        const mids = pool.filter(p => p.pos === 'MID');
+        const fwds = pool.filter(p => p.pos === 'FWD');
 
         this.selectedPlayers = [
-            ...gks.slice(0, config.GK),
-            ...defs.slice(0, config.DEF),
-            ...mids.slice(0, config.MID),
-            ...fwds.slice(0, config.FWD)
+            ...tryPick(gks, config.GK),
+            ...tryPick(defs, config.DEF),
+            ...tryPick(mids, config.MID),
+            ...tryPick(fwds, config.FWD)
         ];
 
         while (this.selectedPlayers.length < 11) {
@@ -684,6 +765,83 @@ class PitchBuilderUI {
         this.updateStatsBar();
     }
 
+    bindTouchDraggable(element, player, sourceSlotIdx = null) {
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isDragging = false;
+        let ghostEl = null;
+
+        element.addEventListener('touchstart', (e) => {
+            if (this.isLocked) return;
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            isDragging = false;
+        }, { passive: true });
+
+        element.addEventListener('touchmove', (e) => {
+            if (this.isLocked) return;
+            const touch = e.touches[0];
+            const dx = Math.abs(touch.clientX - touchStartX);
+            const dy = Math.abs(touch.clientY - touchStartY);
+
+            if (!isDragging && (dx > 12 || dy > 12)) {
+                isDragging = true;
+                this.draggedPlayer = player;
+                this.draggedSourceSlotIdx = sourceSlotIdx;
+
+                ghostEl = document.createElement('div');
+                ghostEl.className = 'touch-drag-ghost';
+                ghostEl.innerHTML = `
+                    <div class="ghost-inner">
+                        <img src="${player.photo || ''}" class="ghost-img">
+                        <span class="ghost-badge">${player.pos}</span>
+                    </div>
+                `;
+                document.body.appendChild(ghostEl);
+            }
+
+            if (isDragging) {
+                // Prevent browser screen scrolling while actively dragging a player!
+                e.preventDefault();
+                if (ghostEl) {
+                    ghostEl.style.left = `${touch.clientX - 35}px`;
+                    ghostEl.style.top = `${touch.clientY - 35}px`;
+                }
+
+                // Highlight slot under touch point
+                const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+                const slot = targetEl?.closest('.pitch-player-slot');
+                document.querySelectorAll('.pitch-player-slot').forEach(s => s.classList.remove('drag-hover'));
+                if (slot) slot.classList.add('drag-hover');
+            }
+        }, { passive: false });
+
+        element.addEventListener('touchend', (e) => {
+            if (ghostEl) {
+                ghostEl.remove();
+                ghostEl = null;
+            }
+            if (isDragging) {
+                const touch = e.changedTouches[0];
+                const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+                const slot = targetEl?.closest('.pitch-player-slot');
+                document.querySelectorAll('.pitch-player-slot').forEach(s => s.classList.remove('drag-hover'));
+
+                if (slot) {
+                    const slotIdx = parseInt(slot.getAttribute('data-slot-index'), 10);
+                    const slotPos = slot.getAttribute('data-slot-pos');
+                    if (!isNaN(slotIdx) && slotPos) {
+                        this.handleDropOnSlot(player, slotIdx, slotPos);
+                    }
+                }
+                isDragging = false;
+                this.draggedPlayer = null;
+                this.draggedSourceSlotIdx = null;
+            }
+        });
+    }
+
     clearDragOverStates() {
         document.querySelectorAll('.pitch-player-slot, .dock-player-card').forEach(s => s.classList.remove('drag-hover', 'is-dragging'));
     }
@@ -700,6 +858,7 @@ class PitchBuilderUI {
 
         const homeCount = this.selectedPlayers.filter(p => p && p.club === this.activeFixture.homeClub).length;
         const awayCount = this.selectedPlayers.filter(p => p && p.club === this.activeFixture.awayClub).length;
+        const isClubLimitExceeded = homeCount > 6 || awayCount > 6;
 
         bar.innerHTML = `
             <div class="stat-pill">
@@ -715,8 +874,8 @@ class PitchBuilderUI {
                 <span class="pill-val ${remainingBudget < 0 ? 'over-budget' : 'highlight-green'}">£${remainingBudget.toFixed(1)}m</span>
             </div>
             <div class="stat-pill">
-                <span class="pill-label">Club Split</span>
-                <span class="pill-val">${this.activeFixture.homeClub} (${homeCount}) : ${this.activeFixture.awayClub} (${awayCount})</span>
+                <span class="pill-label">Club Split (Max 6)</span>
+                <span class="pill-val ${isClubLimitExceeded ? 'over-budget' : ''}">${this.activeFixture.homeClub} (${homeCount}/6) : ${this.activeFixture.awayClub} (${awayCount}/6)</span>
             </div>
             <div class="stat-pill">
                 <span class="pill-label">Captain (2x)</span>
@@ -738,6 +897,13 @@ class PitchBuilderUI {
             return;
         }
 
+        const homeCount = validPlayers.filter(p => p.club === this.activeFixture.homeClub).length;
+        const awayCount = validPlayers.filter(p => p.club === this.activeFixture.awayClub).length;
+        if (homeCount > 6 || awayCount > 6) {
+            alert(`⚠️ Club Limit Exceeded!\n\nA maximum of 6 players from either team can be selected.\n\nCurrent Split: ${this.activeFixture.homeClub} (${homeCount}) : ${this.activeFixture.awayClub} (${awayCount}).\n\nPlease adjust your picks so no club exceeds 6 players.`);
+            return;
+        }
+
         const totalPrice = validPlayers.reduce((sum, p) => sum + p.price, 0);
         if (totalPrice > 100.0) {
             alert(`⚠️ Budget Limit Exceeded!\n\nYour squad total value is £${totalPrice.toFixed(1)}m, which exceeds the £100.0m maximum budget limit by £${(totalPrice - 100.0).toFixed(1)}m.\n\nPlease replace higher-priced players to keep your squad under £100.0m.`);
@@ -755,7 +921,7 @@ class PitchBuilderUI {
 
         if (window.roomManager && window.roomManager.currentRoom) {
             window.roomManager.submitSquad(window.roomManager.currentRoom.code, squadData);
-            alert('🎉 Best 11 Squad (Within £100.0m budget) saved and locked to room successfully!');
+            alert('🎉 Best 11 Squad (Within £100.0m budget & max 6/team) saved and locked to room successfully!');
         } else {
             alert('Squad saved locally! Join or create a room to challenge friends.');
         }

@@ -83,16 +83,6 @@ class ShowdownApp {
             });
         }
 
-        // Quick login as admin button
-        const btnQuickAdmin = document.getElementById('btnQuickLoginAdmin');
-        if (btnQuickAdmin) {
-            btnQuickAdmin.addEventListener('click', () => {
-                document.getElementById('loginUsername').value = 'jj7758';
-                document.getElementById('loginPassword').value = 'foot4life';
-                formLogin.dispatchEvent(new Event('submit'));
-            });
-        }
-
         // Login form submit
         if (formLogin) {
             formLogin.addEventListener('submit', (e) => {

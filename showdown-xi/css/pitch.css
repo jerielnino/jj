@@ -554,8 +554,15 @@
     user-select: none;
 }
 
+.dock-player-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--primary-green);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
 .dock-player-card:active {
     cursor: grabbing;
+    transform: scale(0.96);
 }
 
 .dock-player-card:hover {
@@ -758,22 +765,171 @@
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-    .dock-main-title {
-        font-size: 0.9rem;
+    .builder-match-banner {
+        padding: 0.75rem 0.8rem;
+        gap: 0.4rem;
     }
+
+    .banner-crest-img {
+        width: 34px;
+        height: 34px;
+    }
+
+    .club-meta h3 {
+        font-size: 0.85rem;
+    }
+
+    .banner-vs-center .vs-pill {
+        font-size: 0.75rem;
+        padding: 0.15rem 0.45rem;
+    }
+
+    .lock-status-chip {
+        font-size: 0.62rem;
+        padding: 0.15rem 0.4rem;
+    }
+
+    .builder-controls-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+
+    .builder-actions-group {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .builder-actions-group .btn {
+        flex: 1;
+        padding: 0.4rem 0.2rem;
+        font-size: 0.72rem;
+    }
+
+    .squad-stats-bar {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.4rem;
+    }
+
+    .stat-pill {
+        padding: 0.45rem 0.6rem;
+    }
+
+    .pill-label {
+        font-size: 0.62rem;
+    }
+
+    .pill-val {
+        font-size: 0.85rem;
+    }
+
+    .pitch-container {
+        padding: 0.75rem 0.25rem;
+        border-width: 2px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+    }
+
+    .pitch-field {
+        min-height: 460px;
+        padding: 0.2rem 0;
+    }
+
+    .pitch-row {
+        padding: 0.15rem 0;
+    }
+
+    .player-photo-container {
+        width: 42px;
+        height: 42px;
+    }
+
+    .player-pitch-photo, .player-fallback-kit {
+        width: 38px;
+        height: 38px;
+        font-size: 0.72rem;
+    }
+
+    .pitch-player-slot.empty {
+        width: 42px;
+        height: 42px;
+    }
+
+    .empty-slot-plus {
+        font-size: 0.95rem;
+    }
+
+    .empty-slot-label {
+        font-size: 0.58rem;
+    }
+
+    .player-slot-meta {
+        padding: 0.12rem 0.3rem;
+        min-width: 54px;
+        margin-top: 0.15rem;
+    }
+
+    .slot-player-name {
+        font-size: 0.62rem;
+        max-width: 54px;
+    }
+
+    .slot-player-price {
+        font-size: 0.55rem;
+    }
+
+    .dock-main-title {
+        font-size: 0.85rem;
+    }
+
     .dock-hint {
         display: none;
     }
+
+    .dock-filter-pills {
+        gap: 0.25rem;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        width: 100%;
+        padding-bottom: 2px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .dock-filter-btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.68rem;
+        flex-shrink: 0;
+    }
+
+    .dock-players-track {
+        gap: 0.45rem;
+        padding-bottom: 0.4rem;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x;
+    }
+
     .dock-player-card {
-        flex: 0 0 100px;
-        padding: 0.5rem 0.35rem;
+        flex: 0 0 92px;
+        padding: 0.45rem 0.3rem;
     }
+
     .dock-card-top {
-        width: 38px;
-        height: 38px;
+        width: 36px;
+        height: 36px;
     }
+
     .dock-pname {
-        font-size: 0.72rem;
-        max-width: 90px;
+        font-size: 0.68rem;
+        max-width: 82px;
+    }
+
+    .dock-pstats {
+        font-size: 0.65rem;
+    }
+
+    .btn-dock-add {
+        font-size: 0.62rem;
+        padding: 0.2rem 0;
     }
 }

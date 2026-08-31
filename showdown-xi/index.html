@@ -48,9 +48,6 @@
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
                     Sign In
                 </button>
-                <div class="quick-admin-fill" id="btnQuickLoginAdmin">
-                    <span>👑 Quick Login as Admin (jj7758)</span>
-                </div>
             </form>
 
             <!-- Register / Request Access Form Panel -->
@@ -91,20 +88,20 @@
 
         <div class="header-right-actions">
             <button class="btn btn-secondary btn-sm" id="btnSyncFPL" title="Fetch live stats & form from Official FPL API">
-                ⚡ Sync Live Data
+                <span class="btn-icon">⚡</span><span class="btn-text">Sync</span>
             </button>
-            <button class="btn btn-warning btn-sm" id="btnOpenAdminPanel" style="display: none;">
-                👑 Admin Panel <span class="admin-badge-count" id="adminPendingBadge">0</span>
+            <button class="btn btn-warning btn-sm" id="btnOpenAdminPanel" style="display: none;" title="Admin Commissioner Panel">
+                <span class="btn-icon">👑</span><span class="btn-text">Admin</span><span class="admin-badge-count" id="adminPendingBadge">0</span>
             </button>
             <div id="userProfileHeader"></div>
-            <button class="btn btn-secondary btn-sm" id="btnOpenJoinRoomModal">
-                🔑 Join Room
+            <button class="btn btn-secondary btn-sm" id="btnOpenJoinRoomModal" title="Join League Room">
+                <span class="btn-icon">🔑</span><span class="btn-text">Join</span>
             </button>
-            <button class="btn btn-primary btn-sm" id="btnOpenCreateRoomModal">
-                ➕ New Room
+            <button class="btn btn-primary btn-sm" id="btnOpenCreateRoomModal" title="Create New League Room">
+                <span class="btn-icon">➕</span><span class="btn-text">New Room</span>
             </button>
             <button class="btn btn-secondary btn-sm" id="btnLogoutBtn" title="Logout">
-                🚪 Logout
+                <span class="btn-icon">🚪</span><span class="btn-text">Logout</span>
             </button>
         </div>
     </header>
@@ -213,6 +210,17 @@
                         <li><span>Red Card:</span> <span class="rule-pts" style="color:#EF4444">-3 pts</span></li>
                         <li><span>Penalty Miss / Own Goal:</span> <span class="rule-pts" style="color:#EF4444">-2 pts</span></li>
                         <li><span>Bonus Points (BPS):</span> <span class="rule-pts">+1 to +3 pts</span></li>
+                    </ul>
+                </div>
+
+                <div class="rule-card">
+                    <h3>👥 Squad Selection Constraints</h3>
+                    <ul class="rule-list">
+                        <li><span>Squad Size:</span> <span class="rule-pts">Exact 11 Players</span></li>
+                        <li><span>Max Budget:</span> <span class="rule-pts">£100.0M Limit</span></li>
+                        <li><span>Max Players per Club:</span> <span class="rule-pts">Max 6 Players</span></li>
+                        <li><span>Captain Multiplier:</span> <span class="rule-pts">2x Match Points</span></li>
+                        <li><span>Vice-Captain:</span> <span class="rule-pts">Backup 2x</span></li>
                     </ul>
                 </div>
             </div>
