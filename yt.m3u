@@ -28,5 +28,5 @@ http://127.0.0.1:6095/stream?url=https://www.youtube.com/@drmsportstvnetwork/liv
 #EXTINF:-1 tvg-id="Hindi 24/7" tvg-logo="" group-title="Music",Hindi 24/7
 http://127.0.0.1:6095/stream?url=www.youtube.com/live/CKWFeepKqDA?si=ryUtXbJpbHY6K5mn
 
-#EXTINF:-1 tvg-id="Malayalam 24/7" tvg-logo="" group-title="Music",Malayalam 24/7
+#EXTINF:-1 tvg-id="Spotify 24/7" tvg-logo="" group-title="Music",Spotify 24/7
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/live/gTFH010_w4I?si=dCVbyskqkeqfOWLM
