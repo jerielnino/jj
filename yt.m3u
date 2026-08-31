@@ -1,4 +1,4 @@
-#EXTM3U
+dee#EXTM3U
 #EXT-X-VERSION:3
 
 #EXTINF:-1 tvg-id="AsianetNews" tvg-logo="https://yt3.googleusercontent.com/8eItmjbOfJwot8wd0-19KgtvF2ztf4np2qIVfJ1kMPv1ADi6wx9giU62B1j6xO0Ug2Idrqbncg=s160-c-k-c0x00ffffff-no-rj" group-title="Malayalam",Asianet News
@@ -26,4 +26,4 @@ http://127.0.0.1:6095/stream?url=https://www.youtube.com/@News18Kerala/live
 http://127.0.0.1:6095/stream?url=https://www.youtube.com/@drmsportstvnetwork/live
 
 #EXTINF:-1 tvg-id="Hindi 24/7" tvg-logo="" group-title="Music",Hindi 24/7
-http://127.0.0.1:6095/stream?url=https://www.youtube.com/@dilharmony/live
+http://127.0.0.1:6095/stream?url=www.youtube.com/live/CKWFeepKqDA?si=ryUtXbJpbHY6K5mn
