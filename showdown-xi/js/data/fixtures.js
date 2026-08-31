@@ -1,6 +1,6 @@
 /**
  * Showdown XI - Official Comprehensive Fixtures Schedule
- * Chronologically sorted schedule with 5h deadline computation.
+ * Chronologically sorted schedule with 5h deadline computation in IST.
  */
 
 const FIXTURES_DATA = [
@@ -181,7 +181,7 @@ const FIXTURES_DATA = [
         "kickoffTime": "2026-08-31T19:00:00Z",
         "status": "LIVE",
         "homeScore": 0,
-        "awayScore": 0,
+        "awayScore": 1,
         "featured": false
     },
     {
@@ -3123,7 +3123,15 @@ function getMatchDeadlineInfo(kickoffIsoString) {
 
     const kickoffDate = new Date(kickoff);
     const lockDate = new Date(lockTime);
-    const dateOptions = { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+    const dateOptions = {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Kolkata'
+    };
 
     return {
         status,
@@ -3136,8 +3144,8 @@ function getMatchDeadlineInfo(kickoffIsoString) {
         msUntilKickoff: Math.max(0, msUntilKickoff),
         formattedLockCountdown: formatMilliseconds(Math.max(0, msUntilLock)),
         formattedKickoffCountdown: formatMilliseconds(Math.max(0, msUntilKickoff)),
-        lockDateStr: lockDate.toLocaleDateString('en-GB', dateOptions),
-        kickoffDateStr: kickoffDate.toLocaleDateString('en-GB', dateOptions)
+        lockDateStr: lockDate.toLocaleDateString('en-IN', dateOptions) + ' IST',
+        kickoffDateStr: kickoffDate.toLocaleDateString('en-IN', dateOptions) + ' IST'
     };
 }
 

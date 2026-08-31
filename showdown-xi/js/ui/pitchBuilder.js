@@ -161,6 +161,9 @@ class PitchBuilderUI {
                         <div class="lock-status-chip ${this.isLocked ? 'status-locked' : 'status-open'}">
                             ${this.isLocked ? '🔒 SQUAD LOCKED (5h Deadline)' : '🟢 PICKS OPEN'}
                         </div>
+                        <div class="banner-kickoff-ist" title="Match Kickoff in Indian Standard Time">
+                            <span>📅 ${deadlineInfo.kickoffDateStr}</span>
+                        </div>
                     </div>
                     <div class="banner-club away">
                         <div class="club-meta" style="text-align: right;">
@@ -372,7 +375,7 @@ class PitchBuilderUI {
 
                     slotCard.innerHTML = `
                         <div class="player-photo-container">
-                            <img src="${assignedPlayer.photo || ''}" alt="${assignedPlayer.name}" class="player-pitch-photo" draggable="false" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <img src="${assignedPlayer.photo || ''}" alt="${assignedPlayer.name}" class="player-pitch-photo" draggable="false" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                             <div class="player-fallback-kit" style="display:none; background: linear-gradient(135deg, ${team.primaryColor}, ${team.secondaryColor || team.primaryColor})">
                                 <span>${assignedPlayer.number || assignedPlayer.pos}</span>
                             </div>
@@ -382,6 +385,7 @@ class PitchBuilderUI {
                             ${isInjured ? '<span class="injury-slot-badge" title="Injured: ' + (assignedPlayer.news || '') + '">🚑</span>' : ''}
                             ${isSuspended ? '<span class="suspended-slot-badge" title="Suspended: ' + (assignedPlayer.news || '') + '">🚫</span>' : ''}
                             ${isDoubtful ? '<span class="doubtful-slot-badge" title="Doubtful (' + assignedPlayer.chance + '%): ' + (assignedPlayer.news || '') + '">⚠️</span>' : ''}
+                            ${!this.isLocked ? `<button class="slot-remove-badge" data-remove-idx="${slotIdx}" title="Remove ${assignedPlayer.webName || assignedPlayer.name} from Best 11">&times;</button>` : ''}
                         </div>
                         <div class="player-slot-meta">
                             <div class="slot-player-name">${assignedPlayer.webName || assignedPlayer.name.split(' ').pop()}</div>
@@ -389,9 +393,9 @@ class PitchBuilderUI {
                         </div>
                         ${!this.isLocked ? `
                             <div class="slot-actions-overlay">
-                                <button class="btn-slot-action cap ${isCap ? 'active' : ''}" title="Captain (2x)" data-cap-id="${assignedPlayer.id}">C</button>
+                                <button class="btn-slot-action cap ${isCap ? 'active' : ''}" title="Captain (2x Points)" data-cap-id="${assignedPlayer.id}">C</button>
                                 <button class="btn-slot-action vc ${isVC ? 'active' : ''}" title="Vice-Captain" data-vc-id="${assignedPlayer.id}">V</button>
-                                <button class="btn-slot-action remove" title="Remove" data-remove-idx="${slotIdx}">&times;</button>
+                                <button class="btn-slot-action remove" title="Remove Player" data-remove-idx="${slotIdx}">&times;</button>
                             </div>
                         ` : ''}
                     `;
@@ -485,7 +489,7 @@ class PitchBuilderUI {
             return `
                 <div class="dock-player-card ${isPicked ? 'is-picked' : ''} ${isInjured ? 'card-injured' : ''} ${isSuspended ? 'card-suspended' : ''}" draggable="${!isPicked && !this.isLocked ? 'true' : 'false'}" data-dock-player-id="${player.id}">
                     <div class="dock-card-top">
-                        <img src="${player.photo || ''}" alt="${player.name}" class="dock-player-img" draggable="false" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <img src="${player.photo || ''}" alt="${player.name}" class="dock-player-img" draggable="false" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                         <div class="dock-fallback-kit" style="display:none; background: linear-gradient(135deg, ${team.primaryColor}, ${team.secondaryColor || team.primaryColor})">
                             <span>${player.number || player.pos}</span>
                         </div>
@@ -501,7 +505,7 @@ class PitchBuilderUI {
                         </div>
                     </div>
                     <div class="dock-card-action">
-                        ${isPicked ? '<span class="dock-badge-picked">IN 11</span>' : `<button class="btn-dock-add" data-add-player-id="${player.id}">+ ADD</button>`}
+                        ${isPicked ? `<button class="btn-dock-remove" data-remove-player-id="${player.id}" title="Click to remove ${player.name} from Best 11">✕ REMOVE</button>` : `<button class="btn-dock-add" data-add-player-id="${player.id}">+ ADD</button>`}
                     </div>
                 </div>
             `;
@@ -528,23 +532,29 @@ class PitchBuilderUI {
             });
         });
 
-        // Bind Click / Tap on player card
+        // Bind Click / Tap on player card or add/remove buttons
         track.querySelectorAll('.dock-player-card').forEach(card => {
             const pId = card.getAttribute('data-dock-player-id');
             const player = getPlayerById(pId);
             if (!player) return;
 
-            card.addEventListener('click', () => {
+            card.addEventListener('click', (e) => {
                 if (this.isLocked) return;
+
                 const isPicked = this.selectedPlayers.some(p => p && p.id === player.id);
-                if (isPicked) {
-                    // Highlight their slot on the pitch
+                const removeBtn = e.target.closest('.btn-dock-remove');
+                const addBtn = e.target.closest('.btn-dock-add');
+
+                // If clicking the remove button or clicking on an already-picked card (unless adding)
+                if (removeBtn || (isPicked && !addBtn)) {
                     const slotIdx = this.selectedPlayers.findIndex(p => p && p.id === player.id);
                     if (slotIdx !== -1) {
-                        this.selectSlot(slotIdx, player.pos);
+                        this.removePlayer(slotIdx);
                     }
                     return;
                 }
+
+                // If not picked, assign player to squad
                 this.autoAssignPlayer(player);
             });
         });
