@@ -49,18 +49,18 @@ function calculatePlayerFPLPoints(player, matchStats = {}, isCaptain = false, is
 
     const pos = player.pos || 'MID';
     const stats = {
-        minutes: matchStats.minutes ?? 90,
-        goals: matchStats.goals ?? 0,
-        assists: matchStats.assists ?? 0,
-        cleanSheet: matchStats.cleanSheet ?? false,
-        goalsConceded: matchStats.goalsConceded ?? 0,
-        saves: matchStats.saves ?? 0,
-        penSaves: matchStats.penSaves ?? 0,
-        penMisses: matchStats.penMisses ?? 0,
-        yellowCards: matchStats.yellowCards ?? 0,
-        redCards: matchStats.redCards ?? 0,
-        ownGoals: matchStats.ownGoals ?? 0,
-        bonus: matchStats.bonus ?? 0
+        minutes: matchStats?.minutes ?? 0,
+        goals: matchStats?.goals ?? 0,
+        assists: matchStats?.assists ?? 0,
+        cleanSheet: matchStats?.cleanSheet ?? false,
+        goalsConceded: matchStats?.goalsConceded ?? 0,
+        saves: matchStats?.saves ?? 0,
+        penSaves: matchStats?.penSaves ?? 0,
+        penMisses: matchStats?.penMisses ?? 0,
+        yellowCards: matchStats?.yellowCards ?? 0,
+        redCards: matchStats?.redCards ?? 0,
+        ownGoals: matchStats?.ownGoals ?? 0,
+        bonus: matchStats?.bonus ?? 0
     };
 
     const breakdown = [];
@@ -76,7 +76,7 @@ function calculatePlayerFPLPoints(player, matchStats = {}, isCaptain = false, is
             breakdown.push({ rule: 'Minutes (1-59)', pts: FPL_RULES.MINUTES.PARTIAL, desc: `Played ${stats.minutes} mins` });
         }
     } else {
-        breakdown.push({ rule: 'Did not play', pts: 0, desc: '0 minutes played' });
+        breakdown.push({ rule: 'Pre-Match / DNP', pts: 0, desc: '0 minutes played' });
         return { totalPoints: 0, basePoints: 0, multiplier: isCaptain ? 2 : 1, breakdown };
     }
 
@@ -198,12 +198,12 @@ function calculateSquadTotalPoints(squadPlayerIds = [], benchPlayerIds = [], cap
     const starterBreakdowns = [];
     const benchBreakdowns = [];
 
-    // Helper to get stats
-    const getStats = (pId) => matchLiveStatsMap[pId] || { minutes: 90 };
+    // Helper to get stats (returns null if match not started / no live stats)
+    const getStats = (pId) => (matchLiveStatsMap && matchLiveStatsMap[pId]) ? matchLiveStatsMap[pId] : null;
     const didPlay = (pId) => {
         if (!pId) return false;
         const stats = getStats(pId);
-        return (stats.minutes ?? 90) > 0;
+        return stats && (stats.minutes || 0) > 0;
     };
 
     // Check Captaincy: if Captain played 0 mins, Vice Captain receives 2x multiplier

@@ -194,22 +194,29 @@ function exportSavedSquadsFile() {
             const branch = (this.config.branch || 'main').trim();
             const token = this.config.token.trim();
             const filePath = this.getFilePath();
-            const apiUrl = `https://api.github.com/repos/${repo}/contents/${filePath}?ref=${branch}`;
 
-            // 1. Get current file sha from GitHub if exists
-            let currentSha = null;
-            try {
-                const getRes = await fetch(apiUrl, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/vnd.github+json'
+            // Helper to get latest uncached SHA directly from GitHub
+            const fetchLatestSha = async () => {
+                try {
+                    const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}?ref=${encodeURIComponent(branch)}&_t=${Date.now()}`, {
+                        cache: 'no-store',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/vnd.github+json',
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache'
+                        }
+                    });
+                    if (getRes.ok) {
+                        const getData = await getRes.json();
+                        return getData.sha || null;
                     }
-                });
-                if (getRes.ok) {
-                    const getData = await getRes.json();
-                    currentSha = getData.sha;
-                }
-            } catch (err) {}
+                } catch (err) {}
+                return null;
+            };
+
+            // 1. Get current file sha from GitHub
+            let currentSha = await fetchLatestSha();
 
             // 2. Encode UTF-8 content to Base64
             const contentString = this.generateFileContent();
@@ -220,21 +227,38 @@ function exportSavedSquadsFile() {
             }
             const base64Content = btoa(binary);
 
+            const commitPayload = (sha) => JSON.stringify({
+                message: `Update Showdown XI Squads & Rooms Database [${new Date().toISOString()}]`,
+                content: base64Content,
+                sha: sha || undefined,
+                branch: branch
+            });
+
             // 3. Commit file via GitHub Contents API
-            const putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+            let putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/vnd.github+json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    message: `Update Showdown XI Squads & Rooms Database [${new Date().toISOString()}]`,
-                    content: base64Content,
-                    sha: currentSha || undefined,
-                    branch: branch
-                })
+                body: commitPayload(currentSha)
             });
+
+            // 4. If SHA mismatch (409 Conflict / 422), automatically re-fetch latest SHA and retry once
+            if (!putRes.ok && (putRes.status === 409 || putRes.status === 422)) {
+                console.warn('SHA conflict detected, re-fetching latest commit SHA from GitHub...');
+                currentSha = await fetchLatestSha();
+                putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: commitPayload(currentSha)
+                });
+            }
 
             if (!putRes.ok) {
                 const errData = await putRes.json().catch(() => ({}));
