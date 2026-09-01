@@ -1,6 +1,6 @@
 /**
  * Showdown XI - Leaderboard & Standings UI
- * Live room standings with Match Score, Cumulative Total Score, and Squad Comparison.
+ * Overarching multi-match league standings with Active Match Score, Cumulative Total Score, and 15-player Squad Comparison.
  * 100% Real Registered Human Managers only.
  */
 
@@ -16,26 +16,33 @@ class LeaderboardUI {
         const container = document.getElementById('leaderboardSection');
         if (!container) return;
 
-        if (!room) {
+        if (!room || !room.code) {
             container.innerHTML = `
-                <div class="leaderboard-empty-state">
-                    <span class="empty-icon">🏆</span>
-                    <h3>No Active Showdown Room</h3>
-                    <p>Create or join a room code to battle real friends in real-time.</p>
+                <div class="leaderboard-card">
+                    <div class="leaderboard-empty-state-card">
+                        <div class="empty-icon-bubble">🏆</div>
+                        <h3>No Active Showdown League</h3>
+                        <p>Showdown leagues track your overall score across all Premier League & La Liga matches. Create a room for your friends or join an existing league with a room code!</p>
+                        <div class="empty-state-actions">
+                            <button class="btn btn-primary" id="btnEmptyCreateRoom">➕ Create New League Room</button>
+                            <button class="btn btn-secondary" id="btnEmptyJoinRoom">🔑 Join with Room Code</button>
+                        </div>
+                    </div>
                 </div>
             `;
+            this.bindEmptyStateEvents();
             return;
         }
 
-        const activeFixture = FIXTURES_DATA.find(f => f.id === room.fixtureId) || FIXTURES_DATA[0];
+        const activeFixture = window.app?.selectedFixture || FIXTURES_DATA[0];
         const deadlineInfo = getMatchDeadlineInfo(activeFixture.kickoffTime);
         const isLocked = deadlineInfo.isLocked;
 
-        // Clean any legacy bots
+        // Filter out legacy bots
         const realParticipants = (room.participants || []).filter(p => !p.isBot && !p.userId?.startsWith('bot_'));
 
         const calculated = realParticipants.map(p => {
-            const squad = p.squads ? p.squads[room.fixtureId] || p.squad : p.squad;
+            const squad = p.squads ? p.squads[activeFixture.id] || null : null;
             let matchScore = 0;
             let breakdown = null;
 
@@ -45,11 +52,11 @@ class LeaderboardUI {
                 breakdown = res;
             }
 
-            // Calculate cumulative total score across all fixture squads saved by this manager
+            // Calculate cumulative total score across all fixture squads saved by this manager in this room
             let cumulativeTotal = 0;
             if (p.squads) {
                 for (const fId in p.squads) {
-                    if (fId === room.fixtureId) {
+                    if (fId === activeFixture.id) {
                         cumulativeTotal += matchScore;
                     } else {
                         const s = p.squads[fId];
@@ -74,9 +81,9 @@ class LeaderboardUI {
 
         // Sort based on selected sort criteria
         if (this.sortBy === 'match') {
-            calculated.sort((a, b) => b.matchScore - a.matchScore);
+            calculated.sort((a, b) => b.matchScore - a.matchScore || b.totalScore - a.totalScore);
         } else {
-            calculated.sort((a, b) => b.totalScore - a.totalScore);
+            calculated.sort((a, b) => b.totalScore - a.totalScore || b.matchScore - a.matchScore);
         }
 
         const topTotal = calculated[0]?.totalScore || 0;
@@ -123,14 +130,14 @@ class LeaderboardUI {
                     <div class="room-stat-card highlight-gold">
                         <span class="stat-icon">👑</span>
                         <div class="stat-info">
-                            <span class="stat-label">Leader Total Score</span>
+                            <span class="stat-label">League Leader (Total)</span>
                             <span class="stat-num">${topTotal} pts</span>
                         </div>
                     </div>
                     <div class="room-stat-card highlight-green">
                         <span class="stat-icon">⚡</span>
                         <div class="stat-info">
-                            <span class="stat-label">Top Match Score</span>
+                            <span class="stat-label">Active Match Leader</span>
                             <span class="stat-num">${topMatch} pts</span>
                         </div>
                     </div>
@@ -154,10 +161,10 @@ class LeaderboardUI {
                 <div class="leaderboard-filter-strip">
                     <span class="filter-label">Sort Standings by:</span>
                     <button class="btn-sort-toggle ${this.sortBy === 'total' ? 'active' : ''}" id="btnSortTotal">
-                        ⭐ Overall Total Score
+                        ⭐ Overall Total Score (All Matches)
                     </button>
                     <button class="btn-sort-toggle ${this.sortBy === 'match' ? 'active' : ''}" id="btnSortMatch">
-                        ⚡ Active Match Score
+                        ⚡ Active Match Score (${activeFixture.homeClub} vs ${activeFixture.awayClub})
                     </button>
                 </div>
 
@@ -168,8 +175,8 @@ class LeaderboardUI {
                             <tr>
                                 <th>#</th>
                                 <th>Manager</th>
-                                <th>Formation</th>
-                                <th>Captain</th>
+                                <th>Active Formation</th>
+                                <th>Active Captain</th>
                                 <th>⚡ Match Score</th>
                                 <th>⭐ Total Score</th>
                                 <th>Action</th>
@@ -178,8 +185,8 @@ class LeaderboardUI {
                         <tbody>
                             ${calculated.length === 0 ? `
                                 <tr>
-                                    <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                                        No participants yet. Share the room code <strong>${room.code}</strong> with your friends to start!
+                                    <td colspan="7" style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+                                        No participants in this room yet. Share code <strong>${room.code}</strong> with friends to join!
                                     </td>
                                 </tr>
                             ` : calculated.map((part, idx) => {
@@ -201,7 +208,7 @@ class LeaderboardUI {
                                             </div>
                                         </td>
                                         <td class="formation-cell">
-                                            ${hasSquad ? (isLocked || isUser ? part.squad.formation : '🔒 Hidden') : '<span class="text-muted">Drafting...</span>'}
+                                            ${hasSquad ? (isLocked || isUser ? part.squad.formation : '🔒 Hidden') : '<span class="text-muted">No squad yet</span>'}
                                         </td>
                                         <td class="captain-cell">
                                             ${hasSquad && capPlayer ? (isLocked || isUser ? `
@@ -243,6 +250,22 @@ class LeaderboardUI {
         this.bindEvents(room, calculated);
     }
 
+    bindEmptyStateEvents() {
+        const btnCreate = document.getElementById('btnEmptyCreateRoom');
+        if (btnCreate) {
+            btnCreate.addEventListener('click', () => {
+                if (window.app) window.app.openModal('createRoomModal');
+            });
+        }
+
+        const btnJoin = document.getElementById('btnEmptyJoinRoom');
+        if (btnJoin) {
+            btnJoin.addEventListener('click', () => {
+                if (window.app) window.app.openModal('joinRoomModal');
+            });
+        }
+    }
+
     bindEvents(room, rankedParticipants) {
         const roomDropdown = document.getElementById('roomSelectDropdown');
         if (roomDropdown) {
@@ -251,15 +274,10 @@ class LeaderboardUI {
                 const targetRoom = window.roomManager.getRoom(selectedCode);
                 if (targetRoom) {
                     window.roomManager.currentRoom = targetRoom;
-                    const fixture = FIXTURES_DATA.find(f => f.id === targetRoom.fixtureId);
-                    if (fixture && window.app) {
-                        window.app.selectedFixture = fixture;
-                        localStorage.setItem('showdown_xi_last_fixture_id', fixture.id);
-                        window.pitchBuilder.init(fixture);
-                        window.matchCenterUI.init(fixture);
-                        window.app.renderFixturesSelector();
-                    }
-                    this.render(targetRoom);
+                    try {
+                        localStorage.setItem(window.roomManager.activeRoomCodeKey, targetRoom.code);
+                    } catch (err) {}
+                    this.render(targetRoom, window.matchSimulator?.livePlayerStats);
                 }
             });
         }
@@ -299,7 +317,7 @@ class LeaderboardUI {
         if (btnSortTotal) {
             btnSortTotal.addEventListener('click', () => {
                 this.sortBy = 'total';
-                this.render(this.activeRoom);
+                this.render(this.activeRoom, window.matchSimulator?.livePlayerStats);
             });
         }
 
@@ -307,7 +325,7 @@ class LeaderboardUI {
         if (btnSortMatch) {
             btnSortMatch.addEventListener('click', () => {
                 this.sortBy = 'match';
-                this.render(this.activeRoom);
+                this.render(this.activeRoom, window.matchSimulator?.livePlayerStats);
             });
         }
 
@@ -327,11 +345,12 @@ class LeaderboardUI {
         const content = document.getElementById('comparisonModalContent');
         if (!modal || !content) return;
 
+        const activeFixture = window.app?.selectedFixture || FIXTURES_DATA[0];
         const myProfile = window.roomManager.userProfile;
         const myParticipant = this.activeRoom.participants.find(p => p.userId === myProfile.id);
 
-        const targetSquad = targetParticipant.squad;
-        const mySquad = myParticipant?.squad;
+        const targetSquad = targetParticipant.squads ? targetParticipant.squads[activeFixture.id] || targetParticipant.squad : targetParticipant.squad;
+        const mySquad = myParticipant?.squads ? myParticipant.squads[activeFixture.id] || myParticipant.squad : myParticipant?.squad;
 
         const liveStatsMap = window.matchSimulator?.livePlayerStats || {};
         const squadBreakdown = calculateSquadTotalPoints(targetSquad?.playerIds || [], targetSquad?.benchIds || [], targetSquad?.captainId, targetSquad?.viceCaptainId, liveStatsMap);
@@ -387,7 +406,7 @@ class LeaderboardUI {
             <div class="comp-modal-header">
                 <div class="comp-title">
                     <h3>Tactical Breakdown: ${targetParticipant.name} (@${targetParticipant.userId})</h3>
-                    <p>Formation: <strong>${targetSquad?.formation || '4-3-3'}</strong> • Match Score: <strong>${targetParticipant.matchScore} pts</strong> • Total Score: <strong>${targetParticipant.totalScore} pts</strong> • Squad Cost: <strong>£${targetSquad?.totalPrice || '100.0'}m</strong></p>
+                    <p>Fixture: <strong>${activeFixture.homeClub} vs ${activeFixture.awayClub}</strong> • Formation: <strong>${targetSquad?.formation || '4-3-3'}</strong> • Match Score: <strong>${targetParticipant.matchScore} pts</strong> • League Total: <strong>${targetParticipant.totalScore} pts</strong></p>
                 </div>
                 <button class="drawer-close-btn" id="compCloseBtn">&times;</button>
             </div>

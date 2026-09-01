@@ -66,7 +66,7 @@ class GitSyncService {
  * This file is tracked in Git to provide permanent multiplayer rooms, user profiles, and squad rosters across all devices.
  */
 
-// 1. Permanent Default Rooms (Separated by Room Code and Fixture)
+// 1. Permanent Showdown League Rooms (Multi-Match Overarching Leagues)
 const SAVED_ROOMS_DATA = ${JSON.stringify(mergedRooms, null, 4)};
 
 // 2. Permanent User Squads (Separated by User ID -> Fixture ID -> Squad)
@@ -79,17 +79,6 @@ const SAVED_SQUADS_DATA = ${JSON.stringify(mergedSquads, null, 4)};
 function getGitRoom(roomCode) {
     if (typeof SAVED_ROOMS_DATA !== 'undefined' && SAVED_ROOMS_DATA[roomCode]) {
         return JSON.parse(JSON.stringify(SAVED_ROOMS_DATA[roomCode]));
-    }
-    return null;
-}
-
-function getGitRoomByFixture(fixtureId) {
-    if (typeof SAVED_ROOMS_DATA !== 'undefined') {
-        for (const code in SAVED_ROOMS_DATA) {
-            if (SAVED_ROOMS_DATA[code].fixtureId === fixtureId) {
-                return JSON.parse(JSON.stringify(SAVED_ROOMS_DATA[code]));
-            }
-        }
     }
     return null;
 }

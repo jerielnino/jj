@@ -26,6 +26,16 @@ class ShowdownApp {
         // Find default upcoming fixture
         this.initDefaultFixture();
         this.renderFixturesSelector();
+
+        // Check for URL room invite hash
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#room=')) {
+            const inviteCode = decodeURIComponent(hash.substring(6)).trim();
+            if (inviteCode && window.roomManager) {
+                window.roomManager.joinRoom(inviteCode);
+            }
+        }
+
         this.selectFixture(this.selectedFixture.id);
         this.renderUserProfileHeader();
         this.updateAdminHeaderButton();
@@ -171,7 +181,8 @@ class ShowdownApp {
             const authUsersOld = localStorage.getItem('showdown_xi_auth_users');
             const loggedUserOld = localStorage.getItem('showdown_xi_logged_user');
             const masterSquads = localStorage.getItem('showdown_xi_master_squads');
-            const rooms = localStorage.getItem('showdown_xi_rooms_v2');
+            const rooms = localStorage.getItem('showdown_xi_rooms_v3');
+            const activeRoomCode = localStorage.getItem('showdown_xi_active_room_code');
             const userProfile = localStorage.getItem('showdown_xi_user_profile');
             const lastFixture = localStorage.getItem('showdown_xi_last_fixture_id');
             const gitSyncConfig = localStorage.getItem('showdown_xi_github_sync_config');
@@ -190,7 +201,8 @@ class ShowdownApp {
             if (authUsersOld) localStorage.setItem('showdown_xi_auth_users', authUsersOld);
             if (loggedUserOld) localStorage.setItem('showdown_xi_logged_user', loggedUserOld);
             if (masterSquads) localStorage.setItem('showdown_xi_master_squads', masterSquads);
-            if (rooms) localStorage.setItem('showdown_xi_rooms_v2', rooms);
+            if (rooms) localStorage.setItem('showdown_xi_rooms_v3', rooms);
+            if (activeRoomCode) localStorage.setItem('showdown_xi_active_room_code', activeRoomCode);
             if (userProfile) localStorage.setItem('showdown_xi_user_profile', userProfile);
             if (lastFixture) localStorage.setItem('showdown_xi_last_fixture_id', lastFixture);
             if (gitSyncConfig) localStorage.setItem('showdown_xi_github_sync_config', gitSyncConfig);
@@ -215,8 +227,8 @@ class ShowdownApp {
             panel.classList.toggle('active', panel.id === `tab-${tabName}`);
         });
 
-        if (tabName === 'leaderboard' && window.roomManager && window.roomManager.currentRoom) {
-            window.leaderboardUI.render(window.roomManager.currentRoom);
+        if (tabName === 'leaderboard' && window.leaderboardUI) {
+            window.leaderboardUI.render(window.roomManager?.currentRoom, window.matchSimulator?.livePlayerStats);
         }
     }
 
@@ -292,18 +304,11 @@ class ShowdownApp {
         this.selectedFixture = fixture;
         localStorage.setItem('showdown_xi_last_fixture_id', fixture.id);
 
-        if (!window.roomManager.currentRoom || window.roomManager.currentRoom.fixtureId !== fixture.id) {
-            const existingRoom = window.roomManager.findRoomByFixture(fixture.id);
-            if (existingRoom) {
-                window.roomManager.currentRoom = existingRoom;
-            } else {
-                window.roomManager.createRoom(fixture.id);
-            }
-        }
-
         window.pitchBuilder.init(fixture);
         window.matchCenterUI.init(fixture);
-        window.leaderboardUI.render(window.roomManager.currentRoom);
+        if (window.leaderboardUI) {
+            window.leaderboardUI.render(window.roomManager?.currentRoom, window.matchSimulator?.livePlayerStats);
+        }
 
         this.renderFixturesSelector();
     }
@@ -510,10 +515,11 @@ class ShowdownApp {
             btnSubmitCreate.addEventListener('click', () => {
                 const nameInput = document.getElementById('newRoomNameInput');
                 const roomName = nameInput?.value?.trim() || null;
-                const room = window.roomManager.createRoom(this.selectedFixture.id, roomName);
+                const room = window.roomManager.createRoom(roomName);
+                if (nameInput) nameInput.value = '';
                 this.closeModal('createRoomModal');
                 this.switchTab('leaderboard');
-                alert(`✨ Room created!\nInvite Code: ${room.code}`);
+                alert(`✨ Showdown League Room created!\n\nRoom Name: ${room.name}\nInvite Code: ${room.code}\n\nShare this code with your friends to compete across all fixtures!`);
             });
         }
 
@@ -526,13 +532,14 @@ class ShowdownApp {
                     alert('Please enter a valid room code.');
                     return;
                 }
-                const room = window.roomManager.joinRoom(code);
-                if (room) {
-                    const fixture = FIXTURES_DATA.find(f => f.id === room.fixtureId);
-                    if (fixture) this.selectFixture(fixture.id);
+                const res = window.roomManager.joinRoom(code);
+                if (res.success) {
+                    if (codeInput) codeInput.value = '';
                     this.closeModal('joinRoomModal');
-                    this.switchTab('pitch');
-                    alert(`✅ Joined room: ${room.name}`);
+                    this.switchTab('leaderboard');
+                    alert(`✅ Successfully joined league: ${res.room.name}`);
+                } else {
+                    alert(res.message || 'Could not find or join room.');
                 }
             });
         }

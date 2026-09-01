@@ -99,9 +99,9 @@ class PitchBuilderUI {
 
         // 3. Check Current Room Participant Squad
         const currentRoom = window.roomManager ? window.roomManager.currentRoom : null;
-        if (currentRoom && currentRoom.fixtureId === fixtureId) {
+        if (currentRoom) {
             const userPart = currentRoom.participants?.find(p => p.userId === currentUserId) || currentRoom.participants?.[0];
-            const squad = userPart?.squads?.[fixtureId] || userPart?.squad;
+            const squad = userPart?.squads?.[fixtureId];
             if (squad && applySquadData(squad)) return;
         }
 
@@ -2106,11 +2106,13 @@ class PitchBuilderUI {
 
         this.saveMasterSquad(this.activeFixture.id, squadData);
 
-        if (window.roomManager && window.roomManager.currentRoom) {
-            window.roomManager.submitSquad(window.roomManager.currentRoom.code, squadData);
-            alert('🎉 15-Player Squad (First XI 6:5 Split + Bench 2:2 Split within £100.0m budget) saved & locked to room successfully!');
-        } else {
-            alert('🎉 15-Player Squad saved locally! Join or create a room to challenge friends.');
+        if (window.roomManager) {
+            window.roomManager.submitSquad(window.roomManager.currentRoom?.code || null, squadData, this.activeFixture.id);
+            if (window.roomManager.currentRoom) {
+                alert(`🎉 15-Player Squad saved & locked for ${this.activeFixture.homeClub} vs ${this.activeFixture.awayClub}!\nPoints are recorded to your active league (${window.roomManager.currentRoom.name}).`);
+            } else {
+                alert(`🎉 15-Player Squad saved locally for ${this.activeFixture.homeClub} vs ${this.activeFixture.awayClub}!\nCreate or join a league room to challenge friends.`);
+            }
         }
 
         this.autoSaveDraft();
