@@ -368,26 +368,59 @@ class PitchBuilderUI {
 
     selectPitchSlot(slotIdx, pos) {
         if (this.isLocked) return;
-        if (this.highlightedSlotIdx === slotIdx) {
-            this.highlightedSlotIdx = null;
+        const player = this.selectedPlayers[slotIdx];
+        if (player) {
+            this.showPlayerActionModal({
+                type: 'PITCH',
+                idx: slotIdx,
+                player: player,
+                pos: pos
+            });
         } else {
-            this.highlightedSlotIdx = slotIdx;
-            this.highlightedBenchIdx = null;
+            if (this.highlightedSlotIdx === slotIdx) {
+                this.highlightedSlotIdx = null;
+            } else {
+                this.highlightedSlotIdx = slotIdx;
+                this.highlightedBenchIdx = null;
+                // Auto-filter dock for easier mobile picking
+                this.selectedFilterPos = pos;
+                document.querySelectorAll('.dock-filter-btn[data-dock-pos]').forEach(b => {
+                    b.classList.toggle('active', b.getAttribute('data-dock-pos') === pos);
+                });
+                this.renderBottomDock();
+            }
+            this.renderPitch();
+            this.renderBench();
         }
-        this.renderPitch();
-        this.renderBench();
     }
 
     selectBenchSlot(benchIdx) {
         if (this.isLocked) return;
-        if (this.highlightedBenchIdx === benchIdx) {
-            this.highlightedBenchIdx = null;
+        const player = this.benchPlayers[benchIdx];
+        if (player) {
+            this.showPlayerActionModal({
+                type: 'BENCH',
+                idx: benchIdx,
+                player: player,
+                role: benchIdx === 0 ? 'GK SUB' : `SUB ${benchIdx}`
+            });
         } else {
-            this.highlightedBenchIdx = benchIdx;
-            this.highlightedSlotIdx = null;
+            if (this.highlightedBenchIdx === benchIdx) {
+                this.highlightedBenchIdx = null;
+            } else {
+                this.highlightedBenchIdx = benchIdx;
+                this.highlightedSlotIdx = null;
+                // Auto-filter dock
+                const reqPos = benchIdx === 0 ? 'GK' : 'ALL';
+                this.selectedFilterPos = reqPos;
+                document.querySelectorAll('.dock-filter-btn[data-dock-pos]').forEach(b => {
+                    b.classList.toggle('active', b.getAttribute('data-dock-pos') === reqPos);
+                });
+                this.renderBottomDock();
+            }
+            this.renderPitch();
+            this.renderBench();
         }
-        this.renderPitch();
-        this.renderBench();
     }
 
     renderPitch() {
@@ -458,8 +491,12 @@ class PitchBuilderUI {
                         }
                     });
 
-                    // Click / Tap to Highlight
-                    slotCard.addEventListener('click', () => {
+                    // Click / Tap on slot
+                    slotCard.addEventListener('click', (e) => {
+                        // Prevent triggering if clicked directly on a button inside
+                        if (e.target.closest('.slot-remove-badge') || e.target.closest('.btn-slot-action')) {
+                            return;
+                        }
                         this.selectPitchSlot(slotIdx, row.pos);
                     });
                 }
@@ -485,7 +522,7 @@ class PitchBuilderUI {
                             ${isInjured ? '<span class="injury-slot-badge" title="Injured: ' + (assignedPlayer.news || '') + '">🚑</span>' : ''}
                             ${isSuspended ? '<span class="suspended-slot-badge" title="Suspended: ' + (assignedPlayer.news || '') + '">🚫</span>' : ''}
                             ${isDoubtful ? '<span class="doubtful-slot-badge" title="Doubtful (' + assignedPlayer.chance + '%): ' + (assignedPlayer.news || '') + '">⚠️</span>' : ''}
-                            ${!this.isLocked ? `<button class="slot-remove-badge" data-remove-pitch-idx="${slotIdx}" title="Remove ${assignedPlayer.webName || assignedPlayer.name}">&times;</button>` : ''}
+                            ${!this.isLocked ? `<button type="button" class="slot-remove-badge" data-remove-pitch-idx="${slotIdx}" title="Remove ${assignedPlayer.webName || assignedPlayer.name}">&times;</button>` : ''}
                         </div>
                         <div class="player-slot-meta">
                             <div class="slot-player-name">${assignedPlayer.webName || assignedPlayer.name.split(' ').pop()}</div>
@@ -493,10 +530,10 @@ class PitchBuilderUI {
                         </div>
                         ${!this.isLocked ? `
                             <div class="slot-actions-overlay">
-                                <button class="btn-slot-action cap ${isCap ? 'active' : ''}" title="Captain (2x Points)" data-cap-id="${assignedPlayer.id}">C</button>
-                                <button class="btn-slot-action vc ${isVC ? 'active' : ''}" title="Vice-Captain" data-vc-id="${assignedPlayer.id}">V</button>
-                                <button class="btn-slot-action swap" title="Swap with Bench Player" data-swap-pitch-idx="${slotIdx}">⇄</button>
-                                <button class="btn-slot-action remove" title="Remove Player" data-remove-pitch-idx="${slotIdx}">&times;</button>
+                                <button type="button" class="btn-slot-action cap ${isCap ? 'active' : ''}" title="Captain (2x Points)" data-cap-id="${assignedPlayer.id}">C</button>
+                                <button type="button" class="btn-slot-action vc ${isVC ? 'active' : ''}" title="Vice-Captain" data-vc-id="${assignedPlayer.id}">V</button>
+                                <button type="button" class="btn-slot-action swap" title="Swap with Bench Player" data-swap-pitch-idx="${slotIdx}">⇄</button>
+                                <button type="button" class="btn-slot-action remove" title="Remove Player" data-remove-pitch-idx="${slotIdx}">&times;</button>
                             </div>
                         ` : ''}
                     `;
@@ -515,41 +552,53 @@ class PitchBuilderUI {
 
         // Event Handlers for Pitch Actions
         field.querySelectorAll('[data-cap-id]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            const handleCap = (e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 const pId = btn.getAttribute('data-cap-id');
                 this.captainId = pId;
                 if (this.viceCaptainId === pId) this.viceCaptainId = null;
                 this.renderPitch();
                 this.updateStatsBar();
-            });
+            };
+            btn.addEventListener('click', handleCap);
+            btn.addEventListener('touchend', handleCap);
         });
 
         field.querySelectorAll('[data-vc-id]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            const handleVC = (e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 const pId = btn.getAttribute('data-vc-id');
                 this.viceCaptainId = pId;
                 if (this.captainId === pId) this.captainId = null;
                 this.renderPitch();
                 this.updateStatsBar();
-            });
+            };
+            btn.addEventListener('click', handleVC);
+            btn.addEventListener('touchend', handleVC);
         });
 
         field.querySelectorAll('[data-remove-pitch-idx]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            const handleRemove = (e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 const idx = parseInt(btn.getAttribute('data-remove-pitch-idx'), 10);
                 this.removePitchPlayer(idx);
-            });
+            };
+            btn.addEventListener('click', handleRemove);
+            btn.addEventListener('touchend', handleRemove);
         });
 
         field.querySelectorAll('[data-swap-pitch-idx]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            const handleSwap = (e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 const idx = parseInt(btn.getAttribute('data-swap-pitch-idx'), 10);
                 this.promptSwapPitchPlayer(idx);
-            });
+            };
+            btn.addEventListener('click', handleSwap);
+            btn.addEventListener('touchend', handleSwap);
         });
     }
 
@@ -610,7 +659,10 @@ class PitchBuilderUI {
                     }
                 });
 
-                slotCard.addEventListener('click', () => {
+                slotCard.addEventListener('click', (e) => {
+                    if (e.target.closest('.slot-remove-badge') || e.target.closest('.btn-slot-action')) {
+                        return;
+                    }
                     this.selectBenchSlot(benchIdx);
                 });
             }
@@ -632,7 +684,7 @@ class PitchBuilderUI {
                         ${isInjured ? '<span class="injury-slot-badge" title="Injured">🚑</span>' : ''}
                         ${isSuspended ? '<span class="suspended-slot-badge" title="Suspended">🚫</span>' : ''}
                         ${isDoubtful ? '<span class="doubtful-slot-badge" title="Doubtful">⚠️</span>' : ''}
-                        ${!this.isLocked ? `<button class="slot-remove-badge" data-remove-bench-idx="${benchIdx}" title="Remove from Bench">&times;</button>` : ''}
+                        ${!this.isLocked ? `<button type="button" class="slot-remove-badge" data-remove-bench-idx="${benchIdx}" title="Remove from Bench">&times;</button>` : ''}
                     </div>
                     <div class="player-slot-meta">
                         <div class="slot-player-name">${assignedPlayer.webName || assignedPlayer.name.split(' ').pop()}</div>
@@ -640,8 +692,8 @@ class PitchBuilderUI {
                     </div>
                     ${!this.isLocked ? `
                         <div class="slot-actions-overlay">
-                            <button class="btn-slot-action swap" title="Swap with Starter on Pitch" data-swap-bench-idx="${benchIdx}">⇄</button>
-                            <button class="btn-slot-action remove" title="Remove Player" data-remove-bench-idx="${benchIdx}">&times;</button>
+                            <button type="button" class="btn-slot-action swap" title="Swap with Starter on Pitch" data-swap-bench-idx="${benchIdx}">⇄</button>
+                            <button type="button" class="btn-slot-action remove" title="Remove Player" data-remove-bench-idx="${benchIdx}">&times;</button>
                         </div>
                     ` : ''}
                 `;
@@ -656,21 +708,27 @@ class PitchBuilderUI {
             row.appendChild(slotCard);
         });
 
-        // Event Handlers for Bench Actions
+        // Event Handlers for Bench Actions (Guaranteed Mobile Click & Touch)
         row.querySelectorAll('[data-remove-bench-idx]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            const handleRemoveBench = (e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 const idx = parseInt(btn.getAttribute('data-remove-bench-idx'), 10);
                 this.removeBenchPlayer(idx);
-            });
+            };
+            btn.addEventListener('click', handleRemoveBench);
+            btn.addEventListener('touchend', handleRemoveBench);
         });
 
         row.querySelectorAll('[data-swap-bench-idx]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            const handleSwapBench = (e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 const idx = parseInt(btn.getAttribute('data-swap-bench-idx'), 10);
                 this.promptSwapBenchPlayer(idx);
-            });
+            };
+            btn.addEventListener('click', handleSwapBench);
+            btn.addEventListener('touchend', handleSwapBench);
         });
     }
 
@@ -742,7 +800,7 @@ class PitchBuilderUI {
                         </div>
                     </div>
                     <div class="dock-card-action">
-                        ${isPicked ? `<button class="btn-dock-remove" data-remove-player-id="${player.id}" title="Click to remove ${player.name}">✕ REMOVE</button>` : `<button class="btn-dock-add" data-add-player-id="${player.id}">+ ADD</button>`}
+                        ${isPicked ? `<button type="button" class="btn-dock-remove" data-remove-player-id="${player.id}" title="Click to remove ${player.name}">✕ REMOVE</button>` : `<button type="button" class="btn-dock-add" data-add-player-id="${player.id}">+ ADD</button>`}
                     </div>
                 </div>
             `;
@@ -775,7 +833,7 @@ class PitchBuilderUI {
             const player = getPlayerById(pId);
             if (!player) return;
 
-            card.addEventListener('click', (e) => {
+            const handleCardTap = (e) => {
                 if (this.isLocked) return;
 
                 const isStarting = this.selectedPlayers.some(p => p && p.id === player.id);
@@ -794,9 +852,11 @@ class PitchBuilderUI {
                     return;
                 }
 
-                // If not picked, auto-assign to highlighted slot, or best open slot
+                // Auto-assign player
                 this.autoAssignPlayer(player);
-            });
+            };
+
+            card.addEventListener('click', handleCardTap);
         });
     }
 
@@ -836,12 +896,10 @@ class PitchBuilderUI {
             const benchIdx = this.draggedSourceIdx;
             const existingPitchPlayer = this.selectedPlayers[targetSlotIdx];
 
-            // If target is GK, bench must be GK
             if (targetPos === 'GK' && player.pos !== 'GK') {
                 alert('⚠️ Only a Goalkeeper can play in the starting GK slot.');
                 return;
             }
-            // If benchIdx is 0 (GK sub), existing pitch player must be GK
             if (benchIdx === 0 && existingPitchPlayer && existingPitchPlayer.pos !== 'GK') {
                 alert('⚠️ Bench Slot 1 is reserved for the backup Goalkeeper.');
                 return;
@@ -852,11 +910,9 @@ class PitchBuilderUI {
         } 
         // From Dock / New Player
         else {
-            // Remove from bench if already on bench
             const bIdx = this.benchPlayers.findIndex(p => p && p.id === player.id);
             if (bIdx !== -1) this.benchPlayers[bIdx] = null;
 
-            // Remove from other pitch slot if already there
             const pIdx = this.selectedPlayers.findIndex(p => p && p.id === player.id);
             if (pIdx !== -1) this.selectedPlayers[pIdx] = null;
 
@@ -922,11 +978,9 @@ class PitchBuilderUI {
         }
         // From Dock / New
         else {
-            // Remove from pitch if on pitch
             const pIdx = this.selectedPlayers.findIndex(p => p && p.id === player.id);
             if (pIdx !== -1) this.selectedPlayers[pIdx] = null;
 
-            // Remove from other bench slot if already there
             const bIdx = this.benchPlayers.findIndex(p => p && p.id === player.id);
             if (bIdx !== -1) this.benchPlayers[bIdx] = null;
 
@@ -988,7 +1042,7 @@ class PitchBuilderUI {
             }
         }
 
-        // 5. If all 15 slots or positions are full, provide 1-click replacement menu
+        // 5. If all slots for this position are full, open Replacement Modal
         const currentPosStarters = [];
         slotPositions.forEach((pos, idx) => {
             if (pos === player.pos && this.selectedPlayers[idx]) {
@@ -1004,22 +1058,209 @@ class PitchBuilderUI {
 
         const allCandidates = [...currentPosStarters, ...currentPosBench];
         if (allCandidates.length > 0) {
-            const optionsStr = allCandidates.map((item, i) => `${i + 1}. Replace ${item.type === 'PITCH' ? '[Starting 11]' : '[Bench Sub]'} ${item.player.webName || item.player.name} (£${item.player.price}m, ${item.player.club})`).join('\n');
-            const choice = prompt(`⚠️ All ${player.pos} slots are full in your squad.\n\nWho would you like to replace with ${player.name} (£${player.price}m)?\n\n${optionsStr}\n\nEnter number (1-${allCandidates.length}) or click Cancel:`);
-            if (choice) {
-                const choiceNum = parseInt(choice.trim(), 10);
-                if (!isNaN(choiceNum) && choiceNum >= 1 && choiceNum <= allCandidates.length) {
-                    const chosen = allCandidates[choiceNum - 1];
-                    if (chosen.type === 'PITCH') {
-                        this.handleDropOnSlot(player, chosen.idx, player.pos);
-                    } else {
-                        this.handleDropOnBench(player, chosen.idx);
-                    }
-                }
-            }
+            this.showReplacementModal(player, allCandidates);
         }
     }
 
+    /**
+     * Mobile-Friendly Modal: Interactive Player Action Menu
+     */
+    showPlayerActionModal(info) {
+        const { type, idx, player } = info;
+        const isPitch = type === 'PITCH';
+        const team = TEAMS_DATA[player.club] || { name: player.club, badge: '' };
+        const isCap = player.id === this.captainId;
+        const isVC = player.id === this.viceCaptainId;
+
+        const modal = document.createElement('div');
+        modal.className = 'pitch-action-modal-overlay';
+        modal.innerHTML = `
+            <div class="pitch-action-modal-box">
+                <div class="modal-header-row">
+                    <div class="modal-header-title">
+                        <span>⚙️ Player Actions</span>
+                    </div>
+                    <button type="button" class="modal-close-icon-btn" id="modalCloseAction">&times;</button>
+                </div>
+
+                <div class="modal-player-preview-card">
+                    <img src="${player.photo || ''}" alt="${player.name}" class="modal-preview-img" onerror="this.style.display='none'">
+                    <div class="modal-preview-info">
+                        <div class="modal-preview-name">${player.name}</div>
+                        <div class="modal-preview-meta">
+                            <span>${team.name}</span>
+                            <span>•</span>
+                            <span>${player.pos}</span>
+                            <span>•</span>
+                            <span style="color:var(--primary-green)">£${player.price}m</span>
+                            <span>•</span>
+                            <span>⭐ ${player.form.toFixed(1)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-action-buttons-list">
+                    ${isPitch ? `
+                        <button type="button" class="modal-action-row-btn cap" id="btnModalCap">
+                            <span>👑 ${isCap ? 'Current Captain (2x Points)' : 'Make Captain (2x Points)'}</span>
+                            <span>${isCap ? '✅' : '👑'}</span>
+                        </button>
+                        <button type="button" class="modal-action-row-btn vc" id="btnModalVC">
+                            <span>🎖️ ${isVC ? 'Current Vice-Captain' : 'Make Vice-Captain (Backup 2x)'}</span>
+                            <span>${isVC ? '✅' : '🎖️'}</span>
+                        </button>
+                        <button type="button" class="modal-action-row-btn swap" id="btnModalSwap">
+                            <span>⇄ Swap with Bench Substitute</span>
+                            <span>⇄</span>
+                        </button>
+                    ` : `
+                        <button type="button" class="modal-action-row-btn swap" id="btnModalPromote">
+                            <span>⇄ Promote to Starting 11</span>
+                            <span>⭐</span>
+                        </button>
+                    `}
+                    <button type="button" class="modal-action-row-btn" id="btnModalPickReplace">
+                        <span>🔄 Replace with Another Player</span>
+                        <span>👥</span>
+                    </button>
+                    <button type="button" class="modal-action-row-btn remove" id="btnModalRemove">
+                        <span>🗑️ Remove from Squad</span>
+                        <span>✕</span>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const closeModal = () => modal.remove();
+        modal.querySelector('#modalCloseAction')?.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // Captain
+        modal.querySelector('#btnModalCap')?.addEventListener('click', () => {
+            this.captainId = player.id;
+            if (this.viceCaptainId === player.id) this.viceCaptainId = null;
+            this.renderPitch();
+            this.updateStatsBar();
+            closeModal();
+        });
+
+        // Vice-Captain
+        modal.querySelector('#btnModalVC')?.addEventListener('click', () => {
+            this.viceCaptainId = player.id;
+            if (this.captainId === player.id) this.captainId = null;
+            this.renderPitch();
+            this.updateStatsBar();
+            closeModal();
+        });
+
+        // Swap Pitch Player
+        modal.querySelector('#btnModalSwap')?.addEventListener('click', () => {
+            closeModal();
+            this.promptSwapPitchPlayer(idx);
+        });
+
+        // Promote Bench Player
+        modal.querySelector('#btnModalPromote')?.addEventListener('click', () => {
+            closeModal();
+            this.promptSwapBenchPlayer(idx);
+        });
+
+        // Replace Player from Dock
+        modal.querySelector('#btnModalPickReplace')?.addEventListener('click', () => {
+            closeModal();
+            if (isPitch) {
+                this.highlightedSlotIdx = idx;
+                this.highlightedBenchIdx = null;
+            } else {
+                this.highlightedBenchIdx = idx;
+                this.highlightedSlotIdx = null;
+            }
+            this.selectedFilterPos = player.pos;
+            document.querySelectorAll('.dock-filter-btn[data-dock-pos]').forEach(b => {
+                b.classList.toggle('active', b.getAttribute('data-dock-pos') === player.pos);
+            });
+            this.renderPitch();
+            this.renderBench();
+            this.renderBottomDock();
+            document.getElementById('bottomPlayerDock')?.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Remove Player
+        modal.querySelector('#btnModalRemove')?.addEventListener('click', () => {
+            closeModal();
+            if (isPitch) {
+                this.removePitchPlayer(idx);
+            } else {
+                this.removeBenchPlayer(idx);
+            }
+        });
+    }
+
+    /**
+     * Mobile-Friendly Modal: Replacement Picker
+     */
+    showReplacementModal(newPlayer, candidates) {
+        const modal = document.createElement('div');
+        modal.className = 'pitch-action-modal-overlay';
+        modal.innerHTML = `
+            <div class="pitch-action-modal-box">
+                <div class="modal-header-row">
+                    <div class="modal-header-title">
+                        <span>🔄 Replace ${newPlayer.pos}</span>
+                    </div>
+                    <button type="button" class="modal-close-icon-btn" id="modalCloseReplace">&times;</button>
+                </div>
+
+                <div style="font-size: 0.85rem; color: var(--text-muted);">
+                    All <strong style="color:#fff">${newPlayer.pos}</strong> slots are filled. Tap a player below to replace with <strong style="color:var(--primary-green)">${newPlayer.name} (£${newPlayer.price}m)</strong>:
+                </div>
+
+                <div class="modal-candidates-list">
+                    ${candidates.map((c, i) => `
+                        <button type="button" class="candidate-item-btn" data-cand-idx="${i}">
+                            <img src="${c.player.photo || ''}" alt="${c.player.name}" class="candidate-img" onerror="this.style.display='none'">
+                            <div class="candidate-details">
+                                <span class="candidate-name">${c.player.name}</span>
+                                <span class="candidate-meta">${c.type === 'PITCH' ? '⭐ Starting 11' : '🪑 Bench Sub'} • £${c.player.price}m • ${c.player.club}</span>
+                            </div>
+                            <span style="font-size: 0.8rem; color: var(--primary-green); font-weight: 800;">REPLACE ➔</span>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const closeModal = () => modal.remove();
+        modal.querySelector('#modalCloseReplace')?.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        modal.querySelectorAll('[data-cand-idx]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const i = parseInt(btn.getAttribute('data-cand-idx'), 10);
+                const chosen = candidates[i];
+                if (chosen) {
+                    if (chosen.type === 'PITCH') {
+                        this.handleDropOnSlot(newPlayer, chosen.idx, newPlayer.pos);
+                    } else {
+                        this.handleDropOnBench(newPlayer, chosen.idx);
+                    }
+                }
+                closeModal();
+            });
+        });
+    }
+
+    /**
+     * Mobile-Friendly Modal: Swap Picker
+     */
     promptSwapPitchPlayer(pitchIdx) {
         const pitchPlayer = this.selectedPlayers[pitchIdx];
         if (!pitchPlayer) return;
@@ -1043,26 +1284,67 @@ class PitchBuilderUI {
             return;
         }
 
-        const optionsStr = eligibleBench.map((item, i) => `${i + 1}. [${item.label}] ${item.player.webName || item.player.name} (${item.player.pos}, £${item.player.price}m)`).join('\n');
-        const choice = prompt(`⇄ Swap Starting Player:\n\nWho would you like to swap into Starting 11 for ${pitchPlayer.name}?\n\n${optionsStr}\n\nEnter number (1-${eligibleBench.length}) or click Cancel:`);
-        if (choice) {
-            const num = parseInt(choice.trim(), 10);
-            if (!isNaN(num) && num >= 1 && num <= eligibleBench.length) {
-                const targetBench = eligibleBench[num - 1];
-                this.selectedPlayers[pitchIdx] = targetBench.player;
-                this.benchPlayers[targetBench.bIdx] = pitchPlayer;
+        const modal = document.createElement('div');
+        modal.className = 'pitch-action-modal-overlay';
+        modal.innerHTML = `
+            <div class="pitch-action-modal-box">
+                <div class="modal-header-row">
+                    <div class="modal-header-title">
+                        <span>⇄ Swap Starting Player</span>
+                    </div>
+                    <button type="button" class="modal-close-icon-btn" id="modalCloseSwap">&times;</button>
+                </div>
 
-                // Adjust captaincy if starter moved to bench
-                if (this.captainId === pitchPlayer.id) this.captainId = targetBench.player.id;
+                <div style="font-size: 0.85rem; color: var(--text-muted);">
+                    Select a bench substitute to swap into Starting 11 for <strong style="color:#fff">${pitchPlayer.name}</strong>:
+                </div>
 
-                this.renderPitch();
-                this.renderBench();
-                this.renderBottomDock();
-                this.updateStatsBar();
-            }
-        }
+                <div class="modal-candidates-list">
+                    ${eligibleBench.map((item, i) => `
+                        <button type="button" class="candidate-item-btn" data-swap-idx="${i}">
+                            <img src="${item.player.photo || ''}" alt="${item.player.name}" class="candidate-img" onerror="this.style.display='none'">
+                            <div class="candidate-details">
+                                <span class="candidate-name">${item.player.name}</span>
+                                <span class="candidate-meta">[${item.label}] • ${item.player.pos} • £${item.player.price}m • ${item.player.club}</span>
+                            </div>
+                            <span style="font-size: 0.8rem; color: var(--primary-green); font-weight: 800;">SWAP ⇄</span>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const closeModal = () => modal.remove();
+        modal.querySelector('#modalCloseSwap')?.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        modal.querySelectorAll('[data-swap-idx]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const i = parseInt(btn.getAttribute('data-swap-idx'), 10);
+                const targetBench = eligibleBench[i];
+                if (targetBench) {
+                    this.selectedPlayers[pitchIdx] = targetBench.player;
+                    this.benchPlayers[targetBench.bIdx] = pitchPlayer;
+
+                    if (this.captainId === pitchPlayer.id) this.captainId = targetBench.player.id;
+
+                    this.renderPitch();
+                    this.renderBench();
+                    this.renderBottomDock();
+                    this.updateStatsBar();
+                }
+                closeModal();
+            });
+        });
     }
 
+    /**
+     * Mobile-Friendly Modal: Promote Bench Player
+     */
     promptSwapBenchPlayer(benchIdx) {
         const benchPlayer = this.benchPlayers[benchIdx];
         if (!benchPlayer) return;
@@ -1086,23 +1368,62 @@ class PitchBuilderUI {
             return;
         }
 
-        const optionsStr = eligiblePitch.map((item, i) => `${i + 1}. [${item.pos}] ${item.player.webName || item.player.name} (£${item.player.price}m)`).join('\n');
-        const choice = prompt(`⇄ Promote Bench Substitute to Starting 11:\n\nWho would you like to swap to the bench for ${benchPlayer.name}?\n\n${optionsStr}\n\nEnter number (1-${eligiblePitch.length}) or click Cancel:`);
-        if (choice) {
-            const num = parseInt(choice.trim(), 10);
-            if (!isNaN(num) && num >= 1 && num <= eligiblePitch.length) {
-                const targetPitch = eligiblePitch[num - 1];
-                this.selectedPlayers[targetPitch.pIdx] = benchPlayer;
-                this.benchPlayers[benchIdx] = targetPitch.player;
+        const modal = document.createElement('div');
+        modal.className = 'pitch-action-modal-overlay';
+        modal.innerHTML = `
+            <div class="pitch-action-modal-box">
+                <div class="modal-header-row">
+                    <div class="modal-header-title">
+                        <span>⇄ Promote to Starting 11</span>
+                    </div>
+                    <button type="button" class="modal-close-icon-btn" id="modalClosePromote">&times;</button>
+                </div>
 
-                if (this.captainId === targetPitch.player.id) this.captainId = benchPlayer.id;
+                <div style="font-size: 0.85rem; color: var(--text-muted);">
+                    Select a starter to move to the bench for <strong style="color:#fff">${benchPlayer.name}</strong>:
+                </div>
 
-                this.renderPitch();
-                this.renderBench();
-                this.renderBottomDock();
-                this.updateStatsBar();
-            }
-        }
+                <div class="modal-candidates-list">
+                    ${eligiblePitch.map((item, i) => `
+                        <button type="button" class="candidate-item-btn" data-promote-idx="${i}">
+                            <img src="${item.player.photo || ''}" alt="${item.player.name}" class="candidate-img" onerror="this.style.display='none'">
+                            <div class="candidate-details">
+                                <span class="candidate-name">${item.player.name}</span>
+                                <span class="candidate-meta">[${item.pos}] • £${item.player.price}m • ${item.player.club}</span>
+                            </div>
+                            <span style="font-size: 0.8rem; color: var(--primary-green); font-weight: 800;">PROMOTE ⭐</span>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const closeModal = () => modal.remove();
+        modal.querySelector('#modalClosePromote')?.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        modal.querySelectorAll('[data-promote-idx]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const i = parseInt(btn.getAttribute('data-promote-idx'), 10);
+                const targetPitch = eligiblePitch[i];
+                if (targetPitch) {
+                    this.selectedPlayers[targetPitch.pIdx] = benchPlayer;
+                    this.benchPlayers[benchIdx] = targetPitch.player;
+
+                    if (this.captainId === targetPitch.player.id) this.captainId = benchPlayer.id;
+
+                    this.renderPitch();
+                    this.renderBench();
+                    this.renderBottomDock();
+                    this.updateStatsBar();
+                }
+                closeModal();
+            });
+        });
     }
 
     removePitchPlayer(slotIdx) {
@@ -1327,23 +1648,95 @@ class PitchBuilderUI {
             </div>
         `;
 
+        // Update Save Squad Button Text & Indicator
+        const saveBtn = document.getElementById('btnSaveSquad');
+        if (saveBtn) {
+            if (totalCount === 15) {
+                saveBtn.innerHTML = '💾 Save Squad (15/15)';
+                saveBtn.style.background = 'linear-gradient(135deg, #10B981, #059669)';
+                saveBtn.style.borderColor = '#10B981';
+            } else {
+                saveBtn.innerHTML = `💾 Save Squad (${totalCount}/15)`;
+                saveBtn.style.background = '';
+                saveBtn.style.borderColor = '';
+            }
+        }
+
         this.autoSaveDraft();
     }
 
+    /**
+     * Mandatory 15-Player Squad Validation
+     */
     saveSquadToRoom() {
         const validStarters = this.selectedPlayers.filter(Boolean);
         const validBench = this.benchPlayers.filter(Boolean);
+        const totalCount = validStarters.length + validBench.length;
 
-        if (validStarters.length < 11) {
-            alert(`Incomplete Starting 11! You have selected ${validStarters.length}/11 starters on the pitch.`);
+        // Mandatory check for all 15 players
+        if (totalCount < 15 || validStarters.length < 11 || validBench.length < 4) {
+            const missingStarters = 11 - validStarters.length;
+            const missingBench = 4 - validBench.length;
+
+            const modal = document.createElement('div');
+            modal.className = 'pitch-action-modal-overlay';
+            modal.innerHTML = `
+                <div class="pitch-action-modal-box">
+                    <div class="modal-header-row">
+                        <div class="modal-header-title">
+                            <span>⚠️ Complete 15-Player Squad Required</span>
+                        </div>
+                        <button type="button" class="modal-close-icon-btn" id="modalCloseIncomplete">&times;</button>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:0.6rem; font-size:0.9rem; line-height:1.5;">
+                        <p style="color:#F87171; font-weight:800; margin:0;">
+                            You must pick all 15 players (11 Starters + 4 Bench Substitutes) before saving your squad.
+                        </p>
+                        <div style="background:rgba(255,255,255,0.05); padding:0.75rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:0.3rem;">
+                                <span>⭐ Starting 11:</span>
+                                <strong style="color:${validStarters.length === 11 ? '#10B981' : '#F59E0B'}">${validStarters.length}/11 ${missingStarters > 0 ? `(${missingStarters} missing)` : '✅'}</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:0.3rem;">
+                                <span>🪑 Substitutes Bench:</span>
+                                <strong style="color:${validBench.length === 4 ? '#10B981' : '#F59E0B'}">${validBench.length}/4 ${missingBench > 0 ? `(${missingBench} missing)` : '✅'}</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>👥 Total Squad:</span>
+                                <strong style="color:${totalCount === 15 ? '#10B981' : '#F87171'}">${totalCount}/15 (${15 - totalCount} missing)</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:0.6rem;">
+                        <button type="button" class="btn btn-primary" id="btnModalAutoPickNow" style="padding:0.75rem; font-weight:800;">
+                            ⚡ Auto-Fill Missing Players to Best 15
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="btnModalDismissIncomplete" style="padding:0.6rem;">
+                            Continue Picking Manually
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            const closeModal = () => modal.remove();
+            modal.querySelector('#modalCloseIncomplete')?.addEventListener('click', closeModal);
+            modal.querySelector('#btnModalDismissIncomplete')?.addEventListener('click', closeModal);
+            modal.querySelector('#btnModalAutoPickNow')?.addEventListener('click', () => {
+                closeModal();
+                this.autoPickBest15();
+            });
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
+            });
             return;
         }
-        if (validBench.length < 4) {
-            alert(`Incomplete Substitutes Bench! You have selected ${validBench.length}/4 substitutes on the bench (1 GK Sub + 3 Outfield Subs).`);
-            return;
-        }
+
         if (!this.captainId) {
-            alert('Please select a Captain (C) by clicking the C button on one of your starting players.');
+            alert('👑 Captain Required!\n\nPlease select a Captain (C) by tapping a starting player on the pitch.');
             return;
         }
 
