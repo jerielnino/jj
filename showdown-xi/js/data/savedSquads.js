@@ -17000,7 +17000,6 @@ const SAVED_USER_SQUADS_DATA = {
         },
         "LALIGA_MW4_RMA_SEV": {
             "fixtureId": "LALIGA_MW4_RMA_SEV",
-            "matchTitle": "RMA vs SEV",
             "formation": "4-3-3",
             "captainId": "rma_17",
             "viceCaptainId": "rma_16",
@@ -17023,8 +17022,7 @@ const SAVED_USER_SQUADS_DATA = {
                 "sev_7",
                 "sev_16"
             ],
-            "totalPrice": 100,
-            "updatedAt": 1788254323535
+            "updatedAt": 1788259388996
         },
         "PL_GW3_IPS_LIV": {
             "fixtureId": "PL_GW3_IPS_LIV",
@@ -23109,7 +23107,6 @@ const SAVED_SQUADS_DATA = {
     },
     "LALIGA_MW4_RMA_SEV": {
         "fixtureId": "LALIGA_MW4_RMA_SEV",
-        "matchTitle": "RMA vs SEV",
         "formation": "4-3-3",
         "captainId": "rma_17",
         "viceCaptainId": "rma_16",
@@ -23132,8 +23129,7 @@ const SAVED_SQUADS_DATA = {
             "sev_7",
             "sev_16"
         ],
-        "totalPrice": 100,
-        "updatedAt": 1788254323535
+        "updatedAt": 1788259388996
     },
     "PL_GW3_IPS_LIV": {
         "fixtureId": "PL_GW3_IPS_LIV",
@@ -28801,13 +28797,6 @@ function getGitRoom(roomCode) {
     return null;
 }
 
-function getGitRoom(roomCode) {
-    if (typeof SAVED_ROOMS_DATA !== 'undefined' && SAVED_ROOMS_DATA[roomCode]) {
-        return JSON.parse(JSON.stringify(SAVED_ROOMS_DATA[roomCode]));
-    }
-    return null;
-}
-
 function getGitRoomByFixture(fixtureId) {
     if (typeof SAVED_ROOMS_DATA !== 'undefined') {
         for (const code in SAVED_ROOMS_DATA) {
@@ -28842,7 +28831,6 @@ function getGitUserSquad(userId, fixtureId) {
 function setGitUserSquad(userId, fixtureId, squadData) {
     if (!fixtureId || !squadData) return;
     const cleanSquad = JSON.parse(JSON.stringify(squadData));
-
     if (typeof SAVED_USER_SQUADS_DATA !== 'undefined') {
         if (!SAVED_USER_SQUADS_DATA[userId]) SAVED_USER_SQUADS_DATA[userId] = {};
         SAVED_USER_SQUADS_DATA[userId][fixtureId] = cleanSquad;
@@ -28869,82 +28857,4 @@ function updateGitDatabase(newRooms, newUserSquads, newSquads) {
     if (newSquads && typeof SAVED_SQUADS_DATA !== 'undefined') {
         for (const f in newSquads) SAVED_SQUADS_DATA[f] = newSquads[f];
     }
-}
-
-function exportSavedSquadsFile() {
-    const currentUserId = window.authManager?.currentUser?.username || window.roomManager?.userProfile?.id || 'jj7758';
-    const mergedRooms = typeof SAVED_ROOMS_DATA !== 'undefined' ? SAVED_ROOMS_DATA : {};
-    const mergedSquads = typeof SAVED_SQUADS_DATA !== 'undefined' ? SAVED_SQUADS_DATA : {};
-    const mergedUserSquads = typeof SAVED_USER_SQUADS_DATA !== 'undefined' ? SAVED_USER_SQUADS_DATA : {};
-
-    const content = '/**\n' +
-        ' * Showdown XI - Permanent Git-Backed Rooms & Squads Database\n' +
-        ' * This file is tracked in Git to provide permanent multiplayer rooms, user profiles, and squad rosters across all devices.\n' +
-        ' */\n\n' +
-        '// 1. Permanent Default Rooms (Separated by Room Code and Fixture)\n' +
-        'const SAVED_ROOMS_DATA = ' + JSON.stringify(mergedRooms, null, 4) + ';\n\n' +
-        '// 2. Permanent User Squads (Separated by User ID -> Fixture ID -> Squad)\n' +
-        'const SAVED_USER_SQUADS_DATA = ' + JSON.stringify(mergedUserSquads, null, 4) + ';\n\n' +
-        '// 3. Baseline Fixture Squads Map\n' +
-        'const SAVED_SQUADS_DATA = ' + JSON.stringify(mergedSquads, null, 4) + ';\n\n' +
-        'function getGitRoom(roomCode) {\n' +
-        '    if (typeof SAVED_ROOMS_DATA !== \'undefined\' && SAVED_ROOMS_DATA[roomCode]) {\n' +
-        '        return JSON.parse(JSON.stringify(SAVED_ROOMS_DATA[roomCode]));\n' +
-        '    }\n' +
-        '    return null;\n' +
-        '}\n\n' +
-        'function getGitRoomByFixture(fixtureId) {\n' +
-        '    if (typeof SAVED_ROOMS_DATA !== \'undefined\') {\n' +
-        '        for (const code in SAVED_ROOMS_DATA) {\n' +
-        '            if (SAVED_ROOMS_DATA[code].fixtureId === fixtureId) {\n' +
-        '                return JSON.parse(JSON.stringify(SAVED_ROOMS_DATA[code]));\n' +
-        '            }\n' +
-        '        }\n' +
-        '    }\n' +
-        '    return null;\n' +
-        '}\n\n' +
-        'function getAllGitRooms() {\n' +
-        '    if (typeof SAVED_ROOMS_DATA !== \'undefined\') {\n' +
-        '        return Object.values(SAVED_ROOMS_DATA).map(r => JSON.parse(JSON.stringify(r)));\n' +
-        '    }\n' +
-        '    return [];\n' +
-        '}\n\n' +
-        'function setGitRoom(room) {\n' +
-        '    if (typeof SAVED_ROOMS_DATA !== \'undefined\' && room && room.code) {\n' +
-        '        SAVED_ROOMS_DATA[room.code] = JSON.parse(JSON.stringify(room));\n' +
-        '    }\n' +
-        '}\n\n' +
-        'function getGitUserSquad(userId, fixtureId) {\n' +
-        '    if (typeof SAVED_USER_SQUADS_DATA !== \'undefined\' && SAVED_USER_SQUADS_DATA[userId] && SAVED_USER_SQUADS_DATA[userId][fixtureId]) {\n' +
-        '        return JSON.parse(JSON.stringify(SAVED_USER_SQUADS_DATA[userId][fixtureId]));\n' +
-        '    }\n' +
-        '    return getGitSavedSquad(fixtureId);\n' +
-        '}\n\n' +
-        'function setGitUserSquad(userId, fixtureId, squadData) {\n' +
-        '    if (!fixtureId || !squadData) return;\n' +
-        '    const cleanSquad = JSON.parse(JSON.stringify(squadData));\n' +
-        '    if (typeof SAVED_USER_SQUADS_DATA !== \'undefined\') {\n' +
-        '        if (!SAVED_USER_SQUADS_DATA[userId]) SAVED_USER_SQUADS_DATA[userId] = {};\n' +
-        '        SAVED_USER_SQUADS_DATA[userId][fixtureId] = cleanSquad;\n' +
-        '    }\n' +
-        '    if (typeof SAVED_SQUADS_DATA !== \'undefined\') {\n' +
-        '        SAVED_SQUADS_DATA[fixtureId] = cleanSquad;\n' +
-        '    }\n' +
-        '}\n\n' +
-        'function getGitSavedSquad(fixtureId) {\n' +
-        '    if (typeof SAVED_SQUADS_DATA !== \'undefined\' && SAVED_SQUADS_DATA[fixtureId]) {\n' +
-        '        return JSON.parse(JSON.stringify(SAVED_SQUADS_DATA[fixtureId]));\n' +
-        '    }\n' +
-        '    return null;\n' +
-        '}\n';
-
-    const blob = new Blob([content], { type: 'application/javascript' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'savedSquads.js';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
 }
