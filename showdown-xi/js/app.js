@@ -64,29 +64,8 @@ class ShowdownApp {
     }
 
     bindAuthEvents() {
-        const tabLogin = document.getElementById('tabBtnLogin');
-        const tabRegister = document.getElementById('tabBtnRegister');
         const formLogin = document.getElementById('loginForm');
-        const formRegister = document.getElementById('registerForm');
         const errorMsg = document.getElementById('authErrorMsg');
-
-        if (tabLogin && tabRegister) {
-            tabLogin.addEventListener('click', () => {
-                tabLogin.classList.add('active');
-                tabRegister.classList.remove('active');
-                formLogin.classList.add('active');
-                formRegister.classList.remove('active');
-                if (errorMsg) errorMsg.textContent = '';
-            });
-
-            tabRegister.addEventListener('click', () => {
-                tabRegister.classList.add('active');
-                tabLogin.classList.remove('active');
-                formRegister.classList.add('active');
-                formLogin.classList.remove('active');
-                if (errorMsg) errorMsg.textContent = '';
-            });
-        }
 
         // Login form submit
         if (formLogin) {
@@ -109,30 +88,15 @@ class ShowdownApp {
             });
         }
 
-        // Register form submit
-        if (formRegister) {
-            formRegister.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const u = document.getElementById('regUsername').value;
-                const d = document.getElementById('regDisplayName').value;
-                const p = document.getElementById('regPassword').value;
-                const res = window.authManager.register(u, p, d);
-                if (res.success) {
-                    alert(res.message);
-                    tabLogin.click();
-                } else {
-                    if (errorMsg) {
-                        errorMsg.textContent = res.message;
-                        errorMsg.style.display = 'block';
-                    }
-                }
-            });
-        }
-
         // Logout
         const btnLogout = document.getElementById('btnLogoutBtn');
         if (btnLogout) {
             btnLogout.addEventListener('click', () => {
+                window.authManager.logout();
+                this.checkAuth();
+            });
+        }
+    }
                 if (confirm('Sign out from Showdown XI?')) {
                     window.authManager.logout();
                     location.reload();
@@ -371,8 +335,8 @@ class ShowdownApp {
 
         if (window.authManager.isAdmin()) {
             btn.style.display = 'inline-flex';
-            const pending = window.authManager.getPendingUsers();
-            if (badge) badge.textContent = pending.length;
+            const total = window.authManager.getAllUsers().length;
+            if (badge) badge.textContent = total;
         } else {
             btn.style.display = 'none';
         }
@@ -390,135 +354,138 @@ class ShowdownApp {
         // Add user directly
         const btnAdd = document.getElementById('btnAdminAddUser');
         if (btnAdd) {
-            btnAdd.addEventListener('click', () => {
-                const u = document.getElementById('adminAddUsername').value;
-                const d = document.getElementById('adminAddDisplayName').value;
-                const p = document.getElementById('adminAddPassword').value;
+            btnAdd.addEventListener('click', async () => {
+                const u = document.getElementById('adminAddUsername')?.value;
+                const d = document.getElementById('adminAddDisplayName')?.value;
+                const p = document.getElementById('adminAddPassword')?.value;
                 const res = window.authManager.adminAddUser(u, p, d);
                 if (res.success) {
-                    alert(`✅ User '${u}' created and approved!`);
-                    document.getElementById('adminAddUsername').value = '';
-                    document.getElementById('adminAddDisplayName').value = '';
-                    document.getElementById('adminAddPassword').value = '';
+                    alert(`✅ User '${u}' created and synchronized with Git!\n\nThey can now sign in immediately from any device.`);
+                    if (document.getElementById('adminAddUsername')) document.getElementById('adminAddUsername').value = '';
+                    if (document.getElementById('adminAddDisplayName')) document.getElementById('adminAddDisplayName').value = '';
+                    if (document.getElementById('adminAddPassword')) document.getElementById('adminAddPassword').value = '';
                     this.renderAdminPanel();
-                    this.updateAdminHeaderButton();
                 } else {
                     alert('Error: ' + res.message);
                 }
             });
         }
 
-        // Export JSON
-        const btnExport = document.getElementById('btnAdminExportJson');
-        if (btnExport) {
-            btnExport.addEventListener('click', () => {
+        // Push Users to Git
+        const btnPushGit = document.getElementById('btnAdminPushGit');
+        if (btnPushGit) {
+            btnPushGit.addEventListener('click', async () => {
+                btnPushGit.textContent = '⏳ Pushing to Git...';
+                try {
+                    const res = await window.authManager.pushUsersToGit();
+                    if (res.success) {
+                        alert('🐙 Successfully exported & pushed authorized users database to GitHub (js/data/users.js)!');
+                    }
+                } finally {
+                    btnPushGit.textContent = '🐙 Push Users to GitHub';
+                }
+            });
+        }
+
+        // Pull Users from Git
+        const btnPullGit = document.getElementById('btnAdminPullGit');
+        if (btnPullGit) {
+            btnPullGit.addEventListener('click', async () => {
+                btnPullGit.textContent = '⏳ Pulling...';
+                try {
+                    await window.authManager.pullUsersFromGit();
+                    this.renderAdminPanel();
+                } finally {
+                    btnPullGit.textContent = '⬇️ Pull Users from GitHub';
+                }
+            });
+        }
+
+        // Download users.js File
+        const btnDownload = document.getElementById('btnAdminDownloadUsersFile');
+        if (btnDownload) {
+            btnDownload.addEventListener('click', () => {
+                window.authManager.exportUsersFile();
+            });
+        }
+
+        // Copy Plain JSON
+        const btnExportJson = document.getElementById('btnAdminExportJson');
+        if (btnExportJson) {
+            btnExportJson.addEventListener('click', () => {
                 const json = window.authManager.exportJSON();
                 const textarea = document.getElementById('adminUsersJsonTextarea');
                 if (textarea) textarea.value = json;
                 navigator.clipboard?.writeText(json);
-                alert('📋 Plain JSON copied to clipboard and refreshed in textarea!');
-            });
-        }
-
-        // Import JSON
-        const btnImport = document.getElementById('btnAdminImportJson');
-        if (btnImport) {
-            btnImport.addEventListener('click', () => {
-                const textarea = document.getElementById('adminUsersJsonTextarea');
-                if (!textarea || !textarea.value) return;
-                const res = window.authManager.importJSON(textarea.value);
-                if (res.success) {
-                    alert(`📥 Successfully imported & synced ${res.count} users from JSON!`);
-                    this.renderAdminPanel();
-                    this.updateAdminHeaderButton();
-                } else {
-                    alert('JSON Import Error: ' + (res.error || res.message));
-                }
+                alert('📋 Plain JSON copied to clipboard!');
             });
         }
     }
 
     renderAdminPanel() {
-        const pendingList = document.getElementById('adminPendingList');
         const approvedList = document.getElementById('adminApprovedList');
-        const pendingCount = document.getElementById('adminPendingCount');
+        const approvedCount = document.getElementById('adminApprovedCount');
         const textarea = document.getElementById('adminUsersJsonTextarea');
 
-        const pending = window.authManager.getPendingUsers();
-        const allUsers = window.authManager.getAllUsers().filter(u => u.status === 'APPROVED');
+        const allUsers = window.authManager.getAllUsers();
 
-        if (pendingCount) pendingCount.textContent = pending.length;
+        if (approvedCount) approvedCount.textContent = allUsers.length;
         if (textarea) textarea.value = window.authManager.exportJSON();
 
-        // Render Pending Approvals
-        if (pendingList) {
-            if (pending.length === 0) {
-                pendingList.innerHTML = `<div class="admin-empty-state">No pending approval requests.</div>`;
-            } else {
-                pendingList.innerHTML = pending.map(u => `
-                    <div class="admin-user-row pending-row" data-orig-username="${u.username}">
-                        <div class="user-row-meta">
-                            <span class="user-avatar">${u.avatar}</span>
-                            <div>
-                                <strong>${u.displayName}</strong>
-                                <div class="sub-user-req">Requested: <code>${u.username}</code> • Pass: <code>${u.password}</code></div>
-                            </div>
-                        </div>
-                        <div class="user-assign-box">
-                            <label>Assign Username:</label>
-                            <input type="text" class="input-assign-uname" value="${u.username}">
-                        </div>
-                        <div class="user-row-actions">
-                            <button class="btn btn-primary btn-sm btn-approve-user" data-user="${u.username}">✓ Approve</button>
-                            <button class="btn btn-danger btn-sm btn-reject-user" data-user="${u.username}">✗ Reject</button>
-                        </div>
-                    </div>
-                `).join('');
-
-                // Bind approve/reject handlers
-                pendingList.querySelectorAll('.btn-approve-user').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const origU = btn.getAttribute('data-user');
-                        const row = btn.closest('.admin-user-row');
-                        const customU = row.querySelector('.input-assign-uname').value;
-                        const res = window.authManager.approveUser(origU, customU);
-                        if (res.success) {
-                            alert(`✅ User approved with assigned username: '${res.user.username}'!`);
-                            this.renderAdminPanel();
-                            this.updateAdminHeaderButton();
-                        }
-                    });
-                });
-
-                pendingList.querySelectorAll('.btn-reject-user').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const u = btn.getAttribute('data-user');
-                        if (confirm(`Reject registration for '${u}'?`)) {
-                            window.authManager.rejectUser(u);
-                            this.renderAdminPanel();
-                            this.updateAdminHeaderButton();
-                        }
-                    });
-                });
-            }
-        }
-
-        // Render Approved Users
+        // Render Approved Users Directory
         if (approvedList) {
             approvedList.innerHTML = allUsers.map(u => `
-                <div class="admin-user-row">
-                    <div class="user-row-meta">
-                        <span class="user-avatar">${u.avatar}</span>
+                <div class="admin-user-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); margin-bottom: 0.4rem;">
+                    <div class="user-row-meta" style="display: flex; align-items: center; gap: 0.6rem;">
+                        <span class="user-avatar" style="font-size: 1.2rem;">${u.avatar}</span>
                         <div>
-                            <strong>${u.displayName || u.username}</strong>
-                            <div class="sub-user-req">Username: <code>${u.username}</code> • Role: <span class="badge-role">${u.role}</span></div>
+                            <strong style="color: #fff; font-size: 0.9rem;">${u.displayName || u.username}</strong>
+                            <div class="sub-user-req" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem;">
+                                Username: <code style="color: var(--accent-gold);">${u.username}</code> • 
+                                Password: <code class="pwd-display" data-pwd="${u.password}" style="color: #6EE7B7;">••••••••</code>
+                                <button class="btn-toggle-pwd" style="background: none; border: none; cursor: pointer; font-size: 0.75rem; padding: 0 0.2rem;" title="Show/Hide Password">👁️</button> • 
+                                <span class="badge-role" style="font-size: 0.68rem; padding: 0.1rem 0.4rem; background: rgba(255,255,255,0.08); border-radius: 4px; color: var(--text-secondary);">${u.role}</span>
+                            </div>
                         </div>
                     </div>
                     <div class="user-row-actions">
-                        <span class="badge-approved">APPROVED</span>
+                        ${u.username !== 'jj7758' ? `
+                            <button class="btn btn-danger btn-sm btn-delete-user" data-user="${u.username}" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">
+                                🗑️ Delete
+                            </button>
+                        ` : `
+                            <span style="font-size: 0.75rem; color: var(--accent-gold); font-weight: 600;">👑 Commissioner</span>
+                        `}
                     </div>
                 </div>
             `).join('');
+
+            // Toggle password preview
+            approvedList.querySelectorAll('.btn-toggle-pwd').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const row = btn.closest('.admin-user-row');
+                    const codeEl = row.querySelector('.pwd-display');
+                    if (codeEl) {
+                        const realPwd = codeEl.getAttribute('data-pwd');
+                        if (codeEl.textContent === '••••••••') {
+                            codeEl.textContent = realPwd;
+                        } else {
+                            codeEl.textContent = '••••••••';
+                        }
+                    }
+                });
+            });
+
+            // Delete user handler
+            approvedList.querySelectorAll('.btn-delete-user').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const u = btn.getAttribute('data-user');
+                    if (confirm(`Are you sure you want to delete user '${u}' and revoke access across all devices?`)) {
+                        window.authManager.adminDeleteUser(u);
+                        this.renderAdminPanel();
+                    }
+                });
+            });
         }
     }
 

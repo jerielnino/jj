@@ -1,52 +1,49 @@
 /**
  * Showdown XI - Authentication & User Access Management System
- * Supports Admin Approval, Custom Username Assignment, Plain JSON Persistence & Export/Import.
+ * Managed by Commissioner (jj7758) and synchronized with Git.
  */
-
-const DEFAULT_USERS_DB = {
-    "jj7758": {
-        username: "jj7758",
-        password: "foot4life",
-        displayName: "JJ (Commissioner)",
-        role: "ADMIN",
-        status: "APPROVED", // 'APPROVED', 'PENDING', 'REJECTED'
-        avatar: "👑",
-        createdAt: "2026-09-01T00:00:00.000Z"
-    }
-};
 
 class AuthManager {
     constructor() {
-        this.STORAGE_KEY = 'showdown_users_db_v1';
         this.SESSION_KEY = 'showdown_auth_session_v1';
         this.users = this.loadUsers();
         this.currentUser = this.loadSession();
     }
 
     loadUsers() {
-        try {
-            const raw = localStorage.getItem(this.STORAGE_KEY);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                // Ensure default admin always exists
-                if (!parsed['jj7758']) {
-                    parsed['jj7758'] = DEFAULT_USERS_DB['jj7758'];
-                }
-                return parsed;
-            }
-        } catch (e) {
-            console.error('Error loading users DB:', e);
+        let db = {};
+        if (typeof AUTH_USERS_DATA !== 'undefined') {
+            db = JSON.parse(JSON.stringify(AUTH_USERS_DATA));
         }
-        this.saveUsers(DEFAULT_USERS_DB);
-        return { ...DEFAULT_USERS_DB };
+
+        // Ensure default commissioner always exists
+        if (!db['jj7758']) {
+            db['jj7758'] = {
+                username: "jj7758",
+                password: "foot4life",
+                displayName: "JJ (Commissioner)",
+                role: "ADMIN",
+                status: "APPROVED",
+                avatar: "👑",
+                createdAt: "2026-09-01T00:00:00.000Z",
+                approvedAt: "2026-09-01T00:00:00.000Z"
+            };
+        }
+
+        this.users = db;
+        return db;
     }
 
     saveUsers(usersObj = this.users) {
-        try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(usersObj, null, 2));
-            this.users = usersObj;
-        } catch (e) {
-            console.error('Error saving users DB:', e);
+        this.users = usersObj;
+        if (typeof AUTH_USERS_DATA !== 'undefined') {
+            for (const u in usersObj) {
+                AUTH_USERS_DATA[u] = usersObj[u];
+            }
+            // remove deleted
+            for (const u in AUTH_USERS_DATA) {
+                if (!usersObj[u]) delete AUTH_USERS_DATA[u];
+            }
         }
     }
 
@@ -55,9 +52,9 @@ class AuthManager {
             const raw = localStorage.getItem(this.SESSION_KEY);
             if (raw) {
                 const sessionUser = JSON.parse(raw);
-                // Verify user is still approved
-                if (this.users[sessionUser.username] && this.users[sessionUser.username].status === 'APPROVED') {
-                    return this.users[sessionUser.username];
+                const current = this.users[sessionUser.username];
+                if (current && current.status === 'APPROVED') {
+                    return current;
                 }
             }
         } catch (e) {}
@@ -67,9 +64,9 @@ class AuthManager {
     saveSession(user) {
         this.currentUser = user;
         if (user) {
-            localStorage.setItem(this.SESSION_KEY, JSON.stringify(user));
+            try { localStorage.setItem(this.SESSION_KEY, JSON.stringify(user)); } catch (e) {}
         } else {
-            localStorage.removeItem(this.SESSION_KEY);
+            try { localStorage.removeItem(this.SESSION_KEY); } catch (e) {}
         }
     }
 
@@ -78,120 +75,121 @@ class AuthManager {
         const user = Object.values(this.users).find(u => u.username.toLowerCase() === uKey);
 
         if (!user) {
-            return { success: false, message: 'Invalid username or password.' };
+            return { success: false, message: 'Invalid username or password. Please contact Commissioner (jj7758).' };
         }
 
         if (user.password !== password) {
             return { success: false, message: 'Invalid username or password.' };
         }
 
-        if (user.status === 'PENDING') {
-            return {
-                success: false,
-                isPending: true,
-                message: '⏳ Account Pending Approval!\nYour registration is awaiting approval by the commissioner (jj7758).'
-            };
-        }
-
-        if (user.status === 'REJECTED') {
-            return { success: false, message: '❌ Account request was not approved.' };
+        if (user.status !== 'APPROVED') {
+            return { success: false, message: '❌ Account not active. Please contact Commissioner (jj7758).' };
         }
 
         this.saveSession(user);
         return { success: true, user };
     }
 
-    register(requestedUsername, password, displayName = '') {
-        const uKey = (requestedUsername || '').trim().toLowerCase();
-        if (!uKey || !password) {
-            return { success: false, message: 'Username and password are required.' };
-        }
+    adminAddUser(username, password, displayName, role = 'USER') {
+        if (!this.isAdmin()) return { success: false, message: 'Unauthorized: Commissioner access required.' };
+        const u = (username || '').trim();
+        const p = (password || '').trim();
+        if (!u || !p) return { success: false, message: 'Username and password are required.' };
 
-        const existing = Object.values(this.users).find(u => u.username.toLowerCase() === uKey);
-        if (existing) {
-            return { success: false, message: 'This username is already registered or requested.' };
+        if (this.users[u]) {
+            return { success: false, message: `User '${u}' already exists.` };
         }
 
         const avatars = ['⚽', '🔥', '⚡', '🏆', '🎯', '🧤', '🚀', '🌟'];
         const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
 
         const newUser = {
-            username: requestedUsername.trim(),
-            password: password,
-            displayName: displayName.trim() || requestedUsername.trim(),
-            role: 'USER',
-            status: 'PENDING',
-            avatar: randomAvatar,
-            createdAt: new Date().toISOString()
-        };
-
-        this.users[newUser.username] = newUser;
-        this.saveUsers();
-
-        return {
-            success: true,
-            isPending: true,
-            message: '🎉 Access Requested!\nYour account has been submitted to admin (jj7758) for approval.'
-        };
-    }
-
-    approveUser(originalUsername, newUsername = null, newDisplayName = null) {
-        if (!this.isAdmin()) return { success: false, message: 'Unauthorized' };
-
-        const user = this.users[originalUsername];
-        if (!user) return { success: false, message: 'User not found' };
-
-        // If admin re-assigned the username
-        const finalUsername = (newUsername && newUsername.trim()) ? newUsername.trim() : user.username;
-        const finalDisplayName = (newDisplayName && newDisplayName.trim()) ? newDisplayName.trim() : (user.displayName || finalUsername);
-
-        // If username changed, delete old key and re-assign
-        if (finalUsername !== originalUsername) {
-            delete this.users[originalUsername];
-        }
-
-        user.username = finalUsername;
-        user.displayName = finalDisplayName;
-        user.status = 'APPROVED';
-        user.approvedAt = new Date().toISOString();
-
-        this.users[finalUsername] = user;
-        this.saveUsers();
-
-        return { success: true, user };
-    }
-
-    rejectUser(username) {
-        if (!this.isAdmin()) return { success: false, message: 'Unauthorized' };
-        if (username === 'jj7758') return { success: false, message: 'Cannot reject admin' };
-
-        const user = this.users[username];
-        if (!user) return { success: false, message: 'User not found' };
-
-        user.status = 'REJECTED';
-        this.saveUsers();
-        return { success: true };
-    }
-
-    adminAddUser(username, password, displayName, role = 'USER') {
-        if (!this.isAdmin()) return { success: false, message: 'Unauthorized' };
-        const u = username.trim();
-        if (!u || !password) return { success: false, message: 'Username and password required' };
-
-        const newUser = {
             username: u,
-            password: password,
-            displayName: displayName.trim() || u,
+            password: p,
+            displayName: (displayName || '').trim() || u,
             role: role,
             status: 'APPROVED',
-            avatar: role === 'ADMIN' ? '👑' : '⚽',
+            avatar: role === 'ADMIN' ? '👑' : randomAvatar,
             createdAt: new Date().toISOString(),
             approvedAt: new Date().toISOString()
         };
 
         this.users[u] = newUser;
         this.saveUsers();
+
+        // Auto-push users to Git
+        this.pushUsersToGit().catch(e => console.warn('Auto git push users:', e));
+
         return { success: true, user: newUser };
+    }
+
+    adminDeleteUser(username) {
+        if (!this.isAdmin()) return { success: false, message: 'Unauthorized' };
+        if (username === 'jj7758') return { success: false, message: 'Cannot delete Commissioner account.' };
+
+        if (!this.users[username]) return { success: false, message: 'User not found' };
+
+        delete this.users[username];
+        this.saveUsers();
+
+        // Auto-push users to Git
+        this.pushUsersToGit().catch(e => console.warn('Auto git push users:', e));
+
+        return { success: true };
+    }
+
+    generateUsersFileContent() {
+        return `/**
+ * Showdown XI - Authorized Users Database
+ * Managed by Commissioner (jj7758) and synchronized with Git.
+ * This file is tracked in Git to provide persistent credentials across all devices.
+ */
+
+const AUTH_USERS_DATA = ${JSON.stringify(this.users, null, 4)};
+
+function getGitUsersDatabase() {
+    if (typeof AUTH_USERS_DATA !== 'undefined') {
+        return JSON.parse(JSON.stringify(AUTH_USERS_DATA));
+    }
+    return {};
+}
+
+function updateGitUsersDatabase(newUsers) {
+    if (typeof AUTH_USERS_DATA !== 'undefined' && newUsers) {
+        for (const u in newUsers) {
+            AUTH_USERS_DATA[u] = newUsers[u];
+        }
+    }
+}
+`;
+    }
+
+    async pushUsersToGit() {
+        if (window.gitSyncService && window.gitSyncService.isConfigured()) {
+            const content = this.generateUsersFileContent();
+            return await window.gitSyncService.pushUsersToGitHub(content);
+        }
+        return { success: false, message: 'GitHub Sync not configured.' };
+    }
+
+    async pullUsersFromGit() {
+        if (window.gitSyncService && window.gitSyncService.isConfigured()) {
+            return await window.gitSyncService.pullUsersFromGitHub(false);
+        }
+        return { success: false, message: 'GitHub Sync not configured.' };
+    }
+
+    exportUsersFile() {
+        const content = this.generateUsersFileContent();
+        const blob = new Blob([content], { type: 'application/javascript' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'users.js';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     logout() {
@@ -200,10 +198,6 @@ class AuthManager {
 
     isAdmin() {
         return this.currentUser && this.currentUser.role === 'ADMIN';
-    }
-
-    getPendingUsers() {
-        return Object.values(this.users).filter(u => u.status === 'PENDING');
     }
 
     getAllUsers() {
@@ -219,9 +213,17 @@ class AuthManager {
             const parsed = JSON.parse(jsonString);
             if (typeof parsed === 'object' && parsed !== null) {
                 if (!parsed['jj7758']) {
-                    parsed['jj7758'] = DEFAULT_USERS_DB['jj7758'];
+                    parsed['jj7758'] = {
+                        username: "jj7758",
+                        password: "foot4life",
+                        displayName: "JJ (Commissioner)",
+                        role: "ADMIN",
+                        status: "APPROVED",
+                        avatar: "👑"
+                    };
                 }
                 this.saveUsers(parsed);
+                this.pushUsersToGit().catch(e => console.warn('Git push on import:', e));
                 return { success: true, count: Object.keys(parsed).length };
             }
         } catch (e) {
@@ -232,3 +234,4 @@ class AuthManager {
 }
 
 window.authManager = new AuthManager();
+

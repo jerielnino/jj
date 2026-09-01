@@ -29,15 +29,13 @@
                 <span class="auth-logo-icon">⚽⚡</span>
                 <h2>SHOWDOWN XI</h2>
                 <p>Premier League & La Liga Match Clash Fantasy</p>
-            </div>
-
-            <div class="auth-tabs">
-                <button class="auth-tab-btn active" id="tabBtnLogin">Login</button>
-                <button class="auth-tab-btn" id="tabBtnRegister">Request Access</button>
+                <div style="margin-top: 0.5rem; font-size: 0.78rem; color: var(--text-muted); background: rgba(255,255,255,0.04); padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+                    🔒 Private League: Accounts are managed by Commissioner (<strong>jj7758</strong>).
+                </div>
             </div>
 
             <!-- Login Form Panel -->
-            <form id="loginForm" class="auth-form-panel active">
+            <form id="loginForm" class="auth-form-panel active" style="margin-top: 1rem;">
                 <div class="auth-form-group">
                     <label>Username</label>
                     <input type="text" id="loginUsername" placeholder="e.g. jj7758" required autocomplete="username">
@@ -46,30 +44,8 @@
                     <label>Password</label>
                     <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.75rem;">
                     Sign In
-                </button>
-            </form>
-
-            <!-- Register / Request Access Form Panel -->
-            <form id="registerForm" class="auth-form-panel">
-                <div class="auth-form-group">
-                    <label>Desired Username</label>
-                    <input type="text" id="regUsername" placeholder="e.g. alex_fpl" required>
-                </div>
-                <div class="auth-form-group">
-                    <label>Display Name / Manager Name</label>
-                    <input type="text" id="regDisplayName" placeholder="e.g. Alex Ferguson" required>
-                </div>
-                <div class="auth-form-group">
-                    <label>Password</label>
-                    <input type="password" id="regPassword" placeholder="Create password" required>
-                </div>
-                <div class="auth-notice">
-                    ℹ️ New registrations are reviewed by the commissioner (<strong>jj7758</strong>). You will be approved before entering rooms.
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
-                    Submit for Approval
                 </button>
             </form>
 
@@ -240,49 +216,63 @@
 
     <!-- Modal: Commissioner Admin Panel -->
     <div class="app-modal" id="adminPanelModal">
-        <div class="modal-dialog admin-dialog">
+        <div class="modal-dialog admin-dialog" style="max-width: 600px;">
             <div class="modal-header">
-                <h3>👑 Commissioner User Management</h3>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 1.4rem;">👑</span>
+                    <h3 style="margin: 0;">Commissioner User Management</h3>
+                </div>
                 <button class="modal-close-btn">&times;</button>
             </div>
             
             <div class="admin-panel-content">
-                <!-- Pending Approvals Section -->
-                <div class="admin-section">
-                    <h4>⏳ Pending User Approvals (<span id="adminPendingCount">0</span>)</h4>
-                    <div class="admin-user-list" id="adminPendingList">
-                        <!-- Rendered dynamically -->
-                    </div>
-                </div>
-
                 <!-- Add New User Directly -->
                 <div class="admin-section">
-                    <h4>➕ Create Pre-Approved User</h4>
-                    <div class="admin-add-user-row">
-                        <input type="text" id="adminAddUsername" placeholder="Username (e.g. david7)">
-                        <input type="text" id="adminAddDisplayName" placeholder="Display Name">
-                        <input type="password" id="adminAddPassword" placeholder="Password">
-                        <button class="btn btn-primary btn-sm" id="btnAdminAddUser">+ Add User</button>
+                    <h4>➕ Create New Authorized User</h4>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0.2rem 0 0.6rem;">
+                        Create login credentials for managers. When created or exported, credentials are saved to Git so they can log in immediately on any device.
+                    </p>
+                    <div class="admin-add-user-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 100px; gap: 0.4rem;">
+                        <input type="text" id="adminAddUsername" placeholder="Username (e.g. david7)" required>
+                        <input type="text" id="adminAddDisplayName" placeholder="Display Name (e.g. David B)">
+                        <input type="password" id="adminAddPassword" placeholder="Password" required>
+                        <button class="btn btn-primary btn-sm" id="btnAdminAddUser" style="white-space: nowrap;">+ Add User</button>
                     </div>
                 </div>
 
-                <!-- Active Approved Users -->
+                <!-- Active Authorized Users -->
                 <div class="admin-section">
-                    <h4>👥 Approved Users Database</h4>
-                    <div class="admin-user-list" id="adminApprovedList">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h4 style="margin: 0;">👥 Registered Users Database (<span id="adminApprovedCount">1</span>)</h4>
+                    </div>
+                    <div class="admin-user-list" id="adminApprovedList" style="margin-top: 0.6rem;">
                         <!-- Rendered dynamically -->
                     </div>
                 </div>
 
-                <!-- Plain JSON Persistence Tools -->
+                <!-- Git Cloud Sync & Export Section -->
                 <div class="admin-section">
-                    <h4>📄 Plain JSON Database (Git / Storage Sync)</h4>
-                    <p class="admin-json-help">Export or paste plain JSON to sync user credentials across devices and GitHub hosting.</p>
-                    <textarea id="adminUsersJsonTextarea" rows="6" style="width: 100%; font-family: monospace; font-size: 0.75rem; background: var(--bg-dark); color: #fff; border: 1px solid var(--border-glass); border-radius: var(--radius-sm); padding: 0.5rem;"></textarea>
-                    <div class="admin-json-actions">
-                        <button class="btn btn-secondary btn-sm" id="btnAdminExportJson">📋 Refresh / Copy JSON</button>
-                        <button class="btn btn-warning btn-sm" id="btnAdminImportJson">📥 Save / Import JSON</button>
+                    <h4>🐙 Git Cloud Export & Sync (<code>js/data/users.js</code>)</h4>
+                    <p class="admin-json-help" style="margin-bottom: 0.6rem;">
+                        Export the authorized users database directly to your GitHub repository so all users can sign in from anywhere.
+                    </p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.6rem;">
+                        <button class="btn btn-primary btn-sm" id="btnAdminPushGit" title="Commit and push users to GitHub">
+                            🐙 Push Users to GitHub
+                        </button>
+                        <button class="btn btn-secondary btn-sm" id="btnAdminPullGit" title="Fetch latest users from GitHub">
+                            ⬇️ Pull Users from GitHub
+                        </button>
                     </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.6rem;">
+                        <button class="btn btn-secondary btn-sm" id="btnAdminDownloadUsersFile" title="Download users.js file">
+                            📥 Download users.js File
+                        </button>
+                        <button class="btn btn-secondary btn-sm" id="btnAdminExportJson" title="Copy raw JSON to clipboard">
+                            📋 Copy Plain JSON
+                        </button>
+                    </div>
+                    <textarea id="adminUsersJsonTextarea" rows="4" style="width: 100%; font-family: monospace; font-size: 0.72rem; background: var(--bg-dark); color: #fff; border: 1px solid var(--border-glass); border-radius: var(--radius-sm); padding: 0.5rem;" placeholder="User JSON will appear here..."></textarea>
                 </div>
             </div>
         </div>
@@ -389,6 +379,7 @@
     </div>
 
     <!-- Application Scripts -->
+    <script src="js/data/users.js"></script>
     <script src="js/auth/authManager.js"></script>
     <script src="js/data/teams.js"></script>
     <script src="js/data/fixtures.js"></script>

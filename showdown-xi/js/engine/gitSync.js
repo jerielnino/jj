@@ -431,10 +431,123 @@ function updateGitDatabase(newRooms, newUserSquads, newSquads) {
         }
     }
 
+    async pushUsersToGitHub(usersCodeString) {
+        if (!this.isConfigured()) {
+            this.openSyncModal();
+            return { success: false, message: 'Please configure GitHub credentials in Git Sync.' };
+        }
+
+        const repo = this.cleanRepo(this.config.repo);
+        const branch = (this.config.branch || 'main').trim();
+        const token = this.config.token.trim().replace(/^['"]|['"]$/g, '');
+        const filePath = 'showdown-xi/js/data/users.js';
+
+        // 1. Resolve current SHA
+        let currentSha = null;
+        try {
+            const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}?ref=${encodeURIComponent(branch)}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github+json'
+                }
+            });
+            if (getRes.ok) {
+                const getData = await getRes.json();
+                currentSha = getData.sha;
+            }
+        } catch (e) {}
+
+        // 2. Base64 encode
+        const utf8Bytes = new TextEncoder().encode(usersCodeString);
+        let binary = '';
+        for (let i = 0; i < utf8Bytes.length; i++) {
+            binary += String.fromCharCode(utf8Bytes[i]);
+        }
+        const base64Content = btoa(binary);
+
+        const body = {
+            message: `Update Showdown XI Authorized Users Database [${new Date().toISOString()}]`,
+            content: base64Content,
+            branch: branch
+        };
+        if (currentSha) body.sha = currentSha;
+
+        let putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!putRes.ok && (putRes.status === 409 || putRes.status === 422)) {
+            // Retry once with fresh SHA
+            try {
+                const retryGet = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}?ref=${encodeURIComponent(branch)}`, {
+                    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+                });
+                if (retryGet.ok) {
+                    const rData = await retryGet.json();
+                    body.sha = rData.sha;
+                    putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                }
+            } catch (err) {}
+        }
+
+        if (!putRes.ok) {
+            const err = await putRes.json().catch(() => ({}));
+            throw new Error(err.message || `GitHub error: HTTP ${putRes.status}`);
+        }
+
+        return { success: true };
+    }
+
+    async pullUsersFromGitHub(isSilent = false) {
+        if (!this.isConfigured()) return { success: false };
+        try {
+            const repo = this.cleanRepo(this.config.repo);
+            const branch = (this.config.branch || 'main').trim();
+            const filePath = 'showdown-xi/js/data/users.js';
+            const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/${filePath}?t=${Date.now()}`;
+
+            const res = await fetch(rawUrl);
+            if (!res.ok) return { success: false };
+
+            const codeText = await res.text();
+            const sandbox = new Function(codeText + '\nreturn { AUTH_USERS_DATA };');
+            const data = sandbox();
+
+            if (data.AUTH_USERS_DATA) {
+                if (typeof updateGitUsersDatabase === 'function') {
+                    updateGitUsersDatabase(data.AUTH_USERS_DATA);
+                }
+                if (window.authManager) {
+                    window.authManager.loadUsers();
+                }
+            }
+            if (!isSilent) {
+                alert('🎉 Successfully pulled the latest users database from GitHub!');
+            }
+            return { success: true };
+        } catch (e) {
+            console.warn('Could not pull users from GitHub:', e);
+            return { success: false };
+        }
+    }
+
     async autoSyncOnStartup() {
         if (this.isConfigured()) {
-            console.log('🐙 Auto-syncing latest data from GitHub on startup...');
-            await this.pullFromGitHub(true);
+            console.log('🐙 Auto-syncing latest data and users from GitHub on startup...');
+            await Promise.all([
+                this.pullFromGitHub(true),
+                this.pullUsersFromGitHub(true)
+            ]);
         }
     }
 
