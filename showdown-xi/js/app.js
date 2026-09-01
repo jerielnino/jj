@@ -166,8 +166,10 @@ class ShowdownApp {
 
         try {
             // 1. Snapshot all critical permanent data first
-            const authUsers = localStorage.getItem('showdown_xi_auth_users');
-            const loggedUser = localStorage.getItem('showdown_xi_logged_user');
+            const authUsersDb = localStorage.getItem('showdown_auth_users_db_v1');
+            const authSession = localStorage.getItem('showdown_auth_session_v1');
+            const authUsersOld = localStorage.getItem('showdown_xi_auth_users');
+            const loggedUserOld = localStorage.getItem('showdown_xi_logged_user');
             const masterSquads = localStorage.getItem('showdown_xi_master_squads');
             const rooms = localStorage.getItem('showdown_xi_rooms_v2');
             const userProfile = localStorage.getItem('showdown_xi_user_profile');
@@ -183,8 +185,10 @@ class ShowdownApp {
             try { localStorage.clear(); } catch (e) {}
 
             // 3. Restore all critical persistent data
-            if (authUsers) localStorage.setItem('showdown_xi_auth_users', authUsers);
-            if (loggedUser) localStorage.setItem('showdown_xi_logged_user', loggedUser);
+            if (authUsersDb) localStorage.setItem('showdown_auth_users_db_v1', authUsersDb);
+            if (authSession) localStorage.setItem('showdown_auth_session_v1', authSession);
+            if (authUsersOld) localStorage.setItem('showdown_xi_auth_users', authUsersOld);
+            if (loggedUserOld) localStorage.setItem('showdown_xi_logged_user', loggedUserOld);
             if (masterSquads) localStorage.setItem('showdown_xi_master_squads', masterSquads);
             if (rooms) localStorage.setItem('showdown_xi_rooms_v2', rooms);
             if (userProfile) localStorage.setItem('showdown_xi_user_profile', userProfile);

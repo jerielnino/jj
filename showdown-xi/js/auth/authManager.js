@@ -6,8 +6,10 @@
 class AuthManager {
     constructor() {
         this.SESSION_KEY = 'showdown_auth_session_v1';
+        this.USERS_KEY = 'showdown_auth_users_db_v1';
         this.users = this.loadUsers();
         this.currentUser = this.loadSession();
+        this.fetchUsersFallback().catch(() => {});
     }
 
     loadUsers() {
@@ -15,6 +17,23 @@ class AuthManager {
         if (typeof AUTH_USERS_DATA !== 'undefined') {
             db = JSON.parse(JSON.stringify(AUTH_USERS_DATA));
         }
+
+        // Merge persistent local storage (contains newly added or synced users)
+        try {
+            const localRaw = localStorage.getItem(this.USERS_KEY);
+            if (localRaw) {
+                const localUsers = JSON.parse(localRaw);
+                if (typeof localUsers === 'object' && localUsers !== null) {
+                    for (const u in localUsers) {
+                        if (!db[u]) {
+                            db[u] = localUsers[u];
+                        } else if (localUsers[u].approvedAt && (!db[u].approvedAt || new Date(localUsers[u].approvedAt) > new Date(db[u].approvedAt))) {
+                            db[u] = localUsers[u];
+                        }
+                    }
+                }
+            }
+        } catch (e) {}
 
         // Ensure default commissioner always exists
         if (!db['jj7758']) {
@@ -31,6 +50,11 @@ class AuthManager {
         }
 
         this.users = db;
+        if (typeof AUTH_USERS_DATA !== 'undefined') {
+            for (const u in db) {
+                AUTH_USERS_DATA[u] = db[u];
+            }
+        }
         return db;
     }
 
@@ -45,6 +69,34 @@ class AuthManager {
                 if (!usersObj[u]) delete AUTH_USERS_DATA[u];
             }
         }
+        try {
+            localStorage.setItem(this.USERS_KEY, JSON.stringify(usersObj));
+        } catch (e) {}
+    }
+
+    async fetchUsersFallback() {
+        try {
+            // Attempt to load users.json directly
+            const res = await fetch('users.json?t=' + Date.now(), { cache: 'no-store' });
+            if (res.ok) {
+                const jsonUsers = await res.json();
+                if (jsonUsers && typeof jsonUsers === 'object') {
+                    let updated = false;
+                    for (const u in jsonUsers) {
+                        if (!this.users[u]) {
+                            this.users[u] = jsonUsers[u];
+                            updated = true;
+                        }
+                    }
+                    if (updated) {
+                        this.saveUsers(this.users);
+                        if (window.showdownApp && typeof window.showdownApp.renderAdminPanel === 'function') {
+                            window.showdownApp.renderAdminPanel();
+                        }
+                    }
+                }
+            }
+        } catch (e) {}
     }
 
     loadSession() {
@@ -166,8 +218,9 @@ function updateGitUsersDatabase(newUsers) {
 
     async pushUsersToGit() {
         if (window.gitSyncService && window.gitSyncService.isConfigured()) {
-            const content = this.generateUsersFileContent();
-            return await window.gitSyncService.pushUsersToGitHub(content);
+            const jsContent = this.generateUsersFileContent();
+            const jsonContent = JSON.stringify(this.users, null, 2);
+            return await window.gitSyncService.pushUsersToGitHub(jsContent, jsonContent);
         }
         return { success: false, message: 'GitHub Sync not configured.' };
     }

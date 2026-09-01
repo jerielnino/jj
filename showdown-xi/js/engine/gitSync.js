@@ -374,8 +374,67 @@ function updateGitDatabase(newRooms, newUserSquads, newSquads) {
         }
     }
 
+    async commitSingleFile(repo, branch, token, filePath, contentString, message) {
+        let currentSha = null;
+        try {
+            const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}?ref=${encodeURIComponent(branch)}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github+json'
+                }
+            });
+            if (getRes.ok) {
+                const getData = await getRes.json();
+                currentSha = getData.sha;
+            }
+        } catch (e) {}
+
+        const utf8Bytes = new TextEncoder().encode(contentString);
+        let binary = '';
+        for (let i = 0; i < utf8Bytes.length; i++) {
+            binary += String.fromCharCode(utf8Bytes[i]);
+        }
+        const base64Content = btoa(binary);
+
+        const body = {
+            message: message,
+            content: base64Content,
+            branch: branch
+        };
+        if (currentSha) body.sha = currentSha;
+
+        let putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!putRes.ok && (putRes.status === 409 || putRes.status === 422)) {
+            try {
+                const retryGet = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}?ref=${encodeURIComponent(branch)}`, {
+                    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+                });
+                if (retryGet.ok) {
+                    const rData = await retryGet.json();
+                    body.sha = rData.sha;
+                    putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                }
+            } catch (err) {}
+        }
+        return putRes.ok;
+    }
+
     async pullFromGitHub(isSilent = false) {
-        if (!this.isConfigured()) {
+        const repo = this.cleanRepo(this.config.repo || 'jerielnino/jj');
+        if (!repo) {
             if (!isSilent) this.openSyncModal();
             return { success: false, message: 'Please enter your GitHub Repository name.' };
         }
@@ -385,12 +444,16 @@ function updateGitDatabase(newRooms, newUserSquads, newSquads) {
         this.updateSyncUIState(true, '⬇️ Pulling from GitHub...');
 
         try {
-            const repo = this.cleanRepo(this.config.repo);
             const branch = (this.config.branch || 'main').trim();
             const filePath = this.getFilePath();
             const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/${filePath}?t=${Date.now()}`;
 
-            const res = await fetch(rawUrl);
+            const headers = {};
+            if (this.config.token) {
+                headers['Authorization'] = `Bearer ${this.config.token.trim().replace(/^['"]|['"]$/g, '')}`;
+            }
+
+            const res = await fetch(rawUrl, { headers, cache: 'no-store' });
             if (!res.ok) throw new Error(`Could not fetch savedSquads.js (HTTP ${res.status})`);
 
             const codeText = await res.text();
@@ -431,7 +494,7 @@ function updateGitDatabase(newRooms, newUserSquads, newSquads) {
         }
     }
 
-    async pushUsersToGitHub(usersCodeString) {
+    async pushUsersToGitHub(usersCodeString, usersJsonString = '') {
         if (!this.isConfigured()) {
             this.openSyncModal();
             return { success: false, message: 'Please configure GitHub credentials in Git Sync.' };
@@ -440,101 +503,85 @@ function updateGitDatabase(newRooms, newUserSquads, newSquads) {
         const repo = this.cleanRepo(this.config.repo);
         const branch = (this.config.branch || 'main').trim();
         const token = this.config.token.trim().replace(/^['"]|['"]$/g, '');
-        const filePath = 'showdown-xi/js/data/users.js';
+        const timeStr = new Date().toISOString();
 
-        // 1. Resolve current SHA
-        let currentSha = null;
-        try {
-            const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}?ref=${encodeURIComponent(branch)}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/vnd.github+json'
-                }
-            });
-            if (getRes.ok) {
-                const getData = await getRes.json();
-                currentSha = getData.sha;
-            }
-        } catch (e) {}
+        // 1. Push JS Data file (showdown-xi/js/data/users.js)
+        const jsPath = repo.includes('jerielnino/jj') ? 'showdown-xi/js/data/users.js' : 'js/data/users.js';
+        const jsOk = await this.commitSingleFile(repo, branch, token, jsPath, usersCodeString, `Update Showdown XI Authorized Users Database [${timeStr}]`);
 
-        // 2. Base64 encode
-        const utf8Bytes = new TextEncoder().encode(usersCodeString);
-        let binary = '';
-        for (let i = 0; i < utf8Bytes.length; i++) {
-            binary += String.fromCharCode(utf8Bytes[i]);
-        }
-        const base64Content = btoa(binary);
-
-        const body = {
-            message: `Update Showdown XI Authorized Users Database [${new Date().toISOString()}]`,
-            content: base64Content,
-            branch: branch
-        };
-        if (currentSha) body.sha = currentSha;
-
-        let putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/vnd.github+json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(body)
-        });
-
-        if (!putRes.ok && (putRes.status === 409 || putRes.status === 422)) {
-            // Retry once with fresh SHA
-            try {
-                const retryGet = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}?ref=${encodeURIComponent(branch)}`, {
-                    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
-                });
-                if (retryGet.ok) {
-                    const rData = await retryGet.json();
-                    body.sha = rData.sha;
-                    putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
-                        method: 'PUT',
-                        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body)
-                    });
-                }
-            } catch (err) {}
+        // 2. Also push users.json (showdown-xi/users.json and users.json)
+        if (usersJsonString) {
+            const jsonPath = repo.includes('jerielnino/jj') ? 'showdown-xi/users.json' : 'users.json';
+            await this.commitSingleFile(repo, branch, token, jsonPath, usersJsonString, `Update Showdown XI users.json [${timeStr}]`).catch(() => {});
         }
 
-        if (!putRes.ok) {
-            const err = await putRes.json().catch(() => ({}));
-            throw new Error(err.message || `GitHub error: HTTP ${putRes.status}`);
+        if (!jsOk) {
+            throw new Error('Failed to update users on GitHub. Please check repository permissions.');
         }
 
         return { success: true };
     }
 
     async pullUsersFromGitHub(isSilent = false) {
-        if (!this.isConfigured()) return { success: false };
+        const repo = this.cleanRepo(this.config.repo || 'jerielnino/jj');
+        if (!repo) return { success: false };
+
         try {
-            const repo = this.cleanRepo(this.config.repo);
             const branch = (this.config.branch || 'main').trim();
-            const filePath = 'showdown-xi/js/data/users.js';
-            const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/${filePath}?t=${Date.now()}`;
+            const candidates = [
+                `showdown-xi/js/data/users.js`,
+                `js/data/users.js`,
+                `showdown-xi/users.json`,
+                `users.json`
+            ];
 
-            const res = await fetch(rawUrl);
-            if (!res.ok) return { success: false };
+            let fetchedData = null;
+            const headers = {};
+            if (this.config.token) {
+                headers['Authorization'] = `Bearer ${this.config.token.trim().replace(/^['"]|['"]$/g, '')}`;
+            }
 
-            const codeText = await res.text();
-            const sandbox = new Function(codeText + '\nreturn { AUTH_USERS_DATA };');
-            const data = sandbox();
+            for (const path of candidates) {
+                try {
+                    const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/${path}?t=${Date.now()}`;
+                    const res = await fetch(rawUrl, { headers, cache: 'no-store' });
+                    if (res.ok) {
+                        const text = await res.text();
+                        if (path.endsWith('.js')) {
+                            const sandbox = new Function(text + '\nreturn { AUTH_USERS_DATA };');
+                            const data = sandbox();
+                            if (data && data.AUTH_USERS_DATA) {
+                                fetchedData = data.AUTH_USERS_DATA;
+                                break;
+                            }
+                        } else if (path.endsWith('.json')) {
+                            const json = JSON.parse(text);
+                            if (json && typeof json === 'object') {
+                                fetchedData = json;
+                                break;
+                            }
+                        }
+                    }
+                } catch (err) {}
+            }
 
-            if (data.AUTH_USERS_DATA) {
+            if (fetchedData) {
                 if (typeof updateGitUsersDatabase === 'function') {
-                    updateGitUsersDatabase(data.AUTH_USERS_DATA);
+                    updateGitUsersDatabase(fetchedData);
                 }
                 if (window.authManager) {
+                    window.authManager.saveUsers(fetchedData);
                     window.authManager.loadUsers();
                 }
+                if (window.showdownApp && typeof window.showdownApp.renderAdminPanel === 'function') {
+                    window.showdownApp.renderAdminPanel();
+                }
+                if (!isSilent) {
+                    alert('🎉 Successfully pulled the latest users database from GitHub!');
+                }
+                return { success: true };
             }
-            if (!isSilent) {
-                alert('🎉 Successfully pulled the latest users database from GitHub!');
-            }
-            return { success: true };
+            return { success: false };
         } catch (e) {
             console.warn('Could not pull users from GitHub:', e);
             return { success: false };
@@ -542,12 +589,14 @@ function updateGitDatabase(newRooms, newUserSquads, newSquads) {
     }
 
     async autoSyncOnStartup() {
-        if (this.isConfigured()) {
-            console.log('🐙 Auto-syncing latest data and users from GitHub on startup...');
+        console.log('🐙 Auto-syncing latest data and users from GitHub on startup...');
+        try {
             await Promise.all([
                 this.pullFromGitHub(true),
                 this.pullUsersFromGitHub(true)
             ]);
+        } catch (e) {
+            console.warn('Auto-sync error:', e);
         }
     }
 
