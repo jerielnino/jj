@@ -72,6 +72,19 @@ class AuthManager {
         try {
             localStorage.setItem(this.USERS_KEY, JSON.stringify(usersObj));
         } catch (e) {}
+
+        // Simultaneously update both users.json and js/data/users.js on local disk if running with backend
+        this.syncToLocalDisk(usersObj).catch(() => {});
+    }
+
+    async syncToLocalDisk(usersObj = this.users) {
+        try {
+            await fetch('api/users.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(usersObj)
+            });
+        } catch (e) {}
     }
 
     async fetchUsersFallback() {
