@@ -40,7 +40,7 @@ class LeaderboardUI {
             let breakdown = null;
 
             if (squad && squad.playerIds && squad.playerIds.length === 11) {
-                const res = calculateSquadTotalPoints(squad.playerIds, squad.captainId, squad.viceCaptainId, liveStatsMap);
+                const res = calculateSquadTotalPoints(squad.playerIds, squad.benchIds || [], squad.captainId, squad.viceCaptainId, liveStatsMap);
                 matchScore = res.totalScore;
                 breakdown = res;
             }
@@ -54,7 +54,7 @@ class LeaderboardUI {
                     } else {
                         const s = p.squads[fId];
                         if (s && s.playerIds && s.playerIds.length === 11) {
-                            const pastRes = calculateSquadTotalPoints(s.playerIds, s.captainId, s.viceCaptainId, {});
+                            const pastRes = calculateSquadTotalPoints(s.playerIds, s.benchIds || [], s.captainId, s.viceCaptainId, {});
                             cumulativeTotal += pastRes.totalScore;
                         }
                     }
@@ -276,55 +276,81 @@ class LeaderboardUI {
         const targetSquad = targetParticipant.squad;
         const mySquad = myParticipant?.squad;
 
+        const liveStatsMap = window.matchSimulator?.livePlayerStats || {};
+        const squadBreakdown = calculateSquadTotalPoints(targetSquad?.playerIds || [], targetSquad?.benchIds || [], targetSquad?.captainId, targetSquad?.viceCaptainId, liveStatsMap);
+
+        const renderCard = (pBreakdown, isBench = false, roleLabel = '') => {
+            const pId = pBreakdown.playerId;
+            const player = getPlayerById(pId);
+            if (!player) return '';
+
+            const isCap = pId === targetSquad.captainId;
+            const isVC = pId === targetSquad.viceCaptainId;
+            const team = TEAMS_DATA[player.club] || { name: player.club, badge: '', primaryColor: '#333' };
+            const isCommonPick = mySquad?.playerIds?.includes(pId) || mySquad?.benchIds?.includes(pId);
+
+            let statusBadge = '';
+            if (pBreakdown.autoSubIn) {
+                statusBadge = '<span class="common-tag" style="background:#10B981; color:#000;">⚡ AUTO-SUB IN</span>';
+            } else if (pBreakdown.autoSubOut) {
+                statusBadge = '<span class="diff-tag" style="background:#EF4444; color:#fff;">⚠️ SUBBED OUT</span>';
+            } else if (isBench) {
+                statusBadge = `<span class="bench-p-pill" style="color:#C084FC;">${roleLabel || 'BENCH'}</span>`;
+            }
+
+            return `
+                <div class="comp-player-card ${isCommonPick ? 'shared-pick' : 'differential-pick'} ${pBreakdown.autoSubOut ? 'card-injured' : ''}">
+                    <div class="comp-card-top">
+                        <img src="${team.badge}" class="comp-crest-mini" alt="${team.name}">
+                        <span class="comp-badge">${team.shortName || team.name}</span>
+                        <span class="comp-pos-tag">${player.pos}</span>
+                        ${isCap ? '<span class="captain-badge">C (2x)</span>' : ''}
+                        ${isVC ? '<span class="vc-badge">V</span>' : ''}
+                        ${statusBadge}
+                        ${isCommonPick ? '<span class="common-tag">Shared</span>' : '<span class="diff-tag">Diff ⭐</span>'}
+                    </div>
+                    <div class="comp-player-identity">
+                        <img src="${player.photo || ''}" alt="${player.name}" class="comp-player-photo-thumb" onerror="this.style.display='none'">
+                        <div class="comp-player-name-box">
+                            <div class="comp-player-name">${player.name}</div>
+                            <div class="comp-price">£${player.price}m • #${player.number || player.pos}</div>
+                        </div>
+                    </div>
+                    <div class="comp-player-score">
+                        <span class="comp-points">${pBreakdown.totalPoints} pts</span>
+                    </div>
+                    <div class="comp-breakdown-chips">
+                        ${pBreakdown.breakdown.map(b => `<span class="breakdown-chip ${b.pts >= 0 ? 'pos' : 'neg'}">${b.rule}: ${b.pts >= 0 ? '+' : ''}${b.pts}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        };
+
         content.innerHTML = `
             <div class="comp-modal-header">
                 <div class="comp-title">
                     <h3>Tactical Breakdown: ${targetParticipant.name} (@${targetParticipant.userId})</h3>
-                    <p>Formation: <strong>${targetSquad?.formation || '4-3-3'}</strong> • Match Score: <strong>${targetParticipant.matchScore} pts</strong> • Total Score: <strong>${targetParticipant.totalScore} pts</strong></p>
+                    <p>Formation: <strong>${targetSquad?.formation || '4-3-3'}</strong> • Match Score: <strong>${targetParticipant.matchScore} pts</strong> • Total Score: <strong>${targetParticipant.totalScore} pts</strong> • Squad Cost: <strong>£${targetSquad?.totalPrice || '100.0'}m</strong></p>
                 </div>
                 <button class="drawer-close-btn" id="compCloseBtn">&times;</button>
             </div>
 
-            <div class="comp-player-grid">
-                ${(targetSquad?.playerIds || []).map(pId => {
-                    const player = getPlayerById(pId);
-                    if (!player) return '';
-
-                    const isCap = pId === targetSquad.captainId;
-                    const isVC = pId === targetSquad.viceCaptainId;
-                    const team = TEAMS_DATA[player.club] || { name: player.club, badge: '', primaryColor: '#333' };
-                    const isCommonPick = mySquad?.playerIds?.includes(pId);
-
-                    const pStats = window.matchSimulator?.livePlayerStats[pId] || { minutes: 90 };
-                    const fplBreakdown = calculatePlayerFPLPoints(player, pStats, isCap, isVC);
-
-                    return `
-                        <div class="comp-player-card ${isCommonPick ? 'shared-pick' : 'differential-pick'}">
-                            <div class="comp-card-top">
-                                <img src="${team.badge}" class="comp-crest-mini" alt="${team.name}">
-                                <span class="comp-badge">${team.shortName || team.name}</span>
-                                <span class="comp-pos-tag">${player.pos}</span>
-                                ${isCap ? '<span class="captain-badge">C (2x)</span>' : ''}
-                                ${isVC ? '<span class="vc-badge">V</span>' : ''}
-                                ${isCommonPick ? '<span class="common-tag">Shared</span>' : '<span class="diff-tag">Differential ⭐</span>'}
-                            </div>
-                            <div class="comp-player-identity">
-                                <img src="${player.photo || ''}" alt="${player.name}" class="comp-player-photo-thumb" onerror="this.style.display='none'">
-                                <div class="comp-player-name-box">
-                                    <div class="comp-player-name">${player.name}</div>
-                                    <div class="comp-price">£${player.price}m • #${player.number || player.pos}</div>
-                                </div>
-                            </div>
-                            <div class="comp-player-score">
-                                <span class="comp-points">${fplBreakdown.totalPoints} pts</span>
-                            </div>
-                            <div class="comp-breakdown-chips">
-                                ${fplBreakdown.breakdown.map(b => `<span class="breakdown-chip ${b.pts >= 0 ? 'pos' : 'neg'}">${b.rule}: ${b.pts >= 0 ? '+' : ''}${b.pts}</span>`).join('')}
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
+            <div class="comp-section-title" style="font-weight:900; font-size:0.95rem; margin:1rem 0 0.5rem; color:var(--text-main); display:flex; align-items:center; gap:0.5rem;">
+                <span>⭐ STARTING 11 (ON PITCH)</span>
             </div>
+            <div class="comp-player-grid">
+                ${squadBreakdown.starterBreakdowns.map(sb => renderCard(sb, false)).join('')}
+            </div>
+
+            ${squadBreakdown.benchBreakdowns.length > 0 ? `
+                <div class="comp-section-title" style="font-weight:900; font-size:0.95rem; margin:1.5rem 0 0.5rem; color:var(--text-main); display:flex; align-items:center; gap:0.5rem;">
+                    <span>🪑 SUBSTITUTES BENCH (4 PLAYERS)</span>
+                    <span style="font-size:0.75rem; color:var(--text-dim); font-weight:600;">• Auto-sub priority order</span>
+                </div>
+                <div class="comp-player-grid">
+                    ${squadBreakdown.benchBreakdowns.map((bb, i) => renderCard(bb, true, bb.benchRole || (i === 0 ? 'GK SUB' : `SUB ${i}`))).join('')}
+                </div>
+            ` : ''}
         `;
 
         modal.classList.add('open');

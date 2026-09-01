@@ -182,38 +182,150 @@ function calculatePlayerFPLPoints(player, matchStats = {}, isCaptain = false, is
 }
 
 /**
- * Computes the total squad score and individual breakdowns for an 11-player lineup.
- * @param {Array<string>} squadPlayerIds - Array of 11 player IDs
+ * Computes the total squad score and individual breakdowns for a 15-player squad (11 Starters + 4 Bench Substitutes).
+ * Implements official FPL Auto-Substitution:
+ * - If starting GK played 0 mins, Bench GK replaces them.
+ * - If starting outfield played 0 mins, Bench outfield subs (Sub 1 -> Sub 2 -> Sub 3) sub in if formation remains legal (>=3 DEF, >=2 MID, >=1 FWD).
+ * 
+ * @param {Array<string>} squadPlayerIds - Array of 11 starter player IDs
+ * @param {Array<string>} benchPlayerIds - Array of 4 bench player IDs [gkSub, sub1, sub2, sub3]
  * @param {string} captainId - Selected Captain ID
  * @param {string} viceCaptainId - Selected Vice Captain ID
  * @param {Object} matchLiveStatsMap - Map of { [playerId]: matchStats }
  */
-function calculateSquadTotalPoints(squadPlayerIds, captainId, viceCaptainId, matchLiveStatsMap = {}) {
+function calculateSquadTotalPoints(squadPlayerIds = [], benchPlayerIds = [], captainId = null, viceCaptainId = null, matchLiveStatsMap = {}) {
     let totalScore = 0;
-    const playerBreakdowns = [];
+    const starterBreakdowns = [];
+    const benchBreakdowns = [];
 
-    // Check if Captain played. If captain played 0 mins, Vice Captain gets the 2x multiplier
-    const captainStats = matchLiveStatsMap[captainId] || {};
-    const captainPlayed = (captainStats.minutes ?? 90) > 0;
-    const effectiveCaptainId = captainPlayed ? captainId : viceCaptainId;
+    // Helper to get stats
+    const getStats = (pId) => matchLiveStatsMap[pId] || { minutes: 90 };
+    const didPlay = (pId) => {
+        if (!pId) return false;
+        const stats = getStats(pId);
+        return (stats.minutes ?? 90) > 0;
+    };
 
-    squadPlayerIds.forEach(pId => {
-        const player = getPlayerById(pId);
-        if (!player) return;
+    // Check Captaincy: if Captain played 0 mins, Vice Captain receives 2x multiplier
+    const captainPlayed = didPlay(captainId);
+    const effectiveCaptainId = captainPlayed ? captainId : (didPlay(viceCaptainId) ? viceCaptainId : captainId);
 
-        const isEffectiveCap = pId === effectiveCaptainId;
-        const isVC = pId === viceCaptainId;
-        const pStats = matchLiveStatsMap[pId] || { minutes: 90 };
+    // Analyze Starting 11 players
+    const starterPlayers = squadPlayerIds.map(id => getPlayerById(id)).filter(Boolean);
+    const benchPlayers = (benchPlayerIds || []).map(id => getPlayerById(id)).filter(Boolean);
 
-        const result = calculatePlayerFPLPoints(player, pStats, isEffectiveCap, isVC);
-        totalScore += result.totalPoints;
-        playerBreakdowns.push(result);
+    // Track active formation on pitch
+    const activeCounts = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+    starterPlayers.forEach(p => {
+        if (activeCounts[p.pos] !== undefined) activeCounts[p.pos]++;
+    });
+
+    // Identify starters who did not play (0 mins)
+    const starterStatusMap = {}; // { [playerId]: { autoSubOut: boolean, replacedBy: string|null } }
+    starterPlayers.forEach(p => {
+        starterStatusMap[p.id] = { autoSubOut: false, replacedBy: null };
+    });
+
+    const benchStatusMap = {}; // { [playerId]: { autoSubIn: boolean, replacing: string|null, order: number, role: string } }
+    benchPlayers.forEach((p, idx) => {
+        benchStatusMap[p.id] = {
+            autoSubIn: false,
+            replacing: null,
+            order: idx === 0 ? 0 : idx,
+            role: idx === 0 ? 'GK SUB' : `SUB ${idx}`
+        };
+    });
+
+    // 1. Goalkeeper Auto-Sub
+    const startingGk = starterPlayers.find(p => p.pos === 'GK');
+    const benchGk = benchPlayers.find(p => p.pos === 'GK');
+    if (startingGk && !didPlay(startingGk.id) && benchGk && didPlay(benchGk.id)) {
+        starterStatusMap[startingGk.id].autoSubOut = true;
+        starterStatusMap[startingGk.id].replacedBy = benchGk.name;
+        benchStatusMap[benchGk.id].autoSubIn = true;
+        benchStatusMap[benchGk.id].replacing = startingGk.name;
+    }
+
+    // 2. Outfield Auto-Subs (Sub 1 -> Sub 2 -> Sub 3)
+    const outfieldStartersDNP = starterPlayers.filter(p => p.pos !== 'GK' && !didPlay(p.id));
+    const outfieldBench = benchPlayers.filter(p => p.pos !== 'GK');
+
+    outfieldStartersDNP.forEach(dnpStarter => {
+        // Find first eligible bench sub in priority order
+        for (const benchSub of outfieldBench) {
+            if (benchStatusMap[benchSub.id].autoSubIn) continue; // already used
+            if (!didPlay(benchSub.id)) continue; // didn't play either
+
+            // Check if substituting maintains a legal formation: min 3 DEF, min 2 MID, min 1 FWD
+            const testCounts = { ...activeCounts };
+            testCounts[dnpStarter.pos]--;
+            testCounts[benchSub.pos]++;
+
+            if (testCounts.DEF >= 3 && testCounts.MID >= 2 && testCounts.FWD >= 1) {
+                // Valid substitution!
+                activeCounts[dnpStarter.pos]--;
+                activeCounts[benchSub.pos]++;
+                starterStatusMap[dnpStarter.id].autoSubOut = true;
+                starterStatusMap[dnpStarter.id].replacedBy = benchSub.name;
+                benchStatusMap[benchSub.id].autoSubIn = true;
+                benchStatusMap[benchSub.id].replacing = dnpStarter.name;
+                break;
+            }
+        }
+    });
+
+    // Calculate Points for Starters
+    starterPlayers.forEach(p => {
+        const isEffectiveCap = p.id === effectiveCaptainId;
+        const isVC = p.id === viceCaptainId;
+        const pStats = getStats(p.id);
+        const subInfo = starterStatusMap[p.id];
+
+        const result = calculatePlayerFPLPoints(p, pStats, isEffectiveCap, isVC);
+        result.isStarter = true;
+        result.isBench = false;
+        result.autoSubOut = subInfo.autoSubOut;
+        result.replacedBy = subInfo.replacedBy;
+
+        // Points count towards total score if starter did NOT get auto-subbed out
+        if (!subInfo.autoSubOut) {
+            totalScore += result.totalPoints;
+        } else {
+            result.breakdown.push({ rule: 'Auto-Subbed Out', pts: 0, desc: `Replaced by ${subInfo.replacedBy} (0 pts from starter)` });
+        }
+
+        starterBreakdowns.push(result);
+    });
+
+    // Calculate Points for Bench Substitutes
+    benchPlayers.forEach((p, idx) => {
+        const isEffectiveCap = p.id === effectiveCaptainId;
+        const isVC = p.id === viceCaptainId;
+        const pStats = getStats(p.id);
+        const subInfo = benchStatusMap[p.id] || { autoSubIn: false, replacing: null, role: idx === 0 ? 'GK SUB' : `SUB ${idx}` };
+
+        const result = calculatePlayerFPLPoints(p, pStats, isEffectiveCap, isVC);
+        result.isStarter = false;
+        result.isBench = true;
+        result.benchRole = subInfo.role;
+        result.autoSubIn = subInfo.autoSubIn;
+        result.replacing = subInfo.replacing;
+
+        if (subInfo.autoSubIn) {
+            totalScore += result.totalPoints;
+            result.breakdown.push({ rule: 'Auto-Subbed In', pts: 0, desc: `Replaced ${subInfo.replacing} in Starting 11 (Points count!)` });
+        }
+
+        benchBreakdowns.push(result);
     });
 
     return {
         totalScore,
         captainPlayed,
         effectiveCaptainId,
-        playerBreakdowns
+        starterBreakdowns,
+        benchBreakdowns,
+        playerBreakdowns: [...starterBreakdowns, ...benchBreakdowns] // unified list
     };
 }
+

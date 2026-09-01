@@ -179,7 +179,7 @@ class RoomManager {
         for (const fId in participant.squads) {
             const sq = participant.squads[fId];
             if (sq && sq.playerIds && sq.playerIds.length === 11) {
-                const res = calculateSquadTotalPoints(sq.playerIds, sq.captainId, sq.viceCaptainId, {});
+                const res = calculateSquadTotalPoints(sq.playerIds, sq.benchIds || [], sq.captainId, sq.viceCaptainId, {});
                 sq.matchPoints = res.totalScore;
                 total += res.totalScore;
             }
