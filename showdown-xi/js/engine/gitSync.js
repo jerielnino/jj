@@ -179,6 +179,16 @@ function exportSavedSquadsFile() {
 `;
     }
 
+    cleanRepo(input) {
+        let clean = (input || '').trim();
+        clean = clean.replace(/^https?:\/\/github\.com\//i, '');
+        const parts = clean.split('/').filter(Boolean);
+        if (parts.length >= 2) {
+            return `${parts[0]}/${parts[1]}`;
+        }
+        return clean;
+    }
+
     async pushToGitHub() {
         if (!this.isConfigured()) {
             this.openSyncModal();
@@ -190,12 +200,34 @@ function exportSavedSquadsFile() {
         this.updateSyncUIState(true, '⬆️ Pushing to GitHub...');
 
         try {
-            const repo = this.config.repo.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\/$/, '');
+            const repo = this.cleanRepo(this.config.repo);
             const branch = (this.config.branch || 'main').trim();
-            const token = this.config.token.trim();
+            const token = this.config.token.trim().replace(/^['"]|['"]$/g, '');
             const filePath = this.getFilePath();
 
-            // Multi-strategy uncached SHA resolver (Contents API + Git Trees fallback)
+            // 1. Verify Repository & Token access
+            const repoCheckRes = await fetch(`https://api.github.com/repos/${repo}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github+json'
+                }
+            });
+
+            if (!repoCheckRes.ok) {
+                if (repoCheckRes.status === 401) {
+                    throw new Error('401 Bad credentials (Token was revoked or expired). Please generate a new GitHub Personal Access Token and paste it in the Git Sync modal.');
+                }
+                if (repoCheckRes.status === 404) {
+                    throw new Error(`Repository "${repo}" not found (404). Please ensure the repository is in "owner/repo" format (e.g. "jerielnino/jj") and your token has permission to access it.`);
+                }
+                if (repoCheckRes.status === 403) {
+                    throw new Error('403 Forbidden. Your token needs "Contents: Read and write" repository permissions.');
+                }
+                const errJson = await repoCheckRes.json().catch(() => ({}));
+                throw new Error(errJson.message || `GitHub error: HTTP ${repoCheckRes.status}`);
+            }
+
+            // 2. Multi-strategy SHA resolver
             const fetchLatestSha = async () => {
                 // Strategy 1: GitHub Contents API
                 try {
@@ -208,15 +240,12 @@ function exportSavedSquadsFile() {
                     if (getRes.ok) {
                         const getData = await getRes.json();
                         if (getData.sha) return getData.sha;
-                    } else if (getRes.status === 401) {
-                        throw new Error('401 Bad credentials (Token was revoked or expired). Please generate a new GitHub Personal Access Token and paste it in the Git Sync settings.');
                     }
                 } catch (err) {
-                    if (err.message.includes('401')) throw err;
-                    console.warn('Contents API SHA lookup error, attempting Git Trees fallback...', err);
+                    console.warn('Contents API SHA lookup error:', err);
                 }
 
-                // Strategy 2: GitHub Git Trees API fallback
+                // Strategy 2: GitHub Git Trees API
                 try {
                     const treeRes = await fetch(`https://api.github.com/repos/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`, {
                         headers: {
@@ -238,10 +267,9 @@ function exportSavedSquadsFile() {
                 return null;
             };
 
-            // 1. Get current file sha from GitHub
             let currentSha = await fetchLatestSha();
 
-            // 2. Encode UTF-8 content to Base64
+            // 3. Encode UTF-8 content to Base64
             const contentString = this.generateFileContent();
             const utf8Bytes = new TextEncoder().encode(contentString);
             let binary = '';
@@ -262,7 +290,7 @@ function exportSavedSquadsFile() {
                 return JSON.stringify(body);
             };
 
-            // 3. Commit file via GitHub Contents API
+            // 4. Commit file via GitHub Contents API
             let putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
                 method: 'PUT',
                 headers: {
@@ -273,9 +301,9 @@ function exportSavedSquadsFile() {
                 body: buildPayload(currentSha)
             });
 
-            // 4. If SHA mismatch or missing (409 Conflict / 422), re-fetch latest SHA and retry
+            // 5. If SHA collision (409 Conflict / 422), re-fetch latest SHA and retry once
             if (!putRes.ok && (putRes.status === 409 || putRes.status === 422)) {
-                console.warn('Retrying commit with fresh SHA from GitHub tree...');
+                console.warn('Retrying commit with freshly resolved SHA from GitHub...');
                 currentSha = await fetchLatestSha();
                 putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
                     method: 'PUT',
@@ -296,7 +324,7 @@ function exportSavedSquadsFile() {
                 throw new Error(errData.message || `GitHub API error: HTTP ${putRes.status}`);
             }
 
-            this.saveConfig({ lastSyncedAt: Date.now() });
+            this.saveConfig({ repo, branch, lastSyncedAt: Date.now() });
             this.updateSyncUIState(false, '✅ Synced to GitHub');
             return { success: true };
         } catch (error) {
