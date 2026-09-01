@@ -4,7 +4,7 @@
  */
 
 // 1. Permanent Default Rooms (Separated by Room Code and Fixture)
-const SAVED_ROOMS_DATA = {
+var SAVED_ROOMS_DATA = {
     "ARS-COV-LEAGUE": {
         "code": "ARS-COV-LEAGUE",
         "name": "ARS vs COV Official Showdown Room",
@@ -16576,7 +16576,7 @@ const SAVED_ROOMS_DATA = {
 };
 
 // 2. Permanent User Squads (Separated by User ID -> Fixture ID -> Squad)
-const SAVED_USER_SQUADS_DATA = {
+var SAVED_USER_SQUADS_DATA = {
     "jj7758": {
         "PL_GW1_ARS_COV": {
             "fixtureId": "PL_GW1_ARS_COV",
@@ -22686,7 +22686,7 @@ const SAVED_USER_SQUADS_DATA = {
 };
 
 // 3. Baseline Fixture Squads Map
-const SAVED_SQUADS_DATA = {
+var SAVED_SQUADS_DATA = {
     "PL_GW1_ARS_COV": {
         "fixtureId": "PL_GW1_ARS_COV",
         "matchTitle": "ARS vs COV",
@@ -28803,7 +28803,7 @@ function getGitRoom(roomCode) {
 
 function getGitRoomByFixture(fixtureId) {
     if (typeof SAVED_ROOMS_DATA !== 'undefined') {
-        for (const code in SAVED_ROOMS_DATA) {
+        for (var code in SAVED_ROOMS_DATA) {
             if (SAVED_ROOMS_DATA[code].fixtureId === fixtureId) {
                 return JSON.parse(JSON.stringify(SAVED_ROOMS_DATA[code]));
             }
@@ -28827,27 +28827,27 @@ function getGitSavedSquad(fixtureId) {
 }
 
 function exportSavedSquadsFile() {
-    const localRooms = JSON.parse(localStorage.getItem('showdown_xi_rooms_v2') || '{}');
-    const localMaster = JSON.parse(localStorage.getItem('showdown_xi_master_squads') || '{}');
-    const currentUserId = window.authManager?.currentUser?.username || window.roomManager?.userProfile?.id || 'jj7758';
+    var localRooms = JSON.parse(localStorage.getItem('showdown_xi_rooms_v2') || '{}');
+    var localMaster = JSON.parse(localStorage.getItem('showdown_xi_master_squads') || '{}');
+    var currentUserId = window.authManager?.currentUser?.username || window.roomManager?.userProfile?.id || 'jj7758';
 
-    const mergedRooms = { ...(typeof SAVED_ROOMS_DATA !== 'undefined' ? SAVED_ROOMS_DATA : {}), ...localRooms };
-    const mergedSquads = { ...(typeof SAVED_SQUADS_DATA !== 'undefined' ? SAVED_SQUADS_DATA : {}), ...localMaster };
-    const mergedUserSquads = { ...(typeof SAVED_USER_SQUADS_DATA !== 'undefined' ? SAVED_USER_SQUADS_DATA : {}) };
+    var mergedRooms = { ...(typeof SAVED_ROOMS_DATA !== 'undefined' ? SAVED_ROOMS_DATA : {}), ...localRooms };
+    var mergedSquads = { ...(typeof SAVED_SQUADS_DATA !== 'undefined' ? SAVED_SQUADS_DATA : {}), ...localMaster };
+    var mergedUserSquads = { ...(typeof SAVED_USER_SQUADS_DATA !== 'undefined' ? SAVED_USER_SQUADS_DATA : {}) };
 
     if (!mergedUserSquads[currentUserId]) mergedUserSquads[currentUserId] = {};
     mergedUserSquads[currentUserId] = { ...mergedUserSquads[currentUserId], ...localMaster };
 
-    const content = '/**\n' +
+    var content = '/**\n' +
         ' * Showdown XI - Permanent Git-Backed Rooms & Squads Database\n' +
         ' * This file is tracked in Git to provide permanent multiplayer rooms, user profiles, and squad rosters across all devices.\n' +
         ' */\n\n' +
         '// 1. Permanent Default Rooms (Separated by Room Code and Fixture)\n' +
-        'const SAVED_ROOMS_DATA = ' + JSON.stringify(mergedRooms, null, 4) + ';\n\n' +
+        'var SAVED_ROOMS_DATA = ' + JSON.stringify(mergedRooms, null, 4) + ';\n\n' +
         '// 2. Permanent User Squads (Separated by User ID -> Fixture ID -> Squad)\n' +
-        'const SAVED_USER_SQUADS_DATA = ' + JSON.stringify(mergedUserSquads, null, 4) + ';\n\n' +
+        'var SAVED_USER_SQUADS_DATA = ' + JSON.stringify(mergedUserSquads, null, 4) + ';\n\n' +
         '// 3. Baseline Fixture Squads Map\n' +
-        'const SAVED_SQUADS_DATA = ' + JSON.stringify(mergedSquads, null, 4) + ';\n\n' +
+        'var SAVED_SQUADS_DATA = ' + JSON.stringify(mergedSquads, null, 4) + ';\n\n' +
         'function getGitRoom(roomCode) {\n' +
         '    if (typeof SAVED_ROOMS_DATA !== \'undefined\' && SAVED_ROOMS_DATA[roomCode]) {\n' +
         '        return JSON.parse(JSON.stringify(SAVED_ROOMS_DATA[roomCode]));\n' +
@@ -28856,7 +28856,7 @@ function exportSavedSquadsFile() {
         '}\n\n' +
         'function getGitRoomByFixture(fixtureId) {\n' +
         '    if (typeof SAVED_ROOMS_DATA !== \'undefined\') {\n' +
-        '        for (const code in SAVED_ROOMS_DATA) {\n' +
+        '        for (var code in SAVED_ROOMS_DATA) {\n' +
         '            if (SAVED_ROOMS_DATA[code].fixtureId === fixtureId) {\n' +
         '                return JSON.parse(JSON.stringify(SAVED_ROOMS_DATA[code]));\n' +
         '            }\n' +
@@ -28877,9 +28877,9 @@ function exportSavedSquadsFile() {
         '    return null;\n' +
         '}\n';
 
-    const blob = new Blob([content], { type: 'application/javascript' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    var blob = new Blob([content], { type: 'application/javascript' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
     a.href = url;
     a.download = 'savedSquads.js';
     document.body.appendChild(a);
