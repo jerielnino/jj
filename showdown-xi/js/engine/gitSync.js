@@ -19,9 +19,9 @@ class GitSyncService {
                     repo: parsed.repo || 'jerielnino/jj',
                     branch: parsed.branch || 'main',
                     filePath: parsed.filePath || 'showdown-xi/js/data/savedSquads.js',
-                    token: parsed.token || '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',
-                    autoPush: typeof parsed.autoPush === 'boolean' ? parsed.autoPush : true,
-                    lastSyncedAt: parsed.lastSyncedAt || Date.now()
+                    token: parsed.token || '',
+                    autoPush: typeof parsed.autoPush === 'boolean' ? parsed.autoPush : false,
+                    lastSyncedAt: parsed.lastSyncedAt || null
                 };
             }
         } catch (e) {}
@@ -30,9 +30,9 @@ class GitSyncService {
             repo: 'jerielnino/jj',
             branch: 'main',
             filePath: 'showdown-xi/js/data/savedSquads.js',
-            token: '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',
-            autoPush: true,
-            lastSyncedAt: Date.now()
+            token: '',
+            autoPush: false,
+            lastSyncedAt: null
         };
     }
 
@@ -238,6 +238,9 @@ function exportSavedSquadsFile() {
 
             if (!putRes.ok) {
                 const errData = await putRes.json().catch(() => ({}));
+                if (putRes.status === 401) {
+                    throw new Error('401 Bad credentials (Token was revoked or expired). Please generate a new GitHub Personal Access Token and paste it in the Git Sync settings.');
+                }
                 throw new Error(errData.message || `GitHub API error: HTTP ${putRes.status}`);
             }
 
@@ -247,7 +250,8 @@ function exportSavedSquadsFile() {
         } catch (error) {
             console.error('Git Push Error:', error);
             this.updateSyncUIState(false, '❌ Git Sync Error');
-            alert(`⚠️ Git Push Failed: ${error.message}\n\nPlease check your GitHub repository name, branch, and Personal Access Token permissions.`);
+            alert(`⚠️ Git Push Failed: ${error.message}`);
+            this.openSyncModal();
             return { success: false, error: error.message };
         } finally {
             this.isSyncing = false;
