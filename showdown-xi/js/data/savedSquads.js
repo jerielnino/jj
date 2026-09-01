@@ -16574,6 +16574,26 @@ const SAVED_ROOMS_DATA = {
                 "submittedAt": 1788254323947
             }
         ]
+    },
+    "RMA-SEV-ILX1C": {
+        "code": "RMA-SEV-ILX1C",
+        "name": "CHEMNAD LEAGUE",
+        "fixtureId": "LALIGA_MW4_RMA_SEV",
+        "createdAt": 1788263769864,
+        "creatorId": "jj7758",
+        "participants": [
+            {
+                "userId": "jj7758",
+                "name": "JJ (Commissioner)",
+                "avatar": "👑",
+                "isHost": true,
+                "squads": {},
+                "squad": null,
+                "matchScore": 0,
+                "totalScore": 0,
+                "submittedAt": null
+            }
+        ]
     }
 };
 
@@ -17024,7 +17044,7 @@ const SAVED_USER_SQUADS_DATA = {
                 "rma_9",
                 "sev_15"
             ],
-            "updatedAt": 1788263189284
+            "updatedAt": 1788263500988
         },
         "PL_GW3_IPS_LIV": {
             "fixtureId": "PL_GW3_IPS_LIV",
@@ -23131,7 +23151,7 @@ const SAVED_SQUADS_DATA = {
             "rma_9",
             "sev_15"
         ],
-        "updatedAt": 1788263189284
+        "updatedAt": 1788263500988
     },
     "PL_GW3_IPS_LIV": {
         "fixtureId": "PL_GW3_IPS_LIV",
