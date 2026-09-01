@@ -92,14 +92,9 @@ class ShowdownApp {
         const btnLogout = document.getElementById('btnLogoutBtn');
         if (btnLogout) {
             btnLogout.addEventListener('click', () => {
-                window.authManager.logout();
-                this.checkAuth();
-            });
-        }
-    }
                 if (confirm('Sign out from Showdown XI?')) {
                     window.authManager.logout();
-                    location.reload();
+                    this.checkAuth();
                 }
             });
         }
