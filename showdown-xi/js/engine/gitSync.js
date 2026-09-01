@@ -195,23 +195,46 @@ function exportSavedSquadsFile() {
             const token = this.config.token.trim();
             const filePath = this.getFilePath();
 
-            // Helper to get latest uncached SHA directly from GitHub
+            // Multi-strategy uncached SHA resolver (Contents API + Git Trees fallback)
             const fetchLatestSha = async () => {
+                // Strategy 1: GitHub Contents API
                 try {
-                    const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}?ref=${encodeURIComponent(branch)}&_t=${Date.now()}`, {
-                        cache: 'no-store',
+                    const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}?ref=${encodeURIComponent(branch)}`, {
                         headers: {
                             'Authorization': `Bearer ${token}`,
-                            'Accept': 'application/vnd.github+json',
-                            'Cache-Control': 'no-cache, no-store, must-revalidate',
-                            'Pragma': 'no-cache'
+                            'Accept': 'application/vnd.github+json'
                         }
                     });
                     if (getRes.ok) {
                         const getData = await getRes.json();
-                        return getData.sha || null;
+                        if (getData.sha) return getData.sha;
+                    } else if (getRes.status === 401) {
+                        throw new Error('401 Bad credentials (Token was revoked or expired). Please generate a new GitHub Personal Access Token and paste it in the Git Sync settings.');
                     }
-                } catch (err) {}
+                } catch (err) {
+                    if (err.message.includes('401')) throw err;
+                    console.warn('Contents API SHA lookup error, attempting Git Trees fallback...', err);
+                }
+
+                // Strategy 2: GitHub Git Trees API fallback
+                try {
+                    const treeRes = await fetch(`https://api.github.com/repos/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/vnd.github+json'
+                        }
+                    });
+                    if (treeRes.ok) {
+                        const treeData = await treeRes.json();
+                        const matchingItem = (treeData.tree || []).find(item => item.path === filePath || item.path.endsWith(filePath));
+                        if (matchingItem && matchingItem.sha) {
+                            return matchingItem.sha;
+                        }
+                    }
+                } catch (treeErr) {
+                    console.warn('Git Trees SHA lookup error:', treeErr);
+                }
+
                 return null;
             };
 
@@ -227,12 +250,17 @@ function exportSavedSquadsFile() {
             }
             const base64Content = btoa(binary);
 
-            const commitPayload = (sha) => JSON.stringify({
-                message: `Update Showdown XI Squads & Rooms Database [${new Date().toISOString()}]`,
-                content: base64Content,
-                sha: sha || undefined,
-                branch: branch
-            });
+            const buildPayload = (sha) => {
+                const body = {
+                    message: `Update Showdown XI Squads & Rooms Database [${new Date().toISOString()}]`,
+                    content: base64Content,
+                    branch: branch
+                };
+                if (sha) {
+                    body.sha = sha;
+                }
+                return JSON.stringify(body);
+            };
 
             // 3. Commit file via GitHub Contents API
             let putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
@@ -242,12 +270,12 @@ function exportSavedSquadsFile() {
                     'Accept': 'application/vnd.github+json',
                     'Content-Type': 'application/json'
                 },
-                body: commitPayload(currentSha)
+                body: buildPayload(currentSha)
             });
 
-            // 4. If SHA mismatch (409 Conflict / 422), automatically re-fetch latest SHA and retry once
+            // 4. If SHA mismatch or missing (409 Conflict / 422), re-fetch latest SHA and retry
             if (!putRes.ok && (putRes.status === 409 || putRes.status === 422)) {
-                console.warn('SHA conflict detected, re-fetching latest commit SHA from GitHub...');
+                console.warn('Retrying commit with fresh SHA from GitHub tree...');
                 currentSha = await fetchLatestSha();
                 putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
                     method: 'PUT',
@@ -256,7 +284,7 @@ function exportSavedSquadsFile() {
                         'Accept': 'application/vnd.github+json',
                         'Content-Type': 'application/json'
                     },
-                    body: commitPayload(currentSha)
+                    body: buildPayload(currentSha)
                 });
             }
 
