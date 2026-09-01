@@ -13,11 +13,13 @@ An online joinable fantasy football game where managers compete match-by-match b
 2. **Marquee Clashes (Premier League & La Liga)**:
    - Curated high-stakes fixtures: Arsenal vs Liverpool, Chelsea vs Man United, Real Madrid vs Barcelona (El Clásico), Atletico vs Real Madrid, Man City vs Spurs, etc.
 
-3. **Tactical 2D Pitch Builder**:
+3. **Tactical 2D Pitch Builder & 15-Player Squad Engine**:
+   - 15-player squad: 11 Starters + 4 Substitutes Bench (1 GK Sub + 3 Outfield Subs) within £100.0M budget.
+   - Strict Club Split: **6:5 (or 5:6) First XI split** and **2:2 Substitutes Bench split**.
    - Multiple tactical formations: 4-3-3, 4-4-2, 3-5-2, 3-4-3, 5-3-2, 4-2-3-1, 5-2-3.
-   - Drag & drop / slot-based selection from combined 36+ player rosters.
+   - Drag & drop / slot-based selection from combined 36+ player rosters with real-time club limit validation.
    - Captain (2x points) & Vice-Captain assignment badges.
-   - Auto Best 11 generator for quick drafting.
+   - Auto Best 15 generator conforming to 6:5 First XI and 2:2 Bench split rules.
 
 4. **Official FPL Scoring Engine**:
    - Goals: FWD (+4), MID (+5), DEF/GK (+6)

@@ -876,8 +876,45 @@ class PitchBuilderUI {
             }
         }
 
-        // From another Pitch Slot (Swapping two pitch slots)
-        if (this.draggedSourceType === 'PITCH' && this.draggedSourceIdx !== null) {
+        // 1. From Bench to Pitch (Swapping Pitch and Bench)
+        if (this.draggedSourceType === 'BENCH' && this.draggedSourceIdx !== null) {
+            const benchIdx = this.draggedSourceIdx;
+            const existingPitchPlayer = this.selectedPlayers[targetSlotIdx];
+
+            if (targetPos === 'GK' && player.pos !== 'GK') {
+                alert('⚠️ Only a Goalkeeper can play in the starting GK slot.');
+                return;
+            }
+            if (benchIdx === 0 && existingPitchPlayer && existingPitchPlayer.pos !== 'GK') {
+                alert('⚠️ Bench Slot 1 is reserved for the backup Goalkeeper.');
+                return;
+            }
+
+            // Club split validation on swap
+            if (existingPitchPlayer && existingPitchPlayer.club !== player.club) {
+                const simPitchCount = this.selectedPlayers.filter((p, i) => i !== targetSlotIdx && p && p.club === player.club).length + 1;
+                const simBenchCount = this.benchPlayers.filter((p, i) => i !== benchIdx && p && p.club === existingPitchPlayer.club).length + 1;
+                if (simPitchCount > 6) {
+                    alert(`⚠️ Starting 11 Club Limit Exceeded!\n\nMoving ${player.name} (${player.club}) to Starting 11 would exceed the maximum of 6 players from ${player.club} (First XI 6:5 rule).`);
+                    return;
+                }
+                if (simBenchCount > 2) {
+                    alert(`⚠️ Substitutes Bench Club Limit Exceeded!\n\nMoving ${existingPitchPlayer.name} (${existingPitchPlayer.club}) to Bench would exceed the maximum of 2 players from ${existingPitchPlayer.club} (Bench 2:2 rule).`);
+                    return;
+                }
+            } else if (!existingPitchPlayer) {
+                const simPitchCount = this.selectedPlayers.filter((p, i) => i !== targetSlotIdx && p && p.club === player.club).length + 1;
+                if (simPitchCount > 6) {
+                    alert(`⚠️ Starting 11 Club Limit Exceeded!\n\nA maximum of 6 players from ${player.club} can be in your Starting 11 (First XI 6:5 rule).`);
+                    return;
+                }
+            }
+
+            this.selectedPlayers[targetSlotIdx] = player;
+            this.benchPlayers[benchIdx] = existingPitchPlayer || null;
+        } 
+        // 2. From another Pitch Slot (Swapping two pitch slots)
+        else if (this.draggedSourceType === 'PITCH' && this.draggedSourceIdx !== null) {
             const oldIdx = this.draggedSourceIdx;
             const slotPositions = this.getSlotPositionsArray();
             const sourceSlotPos = slotPositions[oldIdx];
@@ -891,29 +928,21 @@ class PitchBuilderUI {
             this.selectedPlayers[targetSlotIdx] = player;
             this.selectedPlayers[oldIdx] = existingTargetPlayer || null;
         } 
-        // From Bench to Pitch (Swapping Pitch and Bench)
-        else if (this.draggedSourceType === 'BENCH' && this.draggedSourceIdx !== null) {
-            const benchIdx = this.draggedSourceIdx;
-            const existingPitchPlayer = this.selectedPlayers[targetSlotIdx];
-
-            if (targetPos === 'GK' && player.pos !== 'GK') {
-                alert('⚠️ Only a Goalkeeper can play in the starting GK slot.');
-                return;
-            }
-            if (benchIdx === 0 && existingPitchPlayer && existingPitchPlayer.pos !== 'GK') {
-                alert('⚠️ Bench Slot 1 is reserved for the backup Goalkeeper.');
-                return;
-            }
-
-            this.selectedPlayers[targetSlotIdx] = player;
-            this.benchPlayers[benchIdx] = existingPitchPlayer || null;
-        } 
-        // From Dock / New Player
+        // 3. From Dock / New Player
         else {
+            const simPitch = [...this.selectedPlayers];
+            const pIdx = simPitch.findIndex(p => p && p.id === player.id);
+            if (pIdx !== -1) simPitch[pIdx] = null;
+            simPitch[targetSlotIdx] = player;
+
+            const clubCount = simPitch.filter(p => p && p.club === player.club).length;
+            if (clubCount > 6) {
+                alert(`⚠️ Starting 11 Club Limit Exceeded!\n\nA maximum of 6 players from ${player.club} can be in your Starting 11 (First XI 6:5 rule).`);
+                return;
+            }
+
             const bIdx = this.benchPlayers.findIndex(p => p && p.id === player.id);
             if (bIdx !== -1) this.benchPlayers[bIdx] = null;
-
-            const pIdx = this.selectedPlayers.findIndex(p => p && p.id === player.id);
             if (pIdx !== -1) this.selectedPlayers[pIdx] = null;
 
             this.selectedPlayers[targetSlotIdx] = player;
@@ -948,7 +977,7 @@ class PitchBuilderUI {
             return;
         }
 
-        // From Pitch to Bench
+        // 1. From Pitch to Bench
         if (this.draggedSourceType === 'PITCH' && this.draggedSourceIdx !== null) {
             const pitchIdx = this.draggedSourceIdx;
             const slotPositions = this.getSlotPositionsArray();
@@ -960,10 +989,30 @@ class PitchBuilderUI {
                 return;
             }
 
+            // Club split validation on swap
+            if (existingBenchPlayer && existingBenchPlayer.club !== player.club) {
+                const simBenchCount = this.benchPlayers.filter((p, i) => i !== benchIdx && p && p.club === player.club).length + 1;
+                const simPitchCount = this.selectedPlayers.filter((p, i) => i !== pitchIdx && p && p.club === existingBenchPlayer.club).length + 1;
+                if (simBenchCount > 2) {
+                    alert(`⚠️ Substitutes Bench Club Limit Exceeded!\n\nMoving ${player.name} (${player.club}) to Bench would exceed the maximum of 2 players from ${player.club} (Bench 2:2 rule).`);
+                    return;
+                }
+                if (simPitchCount > 6) {
+                    alert(`⚠️ Starting 11 Club Limit Exceeded!\n\nMoving ${existingBenchPlayer.name} (${existingBenchPlayer.club}) to Starting 11 would exceed the maximum of 6 players from ${existingBenchPlayer.club} (First XI 6:5 rule).`);
+                    return;
+                }
+            } else if (!existingBenchPlayer) {
+                const simBenchCount = this.benchPlayers.filter((p, i) => i !== benchIdx && p && p.club === player.club).length + 1;
+                if (simBenchCount > 2) {
+                    alert(`⚠️ Substitutes Bench Club Limit Exceeded!\n\nA maximum of 2 players from ${player.club} can be on the Bench (Bench 2:2 rule).`);
+                    return;
+                }
+            }
+
             this.benchPlayers[benchIdx] = player;
             this.selectedPlayers[pitchIdx] = existingBenchPlayer || null;
         }
-        // From another Bench slot
+        // 2. From another Bench slot
         else if (this.draggedSourceType === 'BENCH' && this.draggedSourceIdx !== null) {
             const oldBenchIdx = this.draggedSourceIdx;
             const existingTarget = this.benchPlayers[benchIdx];
@@ -976,12 +1025,21 @@ class PitchBuilderUI {
             this.benchPlayers[benchIdx] = player;
             this.benchPlayers[oldBenchIdx] = existingTarget || null;
         }
-        // From Dock / New
+        // 3. From Dock / New Player
         else {
+            const simBench = [...this.benchPlayers];
+            const bIdx = simBench.findIndex(p => p && p.id === player.id);
+            if (bIdx !== -1) simBench[bIdx] = null;
+            simBench[benchIdx] = player;
+
+            const clubCount = simBench.filter(p => p && p.club === player.club).length;
+            if (clubCount > 2) {
+                alert(`⚠️ Substitutes Bench Club Limit Exceeded!\n\nA maximum of 2 players from ${player.club} can be placed on the Bench (Bench 2:2 rule).`);
+                return;
+            }
+
             const pIdx = this.selectedPlayers.findIndex(p => p && p.id === player.id);
             if (pIdx !== -1) this.selectedPlayers[pIdx] = null;
-
-            const bIdx = this.benchPlayers.findIndex(p => p && p.id === player.id);
             if (bIdx !== -1) this.benchPlayers[bIdx] = null;
 
             this.benchPlayers[benchIdx] = player;
@@ -1000,9 +1058,12 @@ class PitchBuilderUI {
     }
 
     autoAssignPlayer(player) {
+        const slotPositions = this.getSlotPositionsArray();
+        const curPitchClubCount = this.selectedPlayers.filter(p => p && p.club === player.club).length;
+        const curBenchClubCount = this.benchPlayers.filter(p => p && p.club === player.club).length;
+
         // 1. If user previously tapped on a specific Pitch slot
         if (this.highlightedSlotIdx !== null) {
-            const slotPositions = this.getSlotPositionsArray();
             const targetPos = slotPositions[this.highlightedSlotIdx];
             if (targetPos === player.pos) {
                 this.handleDropOnSlot(player, this.highlightedSlotIdx, targetPos);
@@ -1021,23 +1082,26 @@ class PitchBuilderUI {
             }
         }
 
-        // 3. Find first open Starting 11 slot matching exact position
-        const slotPositions = this.getSlotPositionsArray();
-        const matchingPitchIdx = slotPositions.findIndex((pos, idx) => pos === player.pos && !this.selectedPlayers[idx]);
-        if (matchingPitchIdx !== -1) {
-            this.handleDropOnSlot(player, matchingPitchIdx, player.pos);
-            return;
+        // 3. Find first open Starting 11 slot matching exact position (only if club limit < 6)
+        if (curPitchClubCount < 6) {
+            const matchingPitchIdx = slotPositions.findIndex((pos, idx) => pos === player.pos && !this.selectedPlayers[idx]);
+            if (matchingPitchIdx !== -1) {
+                this.handleDropOnSlot(player, matchingPitchIdx, player.pos);
+                return;
+            }
         }
 
-        // 4. If pitch slots are full for this pos, try finding an open Bench slot
-        if (player.pos === 'GK' && !this.benchPlayers[0]) {
-            this.handleDropOnBench(player, 0);
-            return;
-        } else if (player.pos !== 'GK') {
-            for (let i = 1; i <= 3; i++) {
-                if (!this.benchPlayers[i]) {
-                    this.handleDropOnBench(player, i);
-                    return;
+        // 4. If pitch slots are full for this pos, try finding an open Bench slot (only if club limit < 2)
+        if (curBenchClubCount < 2) {
+            if (player.pos === 'GK' && !this.benchPlayers[0]) {
+                this.handleDropOnBench(player, 0);
+                return;
+            } else if (player.pos !== 'GK') {
+                for (let i = 1; i <= 3; i++) {
+                    if (!this.benchPlayers[i]) {
+                        this.handleDropOnBench(player, i);
+                        return;
+                    }
                 }
             }
         }
@@ -1046,19 +1110,33 @@ class PitchBuilderUI {
         const currentPosStarters = [];
         slotPositions.forEach((pos, idx) => {
             if (pos === player.pos && this.selectedPlayers[idx]) {
-                currentPosStarters.push({ type: 'PITCH', idx, player: this.selectedPlayers[idx] });
+                const candidate = this.selectedPlayers[idx];
+                const canReplacePitch = candidate.club === player.club || curPitchClubCount < 6;
+                if (canReplacePitch) {
+                    currentPosStarters.push({ type: 'PITCH', idx, player: candidate });
+                }
             }
         });
+
         const currentPosBench = [];
         this.benchPlayers.forEach((p, idx) => {
             if (p && ((idx === 0 && player.pos === 'GK') || (idx > 0 && player.pos !== 'GK'))) {
-                currentPosBench.push({ type: 'BENCH', idx, player: p });
+                const canReplaceBench = p.club === player.club || curBenchClubCount < 2;
+                if (canReplaceBench) {
+                    currentPosBench.push({ type: 'BENCH', idx, player: p });
+                }
             }
         });
 
         const allCandidates = [...currentPosStarters, ...currentPosBench];
         if (allCandidates.length > 0) {
             this.showReplacementModal(player, allCandidates);
+        } else {
+            if (curPitchClubCount >= 6 && curBenchClubCount >= 2) {
+                alert(`⚠️ Club Limit Reached!\n\nYou have reached the maximum allowed players from ${player.club} (6 in Starting 11 and 2 on Bench).`);
+            } else {
+                alert(`No available slot or eligible player of position ${player.pos} to replace with ${player.name}.`);
+            }
         }
     }
 
@@ -1271,16 +1349,23 @@ class PitchBuilderUI {
         const eligibleBench = [];
         this.benchPlayers.forEach((bp, bIdx) => {
             if (bp) {
-                if (reqPos === 'GK' && bp.pos === 'GK' && bIdx === 0) {
-                    eligibleBench.push({ bIdx, player: bp, label: 'GK Sub' });
-                } else if (reqPos !== 'GK' && bp.pos !== 'GK' && bIdx > 0) {
-                    eligibleBench.push({ bIdx, player: bp, label: `Sub ${bIdx}` });
+                // Position check
+                const isPosMatch = (reqPos === 'GK' && bp.pos === 'GK' && bIdx === 0) || (reqPos !== 'GK' && bp.pos !== 'GK' && bIdx > 0);
+                if (!isPosMatch) return;
+
+                // Club split check on swap
+                if (bp.club !== pitchPlayer.club) {
+                    const simPitchCount = this.selectedPlayers.filter((p, i) => i !== pitchIdx && p && p.club === bp.club).length + 1;
+                    const simBenchCount = this.benchPlayers.filter((p, i) => i !== bIdx && p && p.club === pitchPlayer.club).length + 1;
+                    if (simPitchCount > 6 || simBenchCount > 2) return;
                 }
+
+                eligibleBench.push({ bIdx, player: bp, label: bIdx === 0 ? 'GK Sub' : `Sub ${bIdx}` });
             }
         });
 
         if (eligibleBench.length === 0) {
-            alert(`No eligible substitute on the bench to swap with ${pitchPlayer.name} (${reqPos}).`);
+            alert(`No eligible substitute on the bench can swap with ${pitchPlayer.name} (${reqPos}) without violating position or club split rules (First XI 6:5, Bench 2:2).`);
             return;
         }
 
@@ -1355,16 +1440,22 @@ class PitchBuilderUI {
         this.selectedPlayers.forEach((sp, pIdx) => {
             if (sp) {
                 const pos = slotPositions[pIdx];
-                if (benchIdx === 0 && sp.pos === 'GK' && pos === 'GK') {
-                    eligiblePitch.push({ pIdx, player: sp, pos });
-                } else if (benchIdx > 0 && sp.pos !== 'GK' && sp.pos === benchPlayer.pos) {
-                    eligiblePitch.push({ pIdx, player: sp, pos });
+                const isPosMatch = (benchIdx === 0 && sp.pos === 'GK' && pos === 'GK') || (benchIdx > 0 && sp.pos !== 'GK' && sp.pos === benchPlayer.pos);
+                if (!isPosMatch) return;
+
+                // Club split check on swap
+                if (sp.club !== benchPlayer.club) {
+                    const simPitchCount = this.selectedPlayers.filter((p, i) => i !== pIdx && p && p.club === benchPlayer.club).length + 1;
+                    const simBenchCount = this.benchPlayers.filter((p, i) => i !== benchIdx && p && p.club === sp.club).length + 1;
+                    if (simPitchCount > 6 || simBenchCount > 2) return;
                 }
+
+                eligiblePitch.push({ pIdx, player: sp, pos });
             }
         });
 
         if (eligiblePitch.length === 0) {
-            alert(`No matching starting player on pitch to swap with ${benchPlayer.name} (${benchPlayer.pos}).`);
+            alert(`No matching starting player on pitch can swap with ${benchPlayer.name} (${benchPlayer.pos}) without violating club split rules (First XI 6:5, Bench 2:2).`);
             return;
         }
 
@@ -1468,131 +1559,222 @@ class PitchBuilderUI {
         const homeCode = this.activeFixture.homeClub;
         const awayCode = this.activeFixture.awayClub;
         const MAX_BUDGET = 100.0;
-        const MAX_PER_CLUB = 8;
 
-        const gks = [...pool.filter(p => p.pos === 'GK')].sort((a, b) => b.form - a.form);
-        const defs = [...pool.filter(p => p.pos === 'DEF')].sort((a, b) => b.form - a.form);
-        const mids = [...pool.filter(p => p.pos === 'MID')].sort((a, b) => b.form - a.form);
-        const fwds = [...pool.filter(p => p.pos === 'FWD')].sort((a, b) => b.form - a.form);
+        const fullHome = allPlayers.filter(p => p.club === homeCode);
+        const fullAway = allPlayers.filter(p => p.club === awayCode);
 
-        const canPick = (p, selectedList) => {
-            if (selectedList.some(s => s.id === p.id)) return false;
-            let hc = selectedList.filter(s => s.club === homeCode).length;
-            let ac = selectedList.filter(s => s.club === awayCode).length;
-            if (p.club === homeCode && hc >= MAX_PER_CLUB) return false;
-            if (p.club === awayCode && ac >= MAX_PER_CLUB) return false;
-            return true;
+        const getClubPool = (code) => {
+            const fit = pool.filter(p => p.club === code);
+            return fit.length >= 8 ? fit : (code === homeCode ? fullHome : fullAway);
         };
 
-        const selected = [];
+        const hPool = getClubPool(homeCode);
+        const aPool = getClubPool(awayCode);
 
-        const pickCategory = (list, count, fallbackList = []) => {
-            const picked = [];
-            for (const p of list) {
-                if (picked.length >= count) break;
-                if (canPick(p, [...selected, ...picked])) {
-                    picked.push(p);
-                }
+        let bestSquad = null;
+        let bestScore = -Infinity;
+
+        const strategies = [
+            { starterH: 6, starterA: 5, starterGkClub: homeCode, benchGkClub: awayCode },
+            { starterH: 5, starterA: 6, starterGkClub: homeCode, benchGkClub: awayCode },
+            { starterH: 6, starterA: 5, starterGkClub: awayCode, benchGkClub: homeCode },
+            { starterH: 5, starterA: 6, starterGkClub: awayCode, benchGkClub: homeCode },
+            { starterH: 6, starterA: 5, starterGkClub: homeCode, benchGkClub: homeCode },
+            { starterH: 5, starterA: 6, starterGkClub: homeCode, benchGkClub: homeCode },
+            { starterH: 6, starterA: 5, starterGkClub: awayCode, benchGkClub: awayCode },
+            { starterH: 5, starterA: 6, starterGkClub: awayCode, benchGkClub: awayCode }
+        ];
+
+        for (const strat of strategies) {
+            const hGks = hPool.filter(p => p.pos === 'GK').sort((a, b) => b.form - a.form);
+            const aGks = aPool.filter(p => p.pos === 'GK').sort((a, b) => b.form - a.form);
+
+            let starterGk = null;
+            let benchGk = null;
+
+            if (strat.starterGkClub === homeCode && strat.benchGkClub === awayCode) {
+                starterGk = hGks[0] || fullHome.find(p => p.pos === 'GK');
+                benchGk = aGks[0] || fullAway.find(p => p.pos === 'GK');
+            } else if (strat.starterGkClub === awayCode && strat.benchGkClub === homeCode) {
+                starterGk = aGks[0] || fullAway.find(p => p.pos === 'GK');
+                benchGk = hGks[0] || fullHome.find(p => p.pos === 'GK');
+            } else if (strat.starterGkClub === homeCode && strat.benchGkClub === homeCode) {
+                starterGk = hGks[0] || fullHome.find(p => p.pos === 'GK');
+                benchGk = hGks[1] || fullHome.filter(p => p.pos === 'GK')[1] || fullHome.find(p => p.pos === 'GK');
+            } else {
+                starterGk = aGks[0] || fullAway.find(p => p.pos === 'GK');
+                benchGk = aGks[1] || fullAway.filter(p => p.pos === 'GK')[1] || fullAway.find(p => p.pos === 'GK');
             }
-            if (picked.length < count) {
-                for (const p of fallbackList) {
-                    if (picked.length >= count) break;
-                    if (canPick(p, [...selected, ...picked])) {
-                        picked.push(p);
+
+            if (!starterGk || !benchGk || starterGk.id === benchGk.id) continue;
+
+            const hStarterOutfieldReq = strat.starterH - (starterGk.club === homeCode ? 1 : 0);
+            const aStarterOutfieldReq = strat.starterA - (starterGk.club === awayCode ? 1 : 0);
+
+            const hBenchOutfieldReq = 2 - (benchGk.club === homeCode ? 1 : 0);
+            const aBenchOutfieldReq = 2 - (benchGk.club === awayCode ? 1 : 0);
+
+            if (hStarterOutfieldReq + aStarterOutfieldReq !== 10) continue;
+            if (hBenchOutfieldReq + aBenchOutfieldReq !== 3) continue;
+
+            let hDefs = hPool.filter(p => p.pos === 'DEF' && p.id !== starterGk.id && p.id !== benchGk.id).sort((a, b) => b.form - a.form);
+            let hMids = hPool.filter(p => p.pos === 'MID' && p.id !== starterGk.id && p.id !== benchGk.id).sort((a, b) => b.form - a.form);
+            let hFwds = hPool.filter(p => p.pos === 'FWD' && p.id !== starterGk.id && p.id !== benchGk.id).sort((a, b) => b.form - a.form);
+
+            let aDefs = aPool.filter(p => p.pos === 'DEF' && p.id !== starterGk.id && p.id !== benchGk.id).sort((a, b) => b.form - a.form);
+            let aMids = aPool.filter(p => p.pos === 'MID' && p.id !== starterGk.id && p.id !== benchGk.id).sort((a, b) => b.form - a.form);
+            let aFwds = aPool.filter(p => p.pos === 'FWD' && p.id !== starterGk.id && p.id !== benchGk.id).sort((a, b) => b.form - a.form);
+
+            // Fallbacks for FWDs from full club rosters if fit pool is low
+            if (hFwds.length + aFwds.length < config.FWD) {
+                const extraHFwds = fullHome.filter(p => p.pos === 'FWD' && !hFwds.some(x => x.id === p.id) && p.id !== starterGk.id && p.id !== benchGk.id);
+                const extraAFwds = fullAway.filter(p => p.pos === 'FWD' && !aFwds.some(x => x.id === p.id) && p.id !== starterGk.id && p.id !== benchGk.id);
+                hFwds = [...hFwds, ...extraHFwds];
+                aFwds = [...aFwds, ...extraAFwds];
+            }
+
+            let hFwdPool = [...hFwds];
+            let aFwdPool = [...aFwds];
+            if (hFwdPool.length + aFwdPool.length < config.FWD) {
+                const hMidFallbacks = hMids.filter(p => !hFwdPool.some(x => x.id === p.id));
+                const aMidFallbacks = aMids.filter(p => !aFwdPool.some(x => x.id === p.id));
+                hFwdPool.push(...hMidFallbacks);
+                aFwdPool.push(...aMidFallbacks);
+            }
+
+            // Find valid (hD, hM, hF) and (aD, aM, aF)
+            for (let hD = 0; hD <= Math.min(config.DEF, hDefs.length); hD++) {
+                const aD = config.DEF - hD;
+                if (aD < 0 || aD > aDefs.length) continue;
+
+                for (let hM = 0; hM <= Math.min(config.MID, hMids.length); hM++) {
+                    const aM = config.MID - hM;
+                    if (aM < 0 || aM > aMids.length) continue;
+
+                    const hF = hStarterOutfieldReq - hD - hM;
+                    const aF = aStarterOutfieldReq - aD - aM;
+
+                    if (hF < 0 || hF > hFwdPool.length || hF > config.FWD) continue;
+                    if (aF < 0 || aF > aFwdPool.length || (hF + aF !== config.FWD)) continue;
+
+                    const pickedStarters = [
+                        ...hDefs.slice(0, hD),
+                        ...aDefs.slice(0, aD),
+                        ...hMids.slice(0, hM),
+                        ...aMids.slice(0, aM)
+                    ];
+
+                    const pickedIds = new Set([starterGk.id, benchGk.id, ...pickedStarters.map(p => p.id)]);
+                    const availHFwd = hFwdPool.filter(p => !pickedIds.has(p.id));
+                    const availAFwd = aFwdPool.filter(p => !pickedIds.has(p.id));
+
+                    if (availHFwd.length < hF || availAFwd.length < aF) continue;
+
+                    const chosenHFwd = availHFwd.slice(0, hF);
+                    const chosenAFwd = availAFwd.slice(0, aF);
+                    pickedStarters.push(...chosenHFwd, ...chosenAFwd);
+
+                    const usedIds = new Set([starterGk.id, benchGk.id, ...pickedStarters.map(p => p.id)]);
+
+                    // Pick Bench outfield (hBenchOutfieldReq from Home, aBenchOutfieldReq from Away)
+                    const remainingH = [...hDefs, ...hMids, ...hFwds, ...fullHome].filter(p => p.pos !== 'GK' && !usedIds.has(p.id)).sort((a, b) => b.form - a.form);
+                    const remainingA = [...aDefs, ...aMids, ...aFwds, ...fullAway].filter(p => p.pos !== 'GK' && !usedIds.has(p.id)).sort((a, b) => b.form - a.form);
+
+                    if (remainingH.length < hBenchOutfieldReq || remainingA.length < aBenchOutfieldReq) continue;
+
+                    const benchOutfield = [
+                        ...remainingH.slice(0, hBenchOutfieldReq),
+                        ...remainingA.slice(0, aBenchOutfieldReq)
+                    ];
+
+                    benchOutfield.forEach(p => usedIds.add(p.id));
+
+                    // Budget adjustment if squad exceeds £100.0m
+                    let totalCost = [starterGk, ...pickedStarters, benchGk, ...benchOutfield].reduce((sum, p) => sum + p.price, 0);
+                    if (totalCost > MAX_BUDGET) {
+                        for (let bIdx = 0; bIdx < benchOutfield.length && totalCost > MAX_BUDGET; bIdx++) {
+                            const current = benchOutfield[bIdx];
+                            const alternatives = (current.club === homeCode ? fullHome : fullAway)
+                                .filter(p => p.pos !== 'GK' && !usedIds.has(p.id) && p.price < current.price)
+                                .sort((a, b) => a.price - b.price);
+                            if (alternatives.length > 0) {
+                                usedIds.delete(current.id);
+                                benchOutfield[bIdx] = alternatives[0];
+                                usedIds.add(alternatives[0].id);
+                                totalCost = [starterGk, ...pickedStarters, benchGk, ...benchOutfield].reduce((sum, p) => sum + p.price, 0);
+                            }
+                        }
+
+                        for (let sIdx = pickedStarters.length - 1; sIdx >= 0 && totalCost > MAX_BUDGET; sIdx--) {
+                            const current = pickedStarters[sIdx];
+                            const alternatives = (current.club === homeCode ? fullHome : fullAway)
+                                .filter(p => p.pos === current.pos && !usedIds.has(p.id) && p.price < current.price)
+                                .sort((a, b) => a.price - b.price);
+                            if (alternatives.length > 0) {
+                                usedIds.delete(current.id);
+                                pickedStarters[sIdx] = alternatives[0];
+                                usedIds.add(alternatives[0].id);
+                                totalCost = [starterGk, ...pickedStarters, benchGk, ...benchOutfield].reduce((sum, p) => sum + p.price, 0);
+                            }
+                        }
                     }
-                }
-            }
-            if (picked.length < count) {
-                for (const p of [...list, ...fallbackList]) {
-                    if (picked.length >= count) break;
-                    if (!selected.some(s => s.id === p.id) && !picked.some(s => s.id === p.id)) {
-                        picked.push(p);
-                    }
-                }
-            }
-            return picked;
-        };
 
-        const chosenGk = pickCategory(gks, 2);
-        selected.push(...chosenGk);
-        const chosenDef = pickCategory(defs, 5);
-        selected.push(...chosenDef);
-        const chosenMid = pickCategory(mids, 5);
-        selected.push(...chosenMid);
-        const chosenFwd = pickCategory(fwds, 3, mids);
-        selected.push(...chosenFwd);
+                    const finalStarters = [starterGk, ...pickedStarters];
+                    const finalBench = [benchGk, ...benchOutfield];
+                    const finalCost = [...finalStarters, ...finalBench].reduce((sum, p) => sum + p.price, 0);
 
-        // Budget Optimization: If total exceeds £100.0m, downsize bench/players to cheaper alternatives
-        let totalCost = selected.reduce((sum, p) => sum + p.price, 0);
-
-        if (totalCost > MAX_BUDGET) {
-            const budgetCheapest = (pos) => pool.filter(p => p.pos === pos).sort((a, b) => a.price - b.price);
-
-            for (let i = selected.length - 1; i >= 0 && totalCost > MAX_BUDGET; i--) {
-                const current = selected[i];
-                const cheapAlternatives = budgetCheapest(current.pos);
-                for (const cheap of cheapAlternatives) {
-                    if (cheap.id !== current.id && canPick(cheap, selected.filter(s => s.id !== current.id))) {
-                        if (cheap.price < current.price) {
-                            selected[i] = cheap;
-                            totalCost = selected.reduce((sum, p) => sum + p.price, 0);
-                            break;
+                    if (finalCost <= MAX_BUDGET) {
+                        const score = [...finalStarters, ...finalBench].reduce((sum, p) => sum + p.form, 0);
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestSquad = { starters: finalStarters, bench: finalBench, cost: finalCost };
                         }
                     }
                 }
             }
         }
 
-        // Split into Starting 11 and 4 Bench
-        const sGks = selected.filter(p => p.pos === 'GK').sort((a, b) => b.form - a.form);
-        const sDefs = selected.filter(p => p.pos === 'DEF').sort((a, b) => b.form - a.form);
-        const sMids = selected.filter(p => p.pos === 'MID').sort((a, b) => b.form - a.form);
-        const sFwds = selected.filter(p => p.pos === 'FWD').sort((a, b) => b.form - a.form);
+        if (bestSquad) {
+            // Place starters on pitch matching formation order (GK, DEF, MID, FWD)
+            const startersGk = bestSquad.starters.find(p => p.pos === 'GK');
+            const startersDefs = bestSquad.starters.filter(p => p.pos === 'DEF');
+            const startersMids = bestSquad.starters.filter(p => p.pos === 'MID');
+            const startersFwds = bestSquad.starters.filter(p => p.pos === 'FWD');
 
-        const starters = [
-            sGks[0],
-            ...sDefs.slice(0, config.DEF),
-            ...sMids.slice(0, config.MID),
-            ...sFwds.slice(0, config.FWD)
-        ];
+            this.selectedPlayers = [
+                startersGk,
+                ...startersDefs.slice(0, config.DEF),
+                ...startersMids.slice(0, config.MID),
+                ...startersFwds.slice(0, config.FWD)
+            ];
 
-        const assignedIds = new Set(starters.filter(Boolean).map(p => p.id));
-        while (starters.length < 11) {
-            const remainingCandidate = selected.find(p => !assignedIds.has(p.id));
-            if (remainingCandidate) {
-                starters.push(remainingCandidate);
-                assignedIds.add(remainingCandidate.id);
-            } else {
-                break;
+            // If any position had to use fallbacks, make sure array has all 11 starters
+            if (this.selectedPlayers.length < 11) {
+                const assignedIds = new Set(this.selectedPlayers.filter(Boolean).map(p => p.id));
+                for (const p of bestSquad.starters) {
+                    if (!assignedIds.has(p.id)) {
+                        this.selectedPlayers.push(p);
+                        assignedIds.add(p.id);
+                    }
+                    if (this.selectedPlayers.length === 11) break;
+                }
             }
+
+            this.benchPlayers = bestSquad.bench;
+
+            // Captain Selection
+            const validStarters = this.selectedPlayers.filter(Boolean);
+            if (validStarters.length > 0) {
+                const sortedByForm = [...validStarters].sort((a, b) => (b.form * 10 + b.price) - (a.form * 10 + a.price));
+                this.captainId = sortedByForm[0].id;
+                this.viceCaptainId = sortedByForm[1]?.id || sortedByForm[0].id;
+            }
+
+            this.renderPitch();
+            this.renderBench();
+            this.renderBottomDock();
+            this.updateStatsBar();
         }
-
-        const benchGk = sGks[1] || selected.find(p => p.pos === 'GK' && !assignedIds.has(p.id));
-        if (benchGk) assignedIds.add(benchGk.id);
-
-        const benchOutfield = selected.filter(p => !assignedIds.has(p.id)).sort((a, b) => b.form - a.form);
-        const bench = [
-            benchGk,
-            benchOutfield[0] || null,
-            benchOutfield[1] || null,
-            benchOutfield[2] || null
-        ];
-
-        this.selectedPlayers = starters;
-        this.benchPlayers = bench;
-
-        // Captain Selection
-        const validStarters = this.selectedPlayers.filter(Boolean);
-        if (validStarters.length > 0) {
-            const sortedByPrice = [...validStarters].sort((a, b) => b.price - a.price);
-            this.captainId = sortedByPrice[0].id;
-            this.viceCaptainId = sortedByPrice[1]?.id || sortedByPrice[0].id;
-        }
-
-        this.renderPitch();
-        this.renderBench();
-        this.renderBottomDock();
-        this.updateStatsBar();
     }
 
     clearDragOverStates() {
@@ -1604,18 +1786,28 @@ class PitchBuilderUI {
         if (!bar) return;
 
         const MAX_BUDGET = 100.0;
-        const startersCount = this.selectedPlayers.filter(Boolean).length;
-        const benchCount = this.benchPlayers.filter(Boolean).length;
+        const validStarters = this.selectedPlayers.filter(Boolean);
+        const validBench = this.benchPlayers.filter(Boolean);
+        const startersCount = validStarters.length;
+        const benchCount = validBench.length;
         const totalCount = startersCount + benchCount;
 
-        const allSquadPlayers = [...this.selectedPlayers.filter(Boolean), ...this.benchPlayers.filter(Boolean)];
+        const allSquadPlayers = [...validStarters, ...validBench];
         const totalPrice = allSquadPlayers.reduce((sum, p) => sum + p.price, 0);
         const remainingBudget = MAX_BUDGET - totalPrice;
         const isOverBudget = totalPrice > MAX_BUDGET;
 
-        const homeCount = allSquadPlayers.filter(p => p.club === this.activeFixture.homeClub).length;
-        const awayCount = allSquadPlayers.filter(p => p.club === this.activeFixture.awayClub).length;
-        const isClubLimitExceeded = homeCount > 8 || awayCount > 8;
+        // First XI Split (6:5 or 5:6)
+        const startersHome = validStarters.filter(p => p.club === this.activeFixture.homeClub).length;
+        const startersAway = validStarters.filter(p => p.club === this.activeFixture.awayClub).length;
+        const isStartersSplitValid = (startersHome === 6 && startersAway === 5) || (startersHome === 5 && startersAway === 6);
+        const isStartersExcess = startersHome > 6 || startersAway > 6;
+
+        // Bench Split (2:2)
+        const benchHome = validBench.filter(p => p.club === this.activeFixture.homeClub).length;
+        const benchAway = validBench.filter(p => p.club === this.activeFixture.awayClub).length;
+        const isBenchSplitValid = benchHome === 2 && benchAway === 2;
+        const isBenchExcess = benchHome > 2 || benchAway > 2;
 
         bar.innerHTML = `
             <div class="stat-pill">
@@ -1623,12 +1815,16 @@ class PitchBuilderUI {
                 <span class="pill-val ${startersCount === 11 ? 'valid' : 'pending'}">${startersCount} / 11</span>
             </div>
             <div class="stat-pill">
+                <span class="pill-label">First XI Split (6:5)</span>
+                <span class="pill-val ${isStartersExcess ? 'over-budget' : (isStartersSplitValid ? 'valid' : 'pending')}">${this.activeFixture.homeClub} (${startersHome}) : ${this.activeFixture.awayClub} (${startersAway})</span>
+            </div>
+            <div class="stat-pill">
                 <span class="pill-label">Bench Subs</span>
                 <span class="pill-val ${benchCount === 4 ? 'valid' : 'pending'}">${benchCount} / 4</span>
             </div>
             <div class="stat-pill">
-                <span class="pill-label">Full Squad</span>
-                <span class="pill-val ${totalCount === 15 ? 'valid' : 'pending'}">${totalCount} / 15</span>
+                <span class="pill-label">Bench Split (2:2)</span>
+                <span class="pill-val ${isBenchExcess ? 'over-budget' : (isBenchSplitValid ? 'valid' : 'pending')}">${this.activeFixture.homeClub} (${benchHome}) : ${this.activeFixture.awayClub} (${benchAway})</span>
             </div>
             <div class="stat-pill">
                 <span class="pill-label">Squad Cost / Max</span>
@@ -1639,10 +1835,6 @@ class PitchBuilderUI {
                 <span class="pill-val ${remainingBudget < 0 ? 'over-budget' : 'highlight-green'}">£${remainingBudget.toFixed(1)}m</span>
             </div>
             <div class="stat-pill">
-                <span class="pill-label">Club Split (Max 8)</span>
-                <span class="pill-val ${isClubLimitExceeded ? 'over-budget' : ''}">${this.activeFixture.homeClub} (${homeCount}) : ${this.activeFixture.awayClub} (${awayCount})</span>
-            </div>
-            <div class="stat-pill">
                 <span class="pill-label">Captain (2x)</span>
                 <span class="pill-val highlight">${this.captainId ? (getPlayerById(this.captainId)?.webName || getPlayerById(this.captainId)?.name || 'None') : 'None'}</span>
             </div>
@@ -1651,8 +1843,9 @@ class PitchBuilderUI {
         // Update Save Squad Button Text & Indicator
         const saveBtn = document.getElementById('btnSaveSquad');
         if (saveBtn) {
-            if (totalCount === 15) {
-                saveBtn.innerHTML = '💾 Save Squad (15/15)';
+            const isSquadReady = totalCount === 15 && isStartersSplitValid && isBenchSplitValid && !isOverBudget;
+            if (isSquadReady) {
+                saveBtn.innerHTML = '💾 Save Squad (15/15) ✅';
                 saveBtn.style.background = 'linear-gradient(135deg, #10B981, #059669)';
                 saveBtn.style.borderColor = '#10B981';
             } else {
@@ -1673,6 +1866,14 @@ class PitchBuilderUI {
         const validBench = this.benchPlayers.filter(Boolean);
         const totalCount = validStarters.length + validBench.length;
 
+        const startersHome = validStarters.filter(p => p.club === this.activeFixture.homeClub).length;
+        const startersAway = validStarters.filter(p => p.club === this.activeFixture.awayClub).length;
+        const isStartersSplitValid = (startersHome === 6 && startersAway === 5) || (startersHome === 5 && startersAway === 6);
+
+        const benchHome = validBench.filter(p => p.club === this.activeFixture.homeClub).length;
+        const benchAway = validBench.filter(p => p.club === this.activeFixture.awayClub).length;
+        const isBenchSplitValid = benchHome === 2 && benchAway === 2;
+
         // Mandatory check for all 15 players
         if (totalCount < 15 || validStarters.length < 11 || validBench.length < 4) {
             const missingStarters = 11 - validStarters.length;
@@ -1691,18 +1892,26 @@ class PitchBuilderUI {
 
                     <div style="display:flex; flex-direction:column; gap:0.6rem; font-size:0.9rem; line-height:1.5;">
                         <p style="color:#F87171; font-weight:800; margin:0;">
-                            You must pick all 15 players (11 Starters + 4 Bench Substitutes) before saving your squad.
+                            You must pick all 15 players (11 Starters + 4 Bench Substitutes) conforming to the 6:5 First XI and 2:2 Bench split rules.
                         </p>
-                        <div style="background:rgba(255,255,255,0.05); padding:0.75rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:0.3rem;">
+                        <div style="background:rgba(255,255,255,0.05); padding:0.75rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1); display:flex; flex-direction:column; gap:0.4rem;">
+                            <div style="display:flex; justify-content:space-between;">
                                 <span>⭐ Starting 11:</span>
                                 <strong style="color:${validStarters.length === 11 ? '#10B981' : '#F59E0B'}">${validStarters.length}/11 ${missingStarters > 0 ? `(${missingStarters} missing)` : '✅'}</strong>
                             </div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:0.3rem;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-dim);">
+                                <span>↳ First XI Split (Target 6:5):</span>
+                                <span style="color:${isStartersSplitValid ? '#10B981' : '#F59E0B'}">${this.activeFixture.homeClub} (${startersHome}) : ${this.activeFixture.awayClub} (${startersAway})</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-top:0.2rem;">
                                 <span>🪑 Substitutes Bench:</span>
                                 <strong style="color:${validBench.length === 4 ? '#10B981' : '#F59E0B'}">${validBench.length}/4 ${missingBench > 0 ? `(${missingBench} missing)` : '✅'}</strong>
                             </div>
-                            <div style="display:flex; justify-content:space-between;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-dim);">
+                                <span>↳ Bench Split (Target 2:2):</span>
+                                <span style="color:${isBenchSplitValid ? '#10B981' : '#F59E0B'}">${this.activeFixture.homeClub} (${benchHome}) : ${this.activeFixture.awayClub} (${benchAway})</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-top:0.2rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:0.3rem;">
                                 <span>👥 Total Squad:</span>
                                 <strong style="color:${totalCount === 15 ? '#10B981' : '#F87171'}">${totalCount}/15 (${15 - totalCount} missing)</strong>
                             </div>
@@ -1711,7 +1920,7 @@ class PitchBuilderUI {
 
                     <div style="display:flex; flex-direction:column; gap:0.6rem;">
                         <button type="button" class="btn btn-primary" id="btnModalAutoPickNow" style="padding:0.75rem; font-weight:800;">
-                            ⚡ Auto-Fill Missing Players to Best 15
+                            ⚡ Auto-Fill Missing Players to Best 15 (6:5 & 2:2)
                         </button>
                         <button type="button" class="btn btn-secondary" id="btnModalDismissIncomplete" style="padding:0.6rem;">
                             Continue Picking Manually
@@ -1748,10 +1957,15 @@ class PitchBuilderUI {
             return;
         }
 
-        const homeCount = allSquad.filter(p => p.club === this.activeFixture.homeClub).length;
-        const awayCount = allSquad.filter(p => p.club === this.activeFixture.awayClub).length;
-        if (homeCount > 8 || awayCount > 8) {
-            alert(`⚠️ Club Limit Exceeded!\n\nA maximum of 8 players from one club can be selected in your 15-player squad.\n\nCurrent Split: ${this.activeFixture.homeClub} (${homeCount}) : ${this.activeFixture.awayClub} (${awayCount}).`);
+        // Enforce First XI 6:5 club split
+        if (!isStartersSplitValid) {
+            alert(`⚠️ Starting 11 Club Split Invalid!\n\nYour First XI must have a 6:5 club split (6 players from one club and 5 from the other).\n\nCurrent Starting 11 Split:\n${this.activeFixture.homeClub}: ${startersHome}\n${this.activeFixture.awayClub}: ${startersAway}\n\nPlease adjust your starting lineup.`);
+            return;
+        }
+
+        // Enforce Bench 2:2 club split
+        if (!isBenchSplitValid) {
+            alert(`⚠️ Substitutes Bench Club Split Invalid!\n\nYour Bench must have an exact 2:2 club split (2 players from ${this.activeFixture.homeClub} and 2 players from ${this.activeFixture.awayClub}).\n\nCurrent Bench Split:\n${this.activeFixture.homeClub}: ${benchHome}\n${this.activeFixture.awayClub}: ${benchAway}\n\nPlease adjust your bench substitutes.`);
             return;
         }
 
@@ -1767,7 +1981,7 @@ class PitchBuilderUI {
 
         if (window.roomManager && window.roomManager.currentRoom) {
             window.roomManager.submitSquad(window.roomManager.currentRoom.code, squadData);
-            alert('🎉 15-Player Squad (11 Starters + 4 Bench Substitutes within £100.0m budget) saved & locked to room successfully!');
+            alert('🎉 15-Player Squad (First XI 6:5 Split + Bench 2:2 Split within £100.0m budget) saved & locked to room successfully!');
         } else {
             alert('🎉 15-Player Squad saved locally! Join or create a room to challenge friends.');
         }
