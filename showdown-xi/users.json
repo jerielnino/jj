@@ -18,5 +18,15 @@
     "avatar": "🔥",
     "createdAt": "2026-09-01T11:41:39.163Z",
     "approvedAt": "2026-09-01T11:41:39.163Z"
+  },
+  "Jazim9": {
+    "username": "Jazim9",
+    "password": "Jazim@088",
+    "displayName": "Jazim",
+    "role": "USER",
+    "status": "APPROVED",
+    "avatar": "⚽",
+    "createdAt": "2026-09-01T16:00:32.301Z",
+    "approvedAt": "2026-09-01T16:00:32.305Z"
   }
 }
