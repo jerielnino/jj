@@ -88,6 +88,9 @@
         </div>
 
         <div class="header-right-actions">
+            <button class="btn btn-secondary btn-sm" id="btnGitSync" title="GitHub Cloud Sync (Push/Pull directly to GitHub)">
+                <span class="btn-icon">🐙</span><span class="btn-text">Git Sync</span>
+            </button>
             <button class="btn btn-secondary btn-sm" id="btnSyncFPL" title="Fetch live stats & form from Official FPL API">
                 <span class="btn-icon">⚡</span><span class="btn-text">Sync</span>
             </button>
@@ -319,12 +322,80 @@
         </div>
     </div>
 
+    <!-- Modal: GitHub Cloud Sync Settings & Action -->
+    <div class="app-modal" id="gitSyncModal">
+        <div class="modal-dialog" style="max-width: 520px;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 1.4rem;">🐙</span>
+                    <h3 style="margin: 0;">GitHub Cloud Sync</h3>
+                </div>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            
+            <div class="modal-body" style="padding: 1rem 0; display: flex; flex-direction: column; gap: 1rem;">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+                    Sync your squads, leagues, and rooms directly to your GitHub repository (<code>js/data/savedSquads.js</code>) via the GitHub REST API.
+                </p>
+
+                <div class="modal-form-group">
+                    <label>GitHub Repository (<code>owner/repo</code>):</label>
+                    <input type="text" id="gitRepoInput" placeholder="e.g. your-username/showdown-xi" autocomplete="off">
+                </div>
+
+                <div class="modal-form-group">
+                    <label>Target Branch:</label>
+                    <input type="text" id="gitBranchInput" placeholder="main" value="main" autocomplete="off">
+                </div>
+
+                <div class="modal-form-group">
+                    <label>GitHub Personal Access Token (PAT with <code>repo</code> or <code>contents:write</code>):</label>
+                    <input type="password" id="gitTokenInput" placeholder="github_pat_11A... or ghp_..." autocomplete="off">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                        Token is stored locally in your browser's private storage only and never shared.
+                    </span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+                    <input type="checkbox" id="gitAutoPushCheck" style="width: 1.1rem; height: 1.1rem; accent-color: var(--primary);">
+                    <label for="gitAutoPushCheck" style="font-size: 0.85rem; cursor: pointer; user-select: none; margin: 0;">
+                        ⚡ <strong>Auto-Push to GitHub</strong> whenever I save a squad
+                    </label>
+                </div>
+
+                <div id="gitSyncStatusInfo" style="font-size: 0.8rem; color: var(--accent-gold); font-family: monospace;">
+                    Not synced yet
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+                    <button class="btn btn-primary btn-sm" id="btnGitPushNow">
+                        ⬆️ Push Now
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="btnGitPullNow">
+                        ⬇️ Pull Latest
+                    </button>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <button class="btn btn-secondary btn-sm" id="btnSaveGitConfig">
+                        💾 Save Config
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="btnGitExportFile" title="Download backup savedSquads.js file">
+                        📥 Download File
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Application Scripts -->
     <script src="js/auth/authManager.js"></script>
     <script src="js/data/teams.js"></script>
     <script src="js/data/fixtures.js"></script>
+    <script src="js/data/savedSquads.js"></script>
     <script src="js/engine/scoring.js"></script>
     <script src="js/engine/apiSync.js"></script>
+    <script src="js/engine/gitSync.js"></script>
     <script src="js/multiplayer/roomManager.js"></script>
     <script src="js/ui/pitchBuilder.js"></script>
     <script src="js/ui/leaderboard.js"></script>

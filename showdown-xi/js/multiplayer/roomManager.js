@@ -192,18 +192,50 @@ class RoomManager {
         }
     }
 
+    findRoomByFixture(fixtureId) {
+        try {
+            const allRooms = JSON.parse(localStorage.getItem(this.storageKey) || '{}');
+            for (const code in allRooms) {
+                const r = allRooms[code];
+                if (r && r.fixtureId === fixtureId) {
+                    if (r.participants) {
+                        r.participants = r.participants.filter(p => !p.isBot && !p.userId?.startsWith('bot_'));
+                    }
+                    return r;
+                }
+            }
+        } catch (e) {}
+
+        // Fallback to permanent Git room
+        if (typeof getGitRoomByFixture === 'function') {
+            const gitRoom = getGitRoomByFixture(fixtureId);
+            if (gitRoom) {
+                this.saveRoom(gitRoom);
+                return gitRoom;
+            }
+        }
+        return null;
+    }
+
     getRoom(code) {
         try {
             const allRooms = JSON.parse(localStorage.getItem(this.storageKey) || '{}');
             const room = allRooms[code] || null;
             if (room && room.participants) {
-                // Filter out any legacy bots
                 room.participants = room.participants.filter(p => !p.isBot && !p.userId?.startsWith('bot_'));
+                return room;
             }
-            return room;
-        } catch (e) {
-            return null;
+        } catch (e) {}
+
+        // Fallback to permanent Git room
+        if (typeof getGitRoom === 'function') {
+            const gitRoom = getGitRoom(code);
+            if (gitRoom) {
+                this.saveRoom(gitRoom);
+                return gitRoom;
+            }
         }
+        return null;
     }
 
     saveRoom(room) {

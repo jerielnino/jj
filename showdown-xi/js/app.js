@@ -18,6 +18,10 @@ class ShowdownApp {
         this.bindAdminPanelEvents();
         this.bindModals();
         
+        if (window.gitSyncService) {
+            window.gitSyncService.init();
+        }
+
         // Find default upcoming fixture
         this.initDefaultFixture();
         this.renderFixturesSelector();
@@ -201,16 +205,31 @@ class ShowdownApp {
         }
 
         try {
+            // 1. Snapshot all critical permanent data first
+            const authUsers = localStorage.getItem('showdown_xi_auth_users');
+            const loggedUser = localStorage.getItem('showdown_xi_logged_user');
+            const masterSquads = localStorage.getItem('showdown_xi_master_squads');
+            const rooms = localStorage.getItem('showdown_xi_rooms_v2');
+            const userProfile = localStorage.getItem('showdown_xi_user_profile');
+            const lastFixture = localStorage.getItem('showdown_xi_last_fixture_id');
+            const gitSyncConfig = localStorage.getItem('showdown_xi_github_sync_config');
+
+            // 2. Clear browser cache and session
             if ('caches' in window) {
                 const cacheNames = await caches.keys();
                 await Promise.all(cacheNames.map(name => caches.delete(name)));
             }
-            sessionStorage.clear();
-            const authUsers = localStorage.getItem('showdown_xi_auth_users');
-            const loggedUser = localStorage.getItem('showdown_xi_logged_user');
-            localStorage.clear();
+            try { sessionStorage.clear(); } catch (e) {}
+            try { localStorage.clear(); } catch (e) {}
+
+            // 3. Restore all critical persistent data
             if (authUsers) localStorage.setItem('showdown_xi_auth_users', authUsers);
             if (loggedUser) localStorage.setItem('showdown_xi_logged_user', loggedUser);
+            if (masterSquads) localStorage.setItem('showdown_xi_master_squads', masterSquads);
+            if (rooms) localStorage.setItem('showdown_xi_rooms_v2', rooms);
+            if (userProfile) localStorage.setItem('showdown_xi_user_profile', userProfile);
+            if (lastFixture) localStorage.setItem('showdown_xi_last_fixture_id', lastFixture);
+            if (gitSyncConfig) localStorage.setItem('showdown_xi_github_sync_config', gitSyncConfig);
         } catch (e) {
             console.error('Error clearing cache:', e);
         }
@@ -310,7 +329,12 @@ class ShowdownApp {
         localStorage.setItem('showdown_xi_last_fixture_id', fixture.id);
 
         if (!window.roomManager.currentRoom || window.roomManager.currentRoom.fixtureId !== fixture.id) {
-            window.roomManager.createRoom(fixture.id);
+            const existingRoom = window.roomManager.findRoomByFixture(fixture.id);
+            if (existingRoom) {
+                window.roomManager.currentRoom = existingRoom;
+            } else {
+                window.roomManager.createRoom(fixture.id);
+            }
         }
 
         window.pitchBuilder.init(fixture);

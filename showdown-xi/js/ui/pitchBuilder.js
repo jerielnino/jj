@@ -41,59 +41,98 @@ class PitchBuilderUI {
         this.render();
     }
 
-    loadSavedSquad() {
-        const currentUserId = window.authManager?.currentUser?.username || window.roomManager?.userProfile?.id || 'jj7758';
-        const draftKey = `showdown_xi_draft_${this.activeFixture.id}_${currentUserId}`;
+    getMasterSquad(fixtureId) {
+        try {
+            const master = JSON.parse(localStorage.getItem('showdown_xi_master_squads') || '{}');
+            return master[fixtureId] || null;
+        } catch (e) {
+            return null;
+        }
+    }
 
-        // 1. Try restoring auto-saved local draft
+    saveMasterSquad(fixtureId, squadData) {
+        try {
+            const master = JSON.parse(localStorage.getItem('showdown_xi_master_squads') || '{}');
+            master[fixtureId] = {
+                ...squadData,
+                fixtureId,
+                updatedAt: Date.now()
+            };
+            localStorage.setItem('showdown_xi_master_squads', JSON.stringify(master));
+        } catch (e) {}
+    }
+
+    loadSavedSquad() {
+        const fixtureId = this.activeFixture.id;
+        const currentUserId = window.authManager?.currentUser?.username || window.roomManager?.userProfile?.id || 'jj7758';
+        const draftKey = `showdown_xi_draft_${fixtureId}_${currentUserId}`;
+
+        const applySquadData = (data) => {
+            if (!data) return false;
+            const playerIds = data.playerIds || [];
+            const benchIds = data.benchIds || [];
+            const hasAnyPlayer = (playerIds.some(Boolean) || benchIds.some(Boolean));
+            if (!hasAnyPlayer) return false;
+
+            this.currentFormation = data.formation || '4-3-3';
+            this.captainId = data.captainId || null;
+            this.viceCaptainId = data.viceCaptainId || null;
+            this.selectedPlayers = new Array(11).fill(null);
+            this.benchPlayers = new Array(4).fill(null);
+
+            for (let i = 0; i < 11; i++) {
+                if (playerIds[i]) {
+                    this.selectedPlayers[i] = getPlayerById(playerIds[i]);
+                }
+            }
+            for (let i = 0; i < 4; i++) {
+                if (benchIds[i]) {
+                    this.benchPlayers[i] = getPlayerById(benchIds[i]);
+                }
+            }
+            return true;
+        };
+
+        // 1. Primary: Master Permanent Squad Store
+        const masterSquad = this.getMasterSquad(fixtureId);
+        if (masterSquad && applySquadData(masterSquad)) return;
+
+        // 2. User Specific Draft
         try {
             const savedDraft = localStorage.getItem(draftKey);
-            if (savedDraft) {
-                const draft = JSON.parse(savedDraft);
-                this.currentFormation = draft.formation || '4-3-3';
-                this.captainId = draft.captainId || null;
-                this.viceCaptainId = draft.viceCaptainId || null;
-                this.selectedPlayers = new Array(11).fill(null);
-                this.benchPlayers = new Array(4).fill(null);
-
-                if (Array.isArray(draft.playerIds)) {
-                    for (let i = 0; i < 11; i++) {
-                        if (draft.playerIds[i]) {
-                            this.selectedPlayers[i] = getPlayerById(draft.playerIds[i]);
-                        }
-                    }
-                }
-                if (Array.isArray(draft.benchIds)) {
-                    for (let i = 0; i < 4; i++) {
-                        if (draft.benchIds[i]) {
-                            this.benchPlayers[i] = getPlayerById(draft.benchIds[i]);
-                        }
-                    }
-                }
-                return;
-            }
+            if (savedDraft && applySquadData(JSON.parse(savedDraft))) return;
         } catch (e) {}
 
-        // 2. Try restoring from active room
-        const currentRoom = window.roomManager ? window.roomManager.currentRoom : null;
-        if (currentRoom) {
-            const userPart = currentRoom.participants.find(p => p.userId === currentUserId);
-            const squad = userPart?.squads?.[this.activeFixture.id] || userPart?.squad;
-            if (squad && squad.playerIds) {
-                this.currentFormation = squad.formation || '4-3-3';
-                this.captainId = squad.captainId || null;
-                this.viceCaptainId = squad.viceCaptainId || null;
-                this.selectedPlayers = new Array(11).fill(null);
-                this.benchPlayers = new Array(4).fill(null);
+        // 3. Fallback General Drafts
+        try {
+            const guestDraft = localStorage.getItem(`showdown_xi_draft_${fixtureId}_jj7758`);
+            if (guestDraft && applySquadData(JSON.parse(guestDraft))) return;
+        } catch (e) {}
 
-                for (let i = 0; i < 11; i++) {
-                    if (squad.playerIds[i]) this.selectedPlayers[i] = getPlayerById(squad.playerIds[i]);
+        // 4. Check Current Room
+        const currentRoom = window.roomManager ? window.roomManager.currentRoom : null;
+        if (currentRoom && currentRoom.fixtureId === fixtureId) {
+            const userPart = currentRoom.participants?.find(p => p.userId === currentUserId) || currentRoom.participants?.[0];
+            const squad = userPart?.squads?.[fixtureId] || userPart?.squad;
+            if (squad && applySquadData(squad)) return;
+        }
+
+        // 5. Check Any Room Matching this Fixture
+        if (window.roomManager) {
+            const room = window.roomManager.findRoomByFixture(fixtureId);
+            if (room && room.participants) {
+                for (const part of room.participants) {
+                    const squad = part.squads?.[fixtureId] || part.squad;
+                    if (squad && applySquadData(squad)) return;
                 }
-                if (Array.isArray(squad.benchIds)) {
-                    for (let i = 0; i < 4; i++) {
-                        if (squad.benchIds[i]) this.benchPlayers[i] = getPlayerById(squad.benchIds[i]);
-                    }
-                }
+            }
+        }
+
+        // 6. Permanent Git Repository Fallback (savedSquads.js)
+        if (typeof getGitSavedSquad === 'function') {
+            const gitSquad = getGitSavedSquad(fixtureId);
+            if (gitSquad && applySquadData(gitSquad)) {
+                this.saveMasterSquad(fixtureId, gitSquad);
                 return;
             }
         }
@@ -120,6 +159,9 @@ class PitchBuilderUI {
         try {
             localStorage.setItem(draftKey, JSON.stringify(draft));
             localStorage.setItem('showdown_xi_last_fixture_id', this.activeFixture.id);
+            if (this.selectedPlayers.some(Boolean) || this.benchPlayers.some(Boolean)) {
+                this.saveMasterSquad(this.activeFixture.id, draft);
+            }
         } catch (e) {}
     }
 
@@ -236,6 +278,9 @@ class PitchBuilderUI {
                         <button class="btn btn-secondary btn-sm" id="btnAutoPick" ${this.isLocked ? 'disabled' : ''}>
                             ⚡ Auto Best 15
                         </button>
+                        <button class="btn btn-secondary btn-sm" id="btnExportGit" title="Download updated savedSquads.js file to commit to Git repository">
+                            📥 Export to Git
+                        </button>
                         <button class="btn btn-danger btn-sm" id="btnClearSquad" ${this.isLocked ? 'disabled' : ''}>
                             🗑️ Reset
                         </button>
@@ -326,6 +371,17 @@ class PitchBuilderUI {
             });
         }
 
+        const exportGitBtn = document.getElementById('btnExportGit');
+        if (exportGitBtn) {
+            exportGitBtn.addEventListener('click', () => {
+                if (typeof exportSavedSquadsFile === 'function') {
+                    exportSavedSquadsFile();
+                } else {
+                    alert('📥 Exporting squads to savedSquads.js...');
+                }
+            });
+        }
+
         const clearBtn = document.getElementById('btnClearSquad');
         if (clearBtn) {
             clearBtn.addEventListener('click', () => {
@@ -363,6 +419,120 @@ class PitchBuilderUI {
                 }
                 this.renderBottomDock();
             });
+        });
+
+        // Global listener to dismiss long-pressed remove badges when tapping outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.pitch-player-slot.show-remove-badge') && !e.target.closest('.bench-player-slot.show-remove-badge')) {
+                document.querySelectorAll('.pitch-player-slot.show-remove-badge, .bench-player-slot.show-remove-badge').forEach(el => el.classList.remove('show-remove-badge'));
+            }
+        });
+    }
+
+    attachSlotInteractions(slotCard, isBench, idx, pos, assignedPlayer) {
+        if (!assignedPlayer) {
+            slotCard.addEventListener('click', () => {
+                if (isBench) {
+                    this.selectBenchSlot(idx);
+                } else {
+                    this.selectPitchSlot(idx, pos);
+                }
+            });
+            return;
+        }
+
+        let longPressTimer = null;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let didLongPress = false;
+
+        slotCard.addEventListener('touchstart', (e) => {
+            if (this.isLocked) return;
+            if (e.target.closest('.slot-remove-badge') || e.target.closest('.btn-slot-action')) return;
+
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            didLongPress = false;
+
+            clearTimeout(longPressTimer);
+            longPressTimer = setTimeout(() => {
+                didLongPress = true;
+                try {
+                    if (navigator.vibrate) navigator.vibrate(35);
+                } catch (err) {}
+
+                // Dismiss remove badge on other slots
+                document.querySelectorAll('.pitch-player-slot.show-remove-badge, .bench-player-slot.show-remove-badge').forEach(el => {
+                    if (el !== slotCard) el.classList.remove('show-remove-badge');
+                });
+
+                // Toggle remove badge on this slot
+                slotCard.classList.toggle('show-remove-badge');
+            }, 400);
+        }, { passive: true });
+
+        slotCard.addEventListener('touchmove', (e) => {
+            if (e.touches && e.touches.length > 0) {
+                const dist = Math.hypot(e.touches[0].clientX - touchStartX, e.touches[0].clientY - touchStartY);
+                if (dist > 8) {
+                    // Finger moved (scrolling) -> cancel long-press immediately
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+            }
+        }, { passive: true });
+
+        slotCard.addEventListener('touchend', (e) => {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+            if (didLongPress) {
+                e.preventDefault();
+                setTimeout(() => { didLongPress = false; }, 150);
+            }
+        });
+
+        slotCard.addEventListener('touchcancel', () => {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+            didLongPress = false;
+        });
+
+        slotCard.addEventListener('click', (e) => {
+            if (didLongPress) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            const removeBtn = e.target.closest('.slot-remove-badge');
+            if (removeBtn) {
+                e.stopPropagation();
+                e.preventDefault();
+                if (isBench) {
+                    this.removeBenchPlayer(idx);
+                } else {
+                    this.removePitchPlayer(idx);
+                }
+                return;
+            }
+
+            if (e.target.closest('.btn-slot-action')) {
+                return;
+            }
+
+            const activeRemoveSlot = document.querySelector('.pitch-player-slot.show-remove-badge, .bench-player-slot.show-remove-badge');
+            if (activeRemoveSlot) {
+                document.querySelectorAll('.pitch-player-slot.show-remove-badge, .bench-player-slot.show-remove-badge').forEach(el => el.classList.remove('show-remove-badge'));
+                if (activeRemoveSlot === slotCard) {
+                    return;
+                }
+            }
+
+            if (isBench) {
+                this.selectBenchSlot(idx);
+            } else {
+                this.selectPitchSlot(idx, pos);
+            }
         });
     }
 
@@ -490,15 +660,6 @@ class PitchBuilderUI {
                             this.handleDropOnSlot(player, slotIdx, row.pos);
                         }
                     });
-
-                    // Click / Tap on slot
-                    slotCard.addEventListener('click', (e) => {
-                        // Prevent triggering if clicked directly on a button inside
-                        if (e.target.closest('.slot-remove-badge') || e.target.closest('.btn-slot-action')) {
-                            return;
-                        }
-                        this.selectPitchSlot(slotIdx, row.pos);
-                    });
                 }
 
                 if (assignedPlayer) {
@@ -542,6 +703,10 @@ class PitchBuilderUI {
                         <div class="empty-slot-plus">+</div>
                         <span class="empty-slot-label">${row.pos}</span>
                     `;
+                }
+
+                if (!this.isLocked) {
+                    this.attachSlotInteractions(slotCard, false, slotIdx, row.pos, assignedPlayer);
                 }
 
                 rowEl.appendChild(slotCard);
@@ -658,13 +823,6 @@ class PitchBuilderUI {
                         this.handleDropOnBench(player, benchIdx);
                     }
                 });
-
-                slotCard.addEventListener('click', (e) => {
-                    if (e.target.closest('.slot-remove-badge') || e.target.closest('.btn-slot-action')) {
-                        return;
-                    }
-                    this.selectBenchSlot(benchIdx);
-                });
             }
 
             if (assignedPlayer) {
@@ -703,6 +861,10 @@ class PitchBuilderUI {
                     <div class="empty-slot-plus">+</div>
                     <span class="empty-slot-label">${role.reqPos === 'GK' ? 'GK' : 'SUB'}</span>
                 `;
+            }
+
+            if (!this.isLocked) {
+                this.attachSlotInteractions(slotCard, true, benchIdx, null, assignedPlayer);
             }
 
             row.appendChild(slotCard);
@@ -1979,6 +2141,8 @@ class PitchBuilderUI {
             updatedAt: Date.now()
         };
 
+        this.saveMasterSquad(this.activeFixture.id, squadData);
+
         if (window.roomManager && window.roomManager.currentRoom) {
             window.roomManager.submitSquad(window.roomManager.currentRoom.code, squadData);
             alert('🎉 15-Player Squad (First XI 6:5 Split + Bench 2:2 Split within £100.0m budget) saved & locked to room successfully!');
@@ -1987,6 +2151,11 @@ class PitchBuilderUI {
         }
 
         this.autoSaveDraft();
+
+        // Trigger background Git sync if configured
+        if (window.gitSyncService && window.gitSyncService.isConfigured() && window.gitSyncService.config.autoPush) {
+            window.gitSyncService.pushToGitHub().catch(e => console.warn('Auto git sync:', e));
+        }
     }
 }
 

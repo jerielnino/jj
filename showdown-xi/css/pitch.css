@@ -472,7 +472,7 @@
     color: #fff;
 }
 
-/* Always-Visible Highly-Tappable Remove Badge on Pitch & Bench Player Slots */
+/* Remove Badge on Pitch & Bench Slots (Hidden by default on mobile, revealed on long-press or desktop hover) */
 .slot-remove-badge {
     position: absolute;
     top: -8px;
@@ -490,20 +490,71 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.8), 0 0 6px rgba(239, 68, 68, 0.5);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.8), 0 0 8px rgba(239, 68, 68, 0.6);
     z-index: 50 !important;
-    pointer-events: auto !important;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.5);
+    transition: opacity 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.15s ease;
     touch-action: manipulation;
-    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+/* Reveal remove badge on desktop hover */
+@media (hover: hover) and (pointer: fine) {
+    .pitch-player-slot.filled:hover .slot-remove-badge,
+    .bench-player-slot.filled:hover .slot-remove-badge {
+        opacity: 1;
+        pointer-events: auto;
+        transform: scale(1);
+    }
+}
+
+/* Long-press active state on mobile & touch */
+.pitch-player-slot.show-remove-badge .slot-remove-badge,
+.bench-player-slot.show-remove-badge .slot-remove-badge {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: scale(1.15) !important;
+    animation: popInRemoveBadge 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.pitch-player-slot.show-remove-badge,
+.bench-player-slot.show-remove-badge {
+    box-shadow: 0 0 0 2px #EF4444, 0 8px 24px rgba(239, 68, 68, 0.4) !important;
+    animation: gentleJiggle 0.35s ease-in-out infinite alternate;
+}
+
+@keyframes popInRemoveBadge {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    70% {
+        opacity: 1;
+        transform: scale(1.3);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1.15);
+    }
+}
+
+@keyframes gentleJiggle {
+    0% {
+        transform: rotate(-1.5deg);
+    }
+    100% {
+        transform: rotate(1.5deg);
+    }
 }
 
 .slot-remove-badge:hover, .slot-remove-badge:focus {
-    transform: scale(1.25);
+    transform: scale(1.3) !important;
     background: #DC2626;
 }
 
 .slot-remove-badge:active {
-    transform: scale(0.9);
+    transform: scale(0.95) !important;
     background: #B91C1C;
 }
 
