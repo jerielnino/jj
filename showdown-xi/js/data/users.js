@@ -14,6 +14,16 @@ const AUTH_USERS_DATA = {
         "avatar": "👑",
         "createdAt": "2026-09-01T00:00:00.000Z",
         "approvedAt": "2026-09-01T00:00:00.000Z"
+    },
+    "Thachi66": {
+        "username": "Thachi66",
+        "password": "Thachi1234",
+        "displayName": "Thachi",
+        "role": "USER",
+        "status": "APPROVED",
+        "avatar": "🔥",
+        "createdAt": "2026-09-01T11:41:39.163Z",
+        "approvedAt": "2026-09-01T11:41:39.163Z"
     }
 };
 
