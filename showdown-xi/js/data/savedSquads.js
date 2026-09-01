@@ -1159,67 +1159,65 @@ const SAVED_ROOMS_DATA = {
                 "isHost": true,
                 "squads": {
                     "LALIGA_MW4_RMA_SEV": {
+                        "fixtureId": "LALIGA_MW4_RMA_SEV",
+                        "matchTitle": "RMA vs SEV",
+                        "formation": "4-3-3",
+                        "captainId": "rma_17",
+                        "viceCaptainId": "rma_16",
                         "playerIds": [
                             "sev_1",
                             "rma_3",
                             "sev_3",
                             "sev_8",
+                            "sev_6",
                             "rma_10",
-                            "rma_14",
-                            "sev_10",
                             "rma_11",
-                            "sev_14",
+                            "sev_10",
                             "rma_17",
-                            "rma_16"
+                            "rma_16",
+                            "sev_15"
                         ],
                         "benchIds": [
                             "rma_1",
-                            "sev_6",
                             "rma_9",
-                            "sev_15"
+                            "sev_7",
+                            "sev_16"
                         ],
-                        "captainId": "rma_17",
-                        "viceCaptainId": "rma_16",
-                        "formation": "3-5-2",
-                        "totalPrice": 99.7,
-                        "updatedAt": 1788258173681,
-                        "fixtureId": "LALIGA_MW4_RMA_SEV",
-                        "submittedAt": 1788258173682,
-                        "matchPoints": 0
+                        "totalPrice": 100,
+                        "updatedAt": 1788254323535
                     }
                 },
                 "squad": {
+                    "fixtureId": "LALIGA_MW4_RMA_SEV",
+                    "matchTitle": "RMA vs SEV",
+                    "formation": "4-3-3",
+                    "captainId": "rma_17",
+                    "viceCaptainId": "rma_16",
                     "playerIds": [
                         "sev_1",
                         "rma_3",
                         "sev_3",
                         "sev_8",
+                        "sev_6",
                         "rma_10",
-                        "rma_14",
-                        "sev_10",
                         "rma_11",
-                        "sev_14",
+                        "sev_10",
                         "rma_17",
-                        "rma_16"
+                        "rma_16",
+                        "sev_15"
                     ],
                     "benchIds": [
                         "rma_1",
-                        "sev_6",
                         "rma_9",
-                        "sev_15"
+                        "sev_7",
+                        "sev_16"
                     ],
-                    "captainId": "rma_17",
-                    "viceCaptainId": "rma_16",
-                    "formation": "3-5-2",
-                    "totalPrice": 99.7,
-                    "updatedAt": 1788258173681,
-                    "fixtureId": "LALIGA_MW4_RMA_SEV",
-                    "submittedAt": 1788258173682,
-                    "matchPoints": 0
+                    "totalPrice": 100,
+                    "updatedAt": 1788254323535
                 },
                 "matchScore": 0,
                 "totalScore": 0,
-                "submittedAt": 1788258173682
+                "submittedAt": 1788254323535
             }
         ]
     },
@@ -17002,7 +17000,8 @@ const SAVED_USER_SQUADS_DATA = {
         },
         "LALIGA_MW4_RMA_SEV": {
             "fixtureId": "LALIGA_MW4_RMA_SEV",
-            "formation": "3-5-2",
+            "matchTitle": "RMA vs SEV",
+            "formation": "4-3-3",
             "captainId": "rma_17",
             "viceCaptainId": "rma_16",
             "playerIds": [
@@ -17010,21 +17009,22 @@ const SAVED_USER_SQUADS_DATA = {
                 "rma_3",
                 "sev_3",
                 "sev_8",
+                "sev_6",
                 "rma_10",
-                "rma_14",
-                "sev_10",
                 "rma_11",
-                "sev_14",
+                "sev_10",
                 "rma_17",
-                "rma_16"
+                "rma_16",
+                "sev_15"
             ],
             "benchIds": [
                 "rma_1",
-                "sev_6",
                 "rma_9",
-                "sev_15"
+                "sev_7",
+                "sev_16"
             ],
-            "updatedAt": 1788258177032
+            "totalPrice": 100,
+            "updatedAt": 1788254323535
         },
         "PL_GW3_IPS_LIV": {
             "fixtureId": "PL_GW3_IPS_LIV",
@@ -23109,7 +23109,8 @@ const SAVED_SQUADS_DATA = {
     },
     "LALIGA_MW4_RMA_SEV": {
         "fixtureId": "LALIGA_MW4_RMA_SEV",
-        "formation": "3-5-2",
+        "matchTitle": "RMA vs SEV",
+        "formation": "4-3-3",
         "captainId": "rma_17",
         "viceCaptainId": "rma_16",
         "playerIds": [
@@ -23117,21 +23118,22 @@ const SAVED_SQUADS_DATA = {
             "rma_3",
             "sev_3",
             "sev_8",
+            "sev_6",
             "rma_10",
-            "rma_14",
-            "sev_10",
             "rma_11",
-            "sev_14",
+            "sev_10",
             "rma_17",
-            "rma_16"
+            "rma_16",
+            "sev_15"
         ],
         "benchIds": [
             "rma_1",
-            "sev_6",
             "rma_9",
-            "sev_15"
+            "sev_7",
+            "sev_16"
         ],
-        "updatedAt": 1788258177032
+        "totalPrice": 100,
+        "updatedAt": 1788254323535
     },
     "PL_GW3_IPS_LIV": {
         "fixtureId": "PL_GW3_IPS_LIV",
@@ -28799,6 +28801,13 @@ function getGitRoom(roomCode) {
     return null;
 }
 
+function getGitRoom(roomCode) {
+    if (typeof SAVED_ROOMS_DATA !== 'undefined' && SAVED_ROOMS_DATA[roomCode]) {
+        return JSON.parse(JSON.stringify(SAVED_ROOMS_DATA[roomCode]));
+    }
+    return null;
+}
+
 function getGitRoomByFixture(fixtureId) {
     if (typeof SAVED_ROOMS_DATA !== 'undefined') {
         for (const code in SAVED_ROOMS_DATA) {
@@ -28810,11 +28819,37 @@ function getGitRoomByFixture(fixtureId) {
     return null;
 }
 
+function getAllGitRooms() {
+    if (typeof SAVED_ROOMS_DATA !== 'undefined') {
+        return Object.values(SAVED_ROOMS_DATA).map(r => JSON.parse(JSON.stringify(r)));
+    }
+    return [];
+}
+
+function setGitRoom(room) {
+    if (typeof SAVED_ROOMS_DATA !== 'undefined' && room && room.code) {
+        SAVED_ROOMS_DATA[room.code] = JSON.parse(JSON.stringify(room));
+    }
+}
+
 function getGitUserSquad(userId, fixtureId) {
     if (typeof SAVED_USER_SQUADS_DATA !== 'undefined' && SAVED_USER_SQUADS_DATA[userId] && SAVED_USER_SQUADS_DATA[userId][fixtureId]) {
         return JSON.parse(JSON.stringify(SAVED_USER_SQUADS_DATA[userId][fixtureId]));
     }
     return getGitSavedSquad(fixtureId);
+}
+
+function setGitUserSquad(userId, fixtureId, squadData) {
+    if (!fixtureId || !squadData) return;
+    const cleanSquad = JSON.parse(JSON.stringify(squadData));
+
+    if (typeof SAVED_USER_SQUADS_DATA !== 'undefined') {
+        if (!SAVED_USER_SQUADS_DATA[userId]) SAVED_USER_SQUADS_DATA[userId] = {};
+        SAVED_USER_SQUADS_DATA[userId][fixtureId] = cleanSquad;
+    }
+    if (typeof SAVED_SQUADS_DATA !== 'undefined') {
+        SAVED_SQUADS_DATA[fixtureId] = cleanSquad;
+    }
 }
 
 function getGitSavedSquad(fixtureId) {
@@ -28824,17 +28859,23 @@ function getGitSavedSquad(fixtureId) {
     return null;
 }
 
+function updateGitDatabase(newRooms, newUserSquads, newSquads) {
+    if (newRooms && typeof SAVED_ROOMS_DATA !== 'undefined') {
+        for (const code in newRooms) SAVED_ROOMS_DATA[code] = newRooms[code];
+    }
+    if (newUserSquads && typeof SAVED_USER_SQUADS_DATA !== 'undefined') {
+        for (const u in newUserSquads) SAVED_USER_SQUADS_DATA[u] = newUserSquads[u];
+    }
+    if (newSquads && typeof SAVED_SQUADS_DATA !== 'undefined') {
+        for (const f in newSquads) SAVED_SQUADS_DATA[f] = newSquads[f];
+    }
+}
+
 function exportSavedSquadsFile() {
-    const localRooms = JSON.parse(localStorage.getItem('showdown_xi_rooms_v2') || '{}');
-    const localMaster = JSON.parse(localStorage.getItem('showdown_xi_master_squads') || '{}');
     const currentUserId = window.authManager?.currentUser?.username || window.roomManager?.userProfile?.id || 'jj7758';
-
-    const mergedRooms = { ...(typeof SAVED_ROOMS_DATA !== 'undefined' ? SAVED_ROOMS_DATA : {}), ...localRooms };
-    const mergedSquads = { ...(typeof SAVED_SQUADS_DATA !== 'undefined' ? SAVED_SQUADS_DATA : {}), ...localMaster };
-    const mergedUserSquads = { ...(typeof SAVED_USER_SQUADS_DATA !== 'undefined' ? SAVED_USER_SQUADS_DATA : {}) };
-
-    if (!mergedUserSquads[currentUserId]) mergedUserSquads[currentUserId] = {};
-    mergedUserSquads[currentUserId] = { ...mergedUserSquads[currentUserId], ...localMaster };
+    const mergedRooms = typeof SAVED_ROOMS_DATA !== 'undefined' ? SAVED_ROOMS_DATA : {};
+    const mergedSquads = typeof SAVED_SQUADS_DATA !== 'undefined' ? SAVED_SQUADS_DATA : {};
+    const mergedUserSquads = typeof SAVED_USER_SQUADS_DATA !== 'undefined' ? SAVED_USER_SQUADS_DATA : {};
 
     const content = '/**\n' +
         ' * Showdown XI - Permanent Git-Backed Rooms & Squads Database\n' +
@@ -28862,11 +28903,33 @@ function exportSavedSquadsFile() {
         '    }\n' +
         '    return null;\n' +
         '}\n\n' +
+        'function getAllGitRooms() {\n' +
+        '    if (typeof SAVED_ROOMS_DATA !== \'undefined\') {\n' +
+        '        return Object.values(SAVED_ROOMS_DATA).map(r => JSON.parse(JSON.stringify(r)));\n' +
+        '    }\n' +
+        '    return [];\n' +
+        '}\n\n' +
+        'function setGitRoom(room) {\n' +
+        '    if (typeof SAVED_ROOMS_DATA !== \'undefined\' && room && room.code) {\n' +
+        '        SAVED_ROOMS_DATA[room.code] = JSON.parse(JSON.stringify(room));\n' +
+        '    }\n' +
+        '}\n\n' +
         'function getGitUserSquad(userId, fixtureId) {\n' +
         '    if (typeof SAVED_USER_SQUADS_DATA !== \'undefined\' && SAVED_USER_SQUADS_DATA[userId] && SAVED_USER_SQUADS_DATA[userId][fixtureId]) {\n' +
         '        return JSON.parse(JSON.stringify(SAVED_USER_SQUADS_DATA[userId][fixtureId]));\n' +
         '    }\n' +
         '    return getGitSavedSquad(fixtureId);\n' +
+        '}\n\n' +
+        'function setGitUserSquad(userId, fixtureId, squadData) {\n' +
+        '    if (!fixtureId || !squadData) return;\n' +
+        '    const cleanSquad = JSON.parse(JSON.stringify(squadData));\n' +
+        '    if (typeof SAVED_USER_SQUADS_DATA !== \'undefined\') {\n' +
+        '        if (!SAVED_USER_SQUADS_DATA[userId]) SAVED_USER_SQUADS_DATA[userId] = {};\n' +
+        '        SAVED_USER_SQUADS_DATA[userId][fixtureId] = cleanSquad;\n' +
+        '    }\n' +
+        '    if (typeof SAVED_SQUADS_DATA !== \'undefined\') {\n' +
+        '        SAVED_SQUADS_DATA[fixtureId] = cleanSquad;\n' +
+        '    }\n' +
         '}\n\n' +
         'function getGitSavedSquad(fixtureId) {\n' +
         '    if (typeof SAVED_SQUADS_DATA !== \'undefined\' && SAVED_SQUADS_DATA[fixtureId]) {\n' +

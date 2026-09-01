@@ -42,30 +42,22 @@ class PitchBuilderUI {
     }
 
     getMasterSquad(fixtureId) {
-        try {
-            const master = JSON.parse(localStorage.getItem('showdown_xi_master_squads') || '{}');
-            return master[fixtureId] || null;
-        } catch (e) {
-            return null;
+        if (typeof getGitSavedSquad === 'function') {
+            return getGitSavedSquad(fixtureId);
         }
+        return null;
     }
 
     saveMasterSquad(fixtureId, squadData) {
-        try {
-            const master = JSON.parse(localStorage.getItem('showdown_xi_master_squads') || '{}');
-            master[fixtureId] = {
-                ...squadData,
-                fixtureId,
-                updatedAt: Date.now()
-            };
-            localStorage.setItem('showdown_xi_master_squads', JSON.stringify(master));
-        } catch (e) {}
+        const currentUserId = window.authManager?.currentUser?.username || window.roomManager?.userProfile?.id || 'jj7758';
+        if (typeof setGitUserSquad === 'function') {
+            setGitUserSquad(currentUserId, fixtureId, squadData);
+        }
     }
 
     loadSavedSquad() {
         const fixtureId = this.activeFixture.id;
         const currentUserId = window.authManager?.currentUser?.username || window.roomManager?.userProfile?.id || 'jj7758';
-        const draftKey = `showdown_xi_draft_${fixtureId}_${currentUserId}`;
 
         const applySquadData = (data) => {
             if (!data) return false;
@@ -93,48 +85,24 @@ class PitchBuilderUI {
             return true;
         };
 
-        // 1. Primary: Master Permanent Squad Store
-        const masterSquad = this.getMasterSquad(fixtureId);
-        if (masterSquad && applySquadData(masterSquad)) return;
+        // 1. User Specific Git Squad
+        if (typeof getGitUserSquad === 'function') {
+            const userSquad = getGitUserSquad(currentUserId, fixtureId);
+            if (userSquad && applySquadData(userSquad)) return;
+        }
 
-        // 2. User Specific Draft
-        try {
-            const savedDraft = localStorage.getItem(draftKey);
-            if (savedDraft && applySquadData(JSON.parse(savedDraft))) return;
-        } catch (e) {}
+        // 2. Baseline Fixture Git Squad
+        if (typeof getGitSavedSquad === 'function') {
+            const gitSquad = getGitSavedSquad(fixtureId);
+            if (gitSquad && applySquadData(gitSquad)) return;
+        }
 
-        // 3. Fallback General Drafts
-        try {
-            const guestDraft = localStorage.getItem(`showdown_xi_draft_${fixtureId}_jj7758`);
-            if (guestDraft && applySquadData(JSON.parse(guestDraft))) return;
-        } catch (e) {}
-
-        // 4. Check Current Room
+        // 3. Check Current Room Participant Squad
         const currentRoom = window.roomManager ? window.roomManager.currentRoom : null;
         if (currentRoom && currentRoom.fixtureId === fixtureId) {
             const userPart = currentRoom.participants?.find(p => p.userId === currentUserId) || currentRoom.participants?.[0];
             const squad = userPart?.squads?.[fixtureId] || userPart?.squad;
             if (squad && applySquadData(squad)) return;
-        }
-
-        // 5. Check Any Room Matching this Fixture
-        if (window.roomManager) {
-            const room = window.roomManager.findRoomByFixture(fixtureId);
-            if (room && room.participants) {
-                for (const part of room.participants) {
-                    const squad = part.squads?.[fixtureId] || part.squad;
-                    if (squad && applySquadData(squad)) return;
-                }
-            }
-        }
-
-        // 6. Permanent Git Repository Fallback (savedSquads.js)
-        if (typeof getGitSavedSquad === 'function') {
-            const gitSquad = getGitSavedSquad(fixtureId);
-            if (gitSquad && applySquadData(gitSquad)) {
-                this.saveMasterSquad(fixtureId, gitSquad);
-                return;
-            }
         }
 
         this.selectedPlayers = new Array(11).fill(null);
@@ -146,7 +114,6 @@ class PitchBuilderUI {
     autoSaveDraft() {
         if (!this.activeFixture) return;
         const currentUserId = window.authManager?.currentUser?.username || window.roomManager?.userProfile?.id || 'jj7758';
-        const draftKey = `showdown_xi_draft_${this.activeFixture.id}_${currentUserId}`;
         const draft = {
             fixtureId: this.activeFixture.id,
             formation: this.currentFormation,
@@ -156,13 +123,9 @@ class PitchBuilderUI {
             benchIds: this.benchPlayers.map(p => p ? p.id : null),
             updatedAt: Date.now()
         };
-        try {
-            localStorage.setItem(draftKey, JSON.stringify(draft));
-            localStorage.setItem('showdown_xi_last_fixture_id', this.activeFixture.id);
-            if (this.selectedPlayers.some(Boolean) || this.benchPlayers.some(Boolean)) {
-                this.saveMasterSquad(this.activeFixture.id, draft);
-            }
-        } catch (e) {}
+        if (typeof setGitUserSquad === 'function') {
+            setGitUserSquad(currentUserId, this.activeFixture.id, draft);
+        }
     }
 
     getSlotPositionsArray() {

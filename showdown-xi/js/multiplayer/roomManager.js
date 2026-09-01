@@ -202,58 +202,45 @@ class RoomManager {
     }
 
     findRoomByFixture(fixtureId) {
-        try {
-            const allRooms = JSON.parse(localStorage.getItem(this.storageKey) || '{}');
-            for (const code in allRooms) {
-                const r = allRooms[code];
-                if (r && r.fixtureId === fixtureId) {
-                    return this.cleanAndRecalculateRoom(r);
-                }
-            }
-        } catch (e) {}
-
-        // Fallback to permanent Git room
         if (typeof getGitRoomByFixture === 'function') {
             const gitRoom = getGitRoomByFixture(fixtureId);
             if (gitRoom) {
-                const clean = this.cleanAndRecalculateRoom(gitRoom);
-                this.saveRoom(clean);
-                return clean;
+                return this.cleanAndRecalculateRoom(gitRoom);
             }
         }
         return null;
     }
 
     getRoom(code) {
-        try {
-            const allRooms = JSON.parse(localStorage.getItem(this.storageKey) || '{}');
-            const room = allRooms[code] || null;
-            if (room && room.participants) {
-                return this.cleanAndRecalculateRoom(room);
-            }
-        } catch (e) {}
-
-        // Fallback to permanent Git room
         if (typeof getGitRoom === 'function') {
             const gitRoom = getGitRoom(code);
             if (gitRoom) {
-                const clean = this.cleanAndRecalculateRoom(gitRoom);
-                this.saveRoom(clean);
-                return clean;
+                return this.cleanAndRecalculateRoom(gitRoom);
             }
         }
         return null;
     }
 
+    getMyRooms() {
+        if (typeof getAllGitRooms === 'function') {
+            const rooms = getAllGitRooms();
+            return rooms.map(r => this.cleanAndRecalculateRoom(r));
+        }
+        return [];
+    }
+
     saveRoom(room) {
-        try {
-            if (room && room.participants) {
-                room.participants = room.participants.filter(p => !p.isBot && !p.userId?.startsWith('bot_'));
-            }
-            const allRooms = JSON.parse(localStorage.getItem(this.storageKey) || '{}');
-            allRooms[room.code] = room;
-            localStorage.setItem(this.storageKey, JSON.stringify(allRooms));
-        } catch (e) {}
+        if (!room || !room.code) return;
+        if (room.participants) {
+            room.participants = room.participants.filter(p => !p.isBot && !p.userId?.startsWith('bot_'));
+        }
+        if (typeof setGitRoom === 'function') {
+            setGitRoom(room);
+        }
+        // Auto-push to GitHub in background
+        if (window.gitSyncService && window.gitSyncService.isConfigured()) {
+            window.gitSyncService.pushToGitHub().catch(e => console.warn('Git sync:', e));
+        }
     }
 
     generateShareableLink(roomCode) {

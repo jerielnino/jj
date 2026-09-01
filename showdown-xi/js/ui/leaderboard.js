@@ -82,12 +82,35 @@ class LeaderboardUI {
         const topTotal = calculated[0]?.totalScore || 0;
         const topMatch = Math.max(0, ...calculated.map(p => p.matchScore));
 
+        const allRooms = window.roomManager ? window.roomManager.getMyRooms() : [room];
+        if (!allRooms.some(r => r.code === room.code)) {
+            allRooms.unshift(room);
+        }
+
         container.innerHTML = `
             <div class="leaderboard-card">
+                <!-- Room Switcher Strip -->
+                <div class="leaderboard-room-bar">
+                    <div class="room-selector-group">
+                        <span class="room-selector-label">🏟️ Active League Room:</span>
+                        <select id="roomSelectDropdown" class="room-select-dropdown">
+                            ${allRooms.map(r => `
+                                <option value="${r.code}" ${r.code === room.code ? 'selected' : ''}>
+                                    ${r.name} (${r.code}) • ${(r.participants || []).length} manager(s)
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+                    <div class="room-quick-actions">
+                        <button class="btn btn-xs btn-primary" id="btnQuickCreateRoom">➕ New Room</button>
+                        <button class="btn btn-xs btn-secondary" id="btnQuickJoinRoom">🔑 Join Room</button>
+                    </div>
+                </div>
+
                 <!-- Room Header -->
                 <div class="leaderboard-header">
                     <div class="header-titles">
-                        <h3>🏆 Room Standings: ${room.name}</h3>
+                        <h3>🏆 ${room.name}</h3>
                         <span class="room-code-tag" id="roomCodeCopyTag" title="Click to copy invite code">🔑 Code: <strong>${room.code}</strong> (Click to Copy)</span>
                     </div>
                     <div class="room-actions-bar">
@@ -221,6 +244,40 @@ class LeaderboardUI {
     }
 
     bindEvents(room, rankedParticipants) {
+        const roomDropdown = document.getElementById('roomSelectDropdown');
+        if (roomDropdown) {
+            roomDropdown.addEventListener('change', (e) => {
+                const selectedCode = e.target.value;
+                const targetRoom = window.roomManager.getRoom(selectedCode);
+                if (targetRoom) {
+                    window.roomManager.currentRoom = targetRoom;
+                    const fixture = FIXTURES_DATA.find(f => f.id === targetRoom.fixtureId);
+                    if (fixture && window.app) {
+                        window.app.selectedFixture = fixture;
+                        localStorage.setItem('showdown_xi_last_fixture_id', fixture.id);
+                        window.pitchBuilder.init(fixture);
+                        window.matchCenterUI.init(fixture);
+                        window.app.renderFixturesSelector();
+                    }
+                    this.render(targetRoom);
+                }
+            });
+        }
+
+        const btnQuickCreate = document.getElementById('btnQuickCreateRoom');
+        if (btnQuickCreate) {
+            btnQuickCreate.addEventListener('click', () => {
+                if (window.app) window.app.openModal('createRoomModal');
+            });
+        }
+
+        const btnQuickJoin = document.getElementById('btnQuickJoinRoom');
+        if (btnQuickJoin) {
+            btnQuickJoin.addEventListener('click', () => {
+                if (window.app) window.app.openModal('joinRoomModal');
+            });
+        }
+
         const copyCode = document.getElementById('roomCodeCopyTag');
         if (copyCode) {
             copyCode.addEventListener('click', () => {

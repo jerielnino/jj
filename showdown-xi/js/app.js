@@ -20,6 +20,7 @@ class ShowdownApp {
         
         if (window.gitSyncService) {
             window.gitSyncService.init();
+            window.gitSyncService.autoSyncOnStartup();
         }
 
         // Find default upcoming fixture

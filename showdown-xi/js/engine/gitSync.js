@@ -57,16 +57,9 @@ class GitSyncService {
     }
 
     generateFileContent() {
-        const localRooms = JSON.parse(localStorage.getItem('showdown_xi_rooms_v2') || '{}');
-        const localMaster = JSON.parse(localStorage.getItem('showdown_xi_master_squads') || '{}');
-        const currentUserId = window.authManager?.currentUser?.username || window.roomManager?.userProfile?.id || 'jj7758';
-
-        const mergedRooms = { ...(typeof SAVED_ROOMS_DATA !== 'undefined' ? SAVED_ROOMS_DATA : {}), ...localRooms };
-        const mergedSquads = { ...(typeof SAVED_SQUADS_DATA !== 'undefined' ? SAVED_SQUADS_DATA : {}), ...localMaster };
-        const mergedUserSquads = { ...(typeof SAVED_USER_SQUADS_DATA !== 'undefined' ? SAVED_USER_SQUADS_DATA : {}) };
-
-        if (!mergedUserSquads[currentUserId]) mergedUserSquads[currentUserId] = {};
-        mergedUserSquads[currentUserId] = { ...mergedUserSquads[currentUserId], ...localMaster };
+        const mergedRooms = typeof SAVED_ROOMS_DATA !== 'undefined' ? SAVED_ROOMS_DATA : {};
+        const mergedSquads = typeof SAVED_SQUADS_DATA !== 'undefined' ? SAVED_SQUADS_DATA : {};
+        const mergedUserSquads = typeof SAVED_USER_SQUADS_DATA !== 'undefined' ? SAVED_USER_SQUADS_DATA : {};
 
         return `/**
  * Showdown XI - Permanent Git-Backed Rooms & Squads Database
@@ -101,11 +94,36 @@ function getGitRoomByFixture(fixtureId) {
     return null;
 }
 
+function getAllGitRooms() {
+    if (typeof SAVED_ROOMS_DATA !== 'undefined') {
+        return Object.values(SAVED_ROOMS_DATA).map(r => JSON.parse(JSON.stringify(r)));
+    }
+    return [];
+}
+
+function setGitRoom(room) {
+    if (typeof SAVED_ROOMS_DATA !== 'undefined' && room && room.code) {
+        SAVED_ROOMS_DATA[room.code] = JSON.parse(JSON.stringify(room));
+    }
+}
+
 function getGitUserSquad(userId, fixtureId) {
     if (typeof SAVED_USER_SQUADS_DATA !== 'undefined' && SAVED_USER_SQUADS_DATA[userId] && SAVED_USER_SQUADS_DATA[userId][fixtureId]) {
         return JSON.parse(JSON.stringify(SAVED_USER_SQUADS_DATA[userId][fixtureId]));
     }
     return getGitSavedSquad(fixtureId);
+}
+
+function setGitUserSquad(userId, fixtureId, squadData) {
+    if (!fixtureId || !squadData) return;
+    const cleanSquad = JSON.parse(JSON.stringify(squadData));
+    if (typeof SAVED_USER_SQUADS_DATA !== 'undefined') {
+        if (!SAVED_USER_SQUADS_DATA[userId]) SAVED_USER_SQUADS_DATA[userId] = {};
+        SAVED_USER_SQUADS_DATA[userId][fixtureId] = cleanSquad;
+    }
+    if (typeof SAVED_SQUADS_DATA !== 'undefined') {
+        SAVED_SQUADS_DATA[fixtureId] = cleanSquad;
+    }
 }
 
 function getGitSavedSquad(fixtureId) {
@@ -115,66 +133,16 @@ function getGitSavedSquad(fixtureId) {
     return null;
 }
 
-function exportSavedSquadsFile() {
-    const localRooms = JSON.parse(localStorage.getItem('showdown_xi_rooms_v2') || '{}');
-    const localMaster = JSON.parse(localStorage.getItem('showdown_xi_master_squads') || '{}');
-    const currentUserId = window.authManager?.currentUser?.username || window.roomManager?.userProfile?.id || 'jj7758';
-
-    const mergedRooms = { ...(typeof SAVED_ROOMS_DATA !== 'undefined' ? SAVED_ROOMS_DATA : {}), ...localRooms };
-    const mergedSquads = { ...(typeof SAVED_SQUADS_DATA !== 'undefined' ? SAVED_SQUADS_DATA : {}), ...localMaster };
-    const mergedUserSquads = { ...(typeof SAVED_USER_SQUADS_DATA !== 'undefined' ? SAVED_USER_SQUADS_DATA : {}) };
-
-    if (!mergedUserSquads[currentUserId]) mergedUserSquads[currentUserId] = {};
-    mergedUserSquads[currentUserId] = { ...mergedUserSquads[currentUserId], ...localMaster };
-
-    const content = '/**\\n' +
-        ' * Showdown XI - Permanent Git-Backed Rooms & Squads Database\\n' +
-        ' * This file is tracked in Git to provide permanent multiplayer rooms, user profiles, and squad rosters across all devices.\\n' +
-        ' */\\n\\n' +
-        '// 1. Permanent Default Rooms (Separated by Room Code and Fixture)\\n' +
-        'const SAVED_ROOMS_DATA = ' + JSON.stringify(mergedRooms, null, 4) + ';\\n\\n' +
-        '// 2. Permanent User Squads (Separated by User ID -> Fixture ID -> Squad)\\n' +
-        'const SAVED_USER_SQUADS_DATA = ' + JSON.stringify(mergedUserSquads, null, 4) + ';\\n\\n' +
-        '// 3. Baseline Fixture Squads Map\\n' +
-        'const SAVED_SQUADS_DATA = ' + JSON.stringify(mergedSquads, null, 4) + ';\\n\\n' +
-        'function getGitRoom(roomCode) {\\n' +
-        '    if (typeof SAVED_ROOMS_DATA !== \\'undefined\\' && SAVED_ROOMS_DATA[roomCode]) {\\n' +
-        '        return JSON.parse(JSON.stringify(SAVED_ROOMS_DATA[roomCode]));\\n' +
-        '    }\\n' +
-        '    return null;\\n' +
-        '}\\n\\n' +
-        'function getGitRoomByFixture(fixtureId) {\\n' +
-        '    if (typeof SAVED_ROOMS_DATA !== \\'undefined\\') {\\n' +
-        '        for (const code in SAVED_ROOMS_DATA) {\\n' +
-        '            if (SAVED_ROOMS_DATA[code].fixtureId === fixtureId) {\\n' +
-        '                return JSON.parse(JSON.stringify(SAVED_ROOMS_DATA[code]));\\n' +
-        '            }\\n' +
-        '        }\\n' +
-        '    }\\n' +
-        '    return null;\\n' +
-        '}\\n\\n' +
-        'function getGitUserSquad(userId, fixtureId) {\\n' +
-        '    if (typeof SAVED_USER_SQUADS_DATA !== \\'undefined\\' && SAVED_USER_SQUADS_DATA[userId] && SAVED_USER_SQUADS_DATA[userId][fixtureId]) {\\n' +
-        '        return JSON.parse(JSON.stringify(SAVED_USER_SQUADS_DATA[userId][fixtureId]));\\n' +
-        '    }\\n' +
-        '    return getGitSavedSquad(fixtureId);\\n' +
-        '}\\n\\n' +
-        'function getGitSavedSquad(fixtureId) {\\n' +
-        '    if (typeof SAVED_SQUADS_DATA !== \\'undefined\\' && SAVED_SQUADS_DATA[fixtureId]) {\\n' +
-        '        return JSON.parse(JSON.stringify(SAVED_SQUADS_DATA[fixtureId]));\\n' +
-        '    }\\n' +
-        '    return null;\\n' +
-        '}\\n';
-
-    const blob = new Blob([content], { type: 'application/javascript' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'savedSquads.js';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+function updateGitDatabase(newRooms, newUserSquads, newSquads) {
+    if (newRooms && typeof SAVED_ROOMS_DATA !== 'undefined') {
+        for (const code in newRooms) SAVED_ROOMS_DATA[code] = newRooms[code];
+    }
+    if (newUserSquads && typeof SAVED_USER_SQUADS_DATA !== 'undefined') {
+        for (const u in newUserSquads) SAVED_USER_SQUADS_DATA[u] = newUserSquads[u];
+    }
+    if (newSquads && typeof SAVED_SQUADS_DATA !== 'undefined') {
+        for (const f in newSquads) SAVED_SQUADS_DATA[f] = newSquads[f];
+    }
 }
 `;
     }
@@ -187,6 +155,68 @@ function exportSavedSquadsFile() {
             return `${parts[0]}/${parts[1]}`;
         }
         return clean;
+    }
+
+    mergeRemoteDatabase(remoteText) {
+        try {
+            const sandbox = new Function(remoteText + '\nreturn { SAVED_ROOMS_DATA, SAVED_USER_SQUADS_DATA, SAVED_SQUADS_DATA };');
+            const remoteData = sandbox();
+            if (!remoteData) return;
+
+            // Merge Rooms and Participant Squads
+            if (remoteData.SAVED_ROOMS_DATA && typeof SAVED_ROOMS_DATA !== 'undefined') {
+                for (const code in remoteData.SAVED_ROOMS_DATA) {
+                    const remoteRoom = remoteData.SAVED_ROOMS_DATA[code];
+                    if (!SAVED_ROOMS_DATA[code]) {
+                        SAVED_ROOMS_DATA[code] = remoteRoom;
+                    } else {
+                        const localRoom = SAVED_ROOMS_DATA[code];
+                        const partMap = {};
+                        (remoteRoom.participants || []).forEach(p => { partMap[p.userId] = p; });
+                        (localRoom.participants || []).forEach(localPart => {
+                            if (!partMap[localPart.userId]) {
+                                partMap[localPart.userId] = localPart;
+                            } else {
+                                const remotePart = partMap[localPart.userId];
+                                const mergedSquadsMap = { ...(remotePart.squads || {}) };
+                                for (const fId in (localPart.squads || {})) {
+                                    const localSq = localPart.squads[fId];
+                                    const remoteSq = mergedSquadsMap[fId];
+                                    if (!remoteSq || (localSq.updatedAt || 0) >= (remoteSq.updatedAt || 0)) {
+                                        mergedSquadsMap[fId] = localSq;
+                                    }
+                                }
+                                partMap[localPart.userId] = {
+                                    ...remotePart,
+                                    ...localPart,
+                                    squads: mergedSquadsMap
+                                };
+                            }
+                        });
+                        localRoom.participants = Object.values(partMap);
+                    }
+                }
+            }
+
+            // Merge User Squads
+            if (remoteData.SAVED_USER_SQUADS_DATA && typeof SAVED_USER_SQUADS_DATA !== 'undefined') {
+                for (const uId in remoteData.SAVED_USER_SQUADS_DATA) {
+                    if (!SAVED_USER_SQUADS_DATA[uId]) {
+                        SAVED_USER_SQUADS_DATA[uId] = remoteData.SAVED_USER_SQUADS_DATA[uId];
+                    } else {
+                        for (const fId in remoteData.SAVED_USER_SQUADS_DATA[uId]) {
+                            const remoteSq = remoteData.SAVED_USER_SQUADS_DATA[uId][fId];
+                            const localSq = SAVED_USER_SQUADS_DATA[uId][fId];
+                            if (!localSq || (remoteSq.updatedAt || 0) > (localSq.updatedAt || 0)) {
+                                SAVED_USER_SQUADS_DATA[uId][fId] = remoteSq;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Could not merge remote state:', e);
+        }
     }
 
     async pushToGitHub() {
@@ -227,8 +257,8 @@ function exportSavedSquadsFile() {
                 throw new Error(errJson.message || `GitHub error: HTTP ${repoCheckRes.status}`);
             }
 
-            // 2. Multi-strategy SHA resolver
-            const fetchLatestSha = async () => {
+            // 2. Multi-strategy SHA resolver & 3-Way Auto-Merge
+            const fetchLatestShaAndMerge = async () => {
                 // Strategy 1: GitHub Contents API
                 try {
                     const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}?ref=${encodeURIComponent(branch)}`, {
@@ -239,10 +269,16 @@ function exportSavedSquadsFile() {
                     });
                     if (getRes.ok) {
                         const getData = await getRes.json();
+                        if (getData.content) {
+                            try {
+                                const decoded = atob(getData.content.replace(/\s/g, ''));
+                                this.mergeRemoteDatabase(decoded);
+                            } catch (e) {}
+                        }
                         if (getData.sha) return getData.sha;
                     }
                 } catch (err) {
-                    console.warn('Contents API SHA lookup error:', err);
+                    console.warn('Contents API lookup error:', err);
                 }
 
                 // Strategy 2: GitHub Git Trees API
@@ -267,18 +303,18 @@ function exportSavedSquadsFile() {
                 return null;
             };
 
-            let currentSha = await fetchLatestSha();
+            let currentSha = await fetchLatestShaAndMerge();
 
-            // 3. Encode UTF-8 content to Base64
-            const contentString = this.generateFileContent();
-            const utf8Bytes = new TextEncoder().encode(contentString);
-            let binary = '';
-            for (let i = 0; i < utf8Bytes.length; i++) {
-                binary += String.fromCharCode(utf8Bytes[i]);
-            }
-            const base64Content = btoa(binary);
+            // 3. Encode UTF-8 content to Base64 after merging remote changes
+            const buildEncodedPayload = (sha) => {
+                const contentString = this.generateFileContent();
+                const utf8Bytes = new TextEncoder().encode(contentString);
+                let binary = '';
+                for (let i = 0; i < utf8Bytes.length; i++) {
+                    binary += String.fromCharCode(utf8Bytes[i]);
+                }
+                const base64Content = btoa(binary);
 
-            const buildPayload = (sha) => {
                 const body = {
                     message: `Update Showdown XI Squads & Rooms Database [${new Date().toISOString()}]`,
                     content: base64Content,
@@ -298,13 +334,13 @@ function exportSavedSquadsFile() {
                     'Accept': 'application/vnd.github+json',
                     'Content-Type': 'application/json'
                 },
-                body: buildPayload(currentSha)
+                body: buildEncodedPayload(currentSha)
             });
 
-            // 5. If SHA collision (409 Conflict / 422), re-fetch latest SHA and retry once
+            // 5. If SHA collision (409 Conflict / 422), re-fetch, re-merge remote updates, and retry
             if (!putRes.ok && (putRes.status === 409 || putRes.status === 422)) {
-                console.warn('Retrying commit with freshly resolved SHA from GitHub...');
-                currentSha = await fetchLatestSha();
+                console.warn('Multi-user commit conflict detected! Merging remote changes and retrying...');
+                currentSha = await fetchLatestShaAndMerge();
                 putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
                     method: 'PUT',
                     headers: {
@@ -312,7 +348,7 @@ function exportSavedSquadsFile() {
                         'Accept': 'application/vnd.github+json',
                         'Content-Type': 'application/json'
                     },
-                    body: buildPayload(currentSha)
+                    body: buildEncodedPayload(currentSha)
                 });
             }
 
@@ -338,9 +374,9 @@ function exportSavedSquadsFile() {
         }
     }
 
-    async pullFromGitHub() {
+    async pullFromGitHub(isSilent = false) {
         if (!this.isConfigured()) {
-            this.openSyncModal();
+            if (!isSilent) this.openSyncModal();
             return { success: false, message: 'Please enter your GitHub Repository name.' };
         }
 
@@ -349,7 +385,7 @@ function exportSavedSquadsFile() {
         this.updateSyncUIState(true, '⬇️ Pulling from GitHub...');
 
         try {
-            const repo = this.config.repo.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\/$/, '');
+            const repo = this.cleanRepo(this.config.repo);
             const branch = (this.config.branch || 'main').trim();
             const filePath = this.getFilePath();
             const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/${filePath}?t=${Date.now()}`;
@@ -363,21 +399,12 @@ function exportSavedSquadsFile() {
             const sandbox = new Function(codeText + '\nreturn { SAVED_ROOMS_DATA, SAVED_USER_SQUADS_DATA, SAVED_SQUADS_DATA };');
             const data = sandbox();
 
-            if (data.SAVED_SQUADS_DATA) {
-                window.SAVED_SQUADS_DATA = data.SAVED_SQUADS_DATA;
-                localStorage.setItem('showdown_xi_master_squads', JSON.stringify(data.SAVED_SQUADS_DATA));
-            }
-            if (data.SAVED_ROOMS_DATA) {
-                window.SAVED_ROOMS_DATA = data.SAVED_ROOMS_DATA;
-                const localRooms = JSON.parse(localStorage.getItem('showdown_xi_rooms_v2') || '{}');
-                localStorage.setItem('showdown_xi_rooms_v2', JSON.stringify({ ...data.SAVED_ROOMS_DATA, ...localRooms }));
-            }
-            if (data.SAVED_USER_SQUADS_DATA) {
-                window.SAVED_USER_SQUADS_DATA = data.SAVED_USER_SQUADS_DATA;
+            if (typeof updateGitDatabase === 'function') {
+                updateGitDatabase(data.SAVED_ROOMS_DATA, data.SAVED_USER_SQUADS_DATA, data.SAVED_SQUADS_DATA);
             }
 
             this.saveConfig({ lastSyncedAt: Date.now() });
-            this.updateSyncUIState(false, '✅ Pulled from Git');
+            this.updateSyncUIState(false, '✅ Synced with Git');
 
             // Refresh UI if active
             if (window.pitchBuilder && window.pitchBuilder.activeFixture) {
@@ -388,15 +415,26 @@ function exportSavedSquadsFile() {
                 window.leaderboardUI?.render(window.roomManager.currentRoom);
             }
 
-            alert('🎉 Successfully pulled the latest squads and rooms from GitHub!');
+            if (!isSilent) {
+                alert('🎉 Successfully pulled the latest squads and rooms from GitHub!');
+            }
             return { success: true };
         } catch (error) {
             console.error('Git Pull Error:', error);
             this.updateSyncUIState(false, '❌ Pull Failed');
-            alert(`⚠️ Git Pull Failed: ${error.message}`);
+            if (!isSilent) {
+                alert(`⚠️ Git Pull Failed: ${error.message}`);
+            }
             return { success: false, error: error.message };
         } finally {
             this.isSyncing = false;
+        }
+    }
+
+    async autoSyncOnStartup() {
+        if (this.isConfigured()) {
+            console.log('🐙 Auto-syncing latest data from GitHub on startup...');
+            await this.pullFromGitHub(true);
         }
     }
 

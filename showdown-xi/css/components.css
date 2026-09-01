@@ -440,6 +440,59 @@
     cursor: pointer;
 }
 
+.leaderboard-room-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    background: var(--bg-dark);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-glass);
+    margin-bottom: 1.25rem;
+}
+
+.room-selector-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex: 1;
+    min-width: 260px;
+}
+
+.room-selector-label {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.room-select-dropdown {
+    background: var(--bg-surface-elevated);
+    color: #fff;
+    border: 1px solid var(--border-glass);
+    padding: 0.45rem 0.8rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex: 1;
+    max-width: 400px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.room-select-dropdown:focus {
+    border-color: var(--primary-green);
+}
+
+.room-quick-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
 .standings-table-wrapper {
     overflow-x: auto;
 }
