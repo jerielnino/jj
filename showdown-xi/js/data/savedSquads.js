@@ -1164,28 +1164,28 @@ const SAVED_ROOMS_DATA = {
                             "rma_3",
                             "sev_3",
                             "sev_8",
-                            "sev_6",
                             "rma_10",
                             "rma_14",
                             "sev_10",
+                            "rma_11",
+                            "sev_14",
                             "rma_17",
-                            "rma_16",
-                            "sev_15"
+                            "rma_16"
                         ],
                         "benchIds": [
                             "rma_1",
+                            "sev_6",
                             "rma_9",
-                            "sev_7",
-                            "sev_16"
+                            "sev_15"
                         ],
                         "captainId": "rma_17",
                         "viceCaptainId": "rma_16",
-                        "formation": "4-3-3",
-                        "totalPrice": 97.9,
-                        "updatedAt": 1788255954602,
+                        "formation": "3-5-2",
+                        "totalPrice": 99.7,
+                        "updatedAt": 1788258173681,
                         "fixtureId": "LALIGA_MW4_RMA_SEV",
-                        "submittedAt": 1788255954603,
-                        "matchPoints": 24
+                        "submittedAt": 1788258173682,
+                        "matchPoints": 0
                     }
                 },
                 "squad": {
@@ -1194,32 +1194,32 @@ const SAVED_ROOMS_DATA = {
                         "rma_3",
                         "sev_3",
                         "sev_8",
-                        "sev_6",
                         "rma_10",
                         "rma_14",
                         "sev_10",
+                        "rma_11",
+                        "sev_14",
                         "rma_17",
-                        "rma_16",
-                        "sev_15"
+                        "rma_16"
                     ],
                     "benchIds": [
                         "rma_1",
+                        "sev_6",
                         "rma_9",
-                        "sev_7",
-                        "sev_16"
+                        "sev_15"
                     ],
                     "captainId": "rma_17",
                     "viceCaptainId": "rma_16",
-                    "formation": "4-3-3",
-                    "totalPrice": 97.9,
-                    "updatedAt": 1788255954602,
+                    "formation": "3-5-2",
+                    "totalPrice": 99.7,
+                    "updatedAt": 1788258173681,
                     "fixtureId": "LALIGA_MW4_RMA_SEV",
-                    "submittedAt": 1788255954603,
-                    "matchPoints": 24
+                    "submittedAt": 1788258173682,
+                    "matchPoints": 0
                 },
-                "matchScore": 24,
-                "totalScore": 24,
-                "submittedAt": 1788255954603
+                "matchScore": 0,
+                "totalScore": 0,
+                "submittedAt": 1788258173682
             }
         ]
     },
@@ -17002,7 +17002,7 @@ const SAVED_USER_SQUADS_DATA = {
         },
         "LALIGA_MW4_RMA_SEV": {
             "fixtureId": "LALIGA_MW4_RMA_SEV",
-            "formation": "4-3-3",
+            "formation": "3-5-2",
             "captainId": "rma_17",
             "viceCaptainId": "rma_16",
             "playerIds": [
@@ -17010,21 +17010,21 @@ const SAVED_USER_SQUADS_DATA = {
                 "rma_3",
                 "sev_3",
                 "sev_8",
-                "sev_6",
                 "rma_10",
                 "rma_14",
                 "sev_10",
+                "rma_11",
+                "sev_14",
                 "rma_17",
-                "rma_16",
-                "sev_15"
+                "rma_16"
             ],
             "benchIds": [
                 "rma_1",
+                "sev_6",
                 "rma_9",
-                "sev_7",
-                "sev_16"
+                "sev_15"
             ],
-            "updatedAt": 1788255956600
+            "updatedAt": 1788258177032
         },
         "PL_GW3_IPS_LIV": {
             "fixtureId": "PL_GW3_IPS_LIV",
@@ -23109,7 +23109,7 @@ const SAVED_SQUADS_DATA = {
     },
     "LALIGA_MW4_RMA_SEV": {
         "fixtureId": "LALIGA_MW4_RMA_SEV",
-        "formation": "4-3-3",
+        "formation": "3-5-2",
         "captainId": "rma_17",
         "viceCaptainId": "rma_16",
         "playerIds": [
@@ -23117,21 +23117,21 @@ const SAVED_SQUADS_DATA = {
             "rma_3",
             "sev_3",
             "sev_8",
-            "sev_6",
             "rma_10",
             "rma_14",
             "sev_10",
+            "rma_11",
+            "sev_14",
             "rma_17",
-            "rma_16",
-            "sev_15"
+            "rma_16"
         ],
         "benchIds": [
             "rma_1",
+            "sev_6",
             "rma_9",
-            "sev_7",
-            "sev_16"
+            "sev_15"
         ],
-        "updatedAt": 1788255956600
+        "updatedAt": 1788258177032
     },
     "PL_GW3_IPS_LIV": {
         "fixtureId": "PL_GW3_IPS_LIV",
