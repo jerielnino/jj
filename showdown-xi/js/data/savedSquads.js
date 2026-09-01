@@ -1166,7 +1166,7 @@ const SAVED_ROOMS_DATA = {
                             "sev_8",
                             "sev_6",
                             "rma_10",
-                            "rma_11",
+                            "rma_14",
                             "sev_10",
                             "rma_17",
                             "rma_16",
@@ -1181,10 +1181,10 @@ const SAVED_ROOMS_DATA = {
                         "captainId": "rma_17",
                         "viceCaptainId": "rma_16",
                         "formation": "4-3-3",
-                        "totalPrice": 100,
-                        "updatedAt": 1788255876291,
+                        "totalPrice": 97.9,
+                        "updatedAt": 1788255954602,
                         "fixtureId": "LALIGA_MW4_RMA_SEV",
-                        "submittedAt": 1788255876291,
+                        "submittedAt": 1788255954603,
                         "matchPoints": 24
                     }
                 },
@@ -1196,7 +1196,7 @@ const SAVED_ROOMS_DATA = {
                         "sev_8",
                         "sev_6",
                         "rma_10",
-                        "rma_11",
+                        "rma_14",
                         "sev_10",
                         "rma_17",
                         "rma_16",
@@ -1211,15 +1211,15 @@ const SAVED_ROOMS_DATA = {
                     "captainId": "rma_17",
                     "viceCaptainId": "rma_16",
                     "formation": "4-3-3",
-                    "totalPrice": 100,
-                    "updatedAt": 1788255876291,
+                    "totalPrice": 97.9,
+                    "updatedAt": 1788255954602,
                     "fixtureId": "LALIGA_MW4_RMA_SEV",
-                    "submittedAt": 1788255876291,
+                    "submittedAt": 1788255954603,
                     "matchPoints": 24
                 },
                 "matchScore": 24,
                 "totalScore": 24,
-                "submittedAt": 1788255876291
+                "submittedAt": 1788255954603
             }
         ]
     },
@@ -17012,7 +17012,7 @@ const SAVED_USER_SQUADS_DATA = {
                 "sev_8",
                 "sev_6",
                 "rma_10",
-                "rma_11",
+                "rma_14",
                 "sev_10",
                 "rma_17",
                 "rma_16",
@@ -17024,7 +17024,7 @@ const SAVED_USER_SQUADS_DATA = {
                 "sev_7",
                 "sev_16"
             ],
-            "updatedAt": 1788255878664
+            "updatedAt": 1788255956600
         },
         "PL_GW3_IPS_LIV": {
             "fixtureId": "PL_GW3_IPS_LIV",
@@ -23119,7 +23119,7 @@ const SAVED_SQUADS_DATA = {
             "sev_8",
             "sev_6",
             "rma_10",
-            "rma_11",
+            "rma_14",
             "sev_10",
             "rma_17",
             "rma_16",
@@ -23131,7 +23131,7 @@ const SAVED_SQUADS_DATA = {
             "sev_7",
             "sev_16"
         ],
-        "updatedAt": 1788255878664
+        "updatedAt": 1788255956600
     },
     "PL_GW3_IPS_LIV": {
         "fixtureId": "PL_GW3_IPS_LIV",
