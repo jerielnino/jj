@@ -430,22 +430,21 @@ class ShowdownApp {
         // Render Approved Users Directory
         if (approvedList) {
             approvedList.innerHTML = allUsers.map(u => `
-                <div class="admin-user-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); margin-bottom: 0.4rem;">
-                    <div class="user-row-meta" style="display: flex; align-items: center; gap: 0.6rem;">
+                <div class="admin-user-row">
+                    <div class="user-row-meta">
                         <span class="user-avatar" style="font-size: 1.2rem;">${u.avatar}</span>
                         <div>
                             <strong style="color: #fff; font-size: 0.9rem;">${u.displayName || u.username}</strong>
-                            <div class="sub-user-req" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem;">
-                                Username: <code style="color: var(--accent-gold);">${u.username}</code> • 
-                                Password: <code class="pwd-display" data-pwd="${u.password}" style="color: #6EE7B7;">••••••••</code>
-                                <button class="btn-toggle-pwd" style="background: none; border: none; cursor: pointer; font-size: 0.75rem; padding: 0 0.2rem;" title="Show/Hide Password">👁️</button> • 
+                            <div class="sub-user-req">
+                                <span>User: <code style="color: var(--accent-gold);">${u.username}</code></span> • 
+                                <span>Pass: <code class="pwd-display" data-pwd="${u.password}" style="color: #6EE7B7;">••••••••</code> <button class="btn-toggle-pwd" style="background: none; border: none; cursor: pointer; font-size: 0.75rem; padding: 0 0.2rem;" title="Show/Hide Password">👁️</button></span> • 
                                 <span class="badge-role" style="font-size: 0.68rem; padding: 0.1rem 0.4rem; background: rgba(255,255,255,0.08); border-radius: 4px; color: var(--text-secondary);">${u.role}</span>
                             </div>
                         </div>
                     </div>
                     <div class="user-row-actions">
                         ${u.username !== 'jj7758' ? `
-                            <button class="btn btn-danger btn-sm btn-delete-user" data-user="${u.username}" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">
+                            <button class="btn btn-danger btn-sm btn-delete-user" data-user="${u.username}">
                                 🗑️ Delete
                             </button>
                         ` : `

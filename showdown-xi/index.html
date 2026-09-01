@@ -229,14 +229,14 @@
                 <!-- Add New User Directly -->
                 <div class="admin-section">
                     <h4>➕ Create New Authorized User</h4>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0.2rem 0 0.6rem;">
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0.2rem 0 0.6rem; line-height: 1.4;">
                         Create login credentials for managers. When created or exported, credentials are saved to Git so they can log in immediately on any device.
                     </p>
-                    <div class="admin-add-user-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 100px; gap: 0.4rem;">
-                        <input type="text" id="adminAddUsername" placeholder="Username (e.g. david7)" required>
-                        <input type="text" id="adminAddDisplayName" placeholder="Display Name (e.g. David B)">
-                        <input type="password" id="adminAddPassword" placeholder="Password" required>
-                        <button class="btn btn-primary btn-sm" id="btnAdminAddUser" style="white-space: nowrap;">+ Add User</button>
+                    <div class="admin-add-user-row">
+                        <input type="text" id="adminAddUsername" placeholder="Username (e.g. david7)" required autocomplete="off">
+                        <input type="text" id="adminAddDisplayName" placeholder="Display Name (e.g. David B)" autocomplete="off">
+                        <input type="password" id="adminAddPassword" placeholder="Password" required autocomplete="off">
+                        <button class="btn btn-primary btn-sm" id="btnAdminAddUser">+ Add User</button>
                     </div>
                 </div>
 
