@@ -282,6 +282,8 @@ function calculateSquadTotalPoints(squadPlayerIds = [], benchPlayerIds = [], cap
         const subInfo = starterStatusMap[p.id];
 
         const result = calculatePlayerFPLPoints(p, pStats, isEffectiveCap, isVC);
+        result.player = p;
+        result.playerId = p.id;
         result.isStarter = true;
         result.isBench = false;
         result.autoSubOut = subInfo.autoSubOut;
@@ -305,6 +307,8 @@ function calculateSquadTotalPoints(squadPlayerIds = [], benchPlayerIds = [], cap
         const subInfo = benchStatusMap[p.id] || { autoSubIn: false, replacing: null, role: idx === 0 ? 'GK SUB' : `SUB ${idx}` };
 
         const result = calculatePlayerFPLPoints(p, pStats, isEffectiveCap, isVC);
+        result.player = p;
+        result.playerId = p.id;
         result.isStarter = false;
         result.isBench = true;
         result.benchRole = subInfo.role;

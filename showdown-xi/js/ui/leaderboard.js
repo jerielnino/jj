@@ -280,8 +280,8 @@ class LeaderboardUI {
         const squadBreakdown = calculateSquadTotalPoints(targetSquad?.playerIds || [], targetSquad?.benchIds || [], targetSquad?.captainId, targetSquad?.viceCaptainId, liveStatsMap);
 
         const renderCard = (pBreakdown, isBench = false, roleLabel = '') => {
-            const pId = pBreakdown.playerId;
-            const player = getPlayerById(pId);
+            const pId = pBreakdown.playerId || pBreakdown.player?.id;
+            const player = pBreakdown.player || getPlayerById(pId);
             if (!player) return '';
 
             const isCap = pId === targetSquad.captainId;

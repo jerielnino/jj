@@ -192,16 +192,22 @@ class RoomManager {
         }
     }
 
+    cleanAndRecalculateRoom(room) {
+        if (!room || !room.participants) return room;
+        room.participants = room.participants.filter(p => !p.isBot && !p.userId?.startsWith('bot_'));
+        for (const p of room.participants) {
+            this.recalculateParticipantScores(p, room.fixtureId);
+        }
+        return room;
+    }
+
     findRoomByFixture(fixtureId) {
         try {
             const allRooms = JSON.parse(localStorage.getItem(this.storageKey) || '{}');
             for (const code in allRooms) {
                 const r = allRooms[code];
                 if (r && r.fixtureId === fixtureId) {
-                    if (r.participants) {
-                        r.participants = r.participants.filter(p => !p.isBot && !p.userId?.startsWith('bot_'));
-                    }
-                    return r;
+                    return this.cleanAndRecalculateRoom(r);
                 }
             }
         } catch (e) {}
@@ -210,8 +216,9 @@ class RoomManager {
         if (typeof getGitRoomByFixture === 'function') {
             const gitRoom = getGitRoomByFixture(fixtureId);
             if (gitRoom) {
-                this.saveRoom(gitRoom);
-                return gitRoom;
+                const clean = this.cleanAndRecalculateRoom(gitRoom);
+                this.saveRoom(clean);
+                return clean;
             }
         }
         return null;
@@ -222,8 +229,7 @@ class RoomManager {
             const allRooms = JSON.parse(localStorage.getItem(this.storageKey) || '{}');
             const room = allRooms[code] || null;
             if (room && room.participants) {
-                room.participants = room.participants.filter(p => !p.isBot && !p.userId?.startsWith('bot_'));
-                return room;
+                return this.cleanAndRecalculateRoom(room);
             }
         } catch (e) {}
 
@@ -231,8 +237,9 @@ class RoomManager {
         if (typeof getGitRoom === 'function') {
             const gitRoom = getGitRoom(code);
             if (gitRoom) {
-                this.saveRoom(gitRoom);
-                return gitRoom;
+                const clean = this.cleanAndRecalculateRoom(gitRoom);
+                this.saveRoom(clean);
+                return clean;
             }
         }
         return null;
