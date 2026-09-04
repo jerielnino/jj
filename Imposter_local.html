@@ -525,6 +525,39 @@
     margin:8px 0;
   }
 
+  /* Discreet Secret Word Reminder Badge */
+  .word-reminder-box{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding:6px 14px;
+    border-radius:20px;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.18);
+    font-size:.82rem;
+    color:var(--cream);
+    cursor:pointer;
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    transition:all 0.2s ease;
+    margin:8px auto 0;
+    backdrop-filter:blur(4px);
+    box-shadow:0 2px 8px rgba(0,0,0,.25);
+  }
+  .word-reminder-box:hover{
+    background:rgba(232,185,58,.16);
+    border-color:var(--gold);
+    transform:translateY(-1px);
+  }
+  .word-reminder-box:active{
+    transform:scale(0.97);
+  }
+  .word-reminder-highlight{
+    font-weight:700;
+    color:var(--gold);
+  }
+
   /* Voting ballot */
   .vote-grid{
     display:flex;
@@ -1364,12 +1397,18 @@
 
   function fetchWikipediaThumbnail(word, callback){
     try {
-      fetch("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(word))
+      const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 3500) : null;
+      fetch("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(word), controller ? { signal: controller.signal } : {})
         .then(r => r.ok ? r.json() : null)
         .then(d => {
+          if (timeoutId) clearTimeout(timeoutId);
           if (d && d.thumbnail && d.thumbnail.source) callback(d.thumbnail.source);
           else callback(null);
-        }).catch(() => callback(null));
+        }).catch(() => {
+          if (timeoutId) clearTimeout(timeoutId);
+          callback(null);
+        });
     } catch(e){ callback(null); }
   }
 
@@ -1851,12 +1890,32 @@
       const incomingName = (data.name || "Player").trim();
       const normName = incomingName.toLowerCase();
       
-      // 1. Check if this is an existing player rejoining (by persistent ID or normalized username)
-      let existing = gameState.players.find(p => p.id === incomingId || (p.name && p.name.trim().toLowerCase() === normName));
+      // 1. Check if this is an existing player rejoining strictly by persistent player id
+      let existing = gameState.players.find(p => p.id === incomingId);
+
+      // Fallback: match offline player with identical name (in case storage was wiped)
+      if (!existing){
+        existing = gameState.players.find(p => !p.online && p.name && p.name.trim().toLowerCase() === normName);
+        if (existing){
+          const oldId = existing.id;
+          existing.id = incomingId;
+          // Re-map imposterIds, votes, and survival counts to keep role & points intact
+          if (gameState.imposterIds){
+            gameState.imposterIds = gameState.imposterIds.map(id => id === oldId ? incomingId : id);
+          }
+          if (gameState.votes && gameState.votes[oldId]){
+            gameState.votes[incomingId] = gameState.votes[oldId];
+            delete gameState.votes[oldId];
+          }
+          if (gameState.imposterSurvivalCount && gameState.imposterSurvivalCount[oldId] !== undefined){
+            gameState.imposterSurvivalCount[incomingId] = gameState.imposterSurvivalCount[oldId];
+            delete gameState.imposterSurvivalCount[oldId];
+          }
+        }
+      }
       
       if (existing){
         // RE-ATTACH EXISTING PLAYER WITH PRESERVED SCORES, POINTS & ROLE
-        existing.id = incomingId;
         existing.connId = peerId;
         existing.name = incomingName;
         if (data.avatar) existing.avatar = data.avatar;
@@ -1876,7 +1935,7 @@
             emoji: isImp ? gameState.decoyEmoji : gameState.secretEmoji,
             category: gameState.secretCategory,
             imageUrl: isImp ? gameState.decoyImageUrl : gameState.secretImageUrl,
-            revealed: true
+            revealed: existing.ready || false
           };
           conn.send({ type: "PRIVATE_CARD", card: card });
         }
@@ -1942,6 +2001,16 @@
   function handleClientReceivedData(data){
     if (data.type === "STATE_SYNC"){
       gameState = data.state;
+      if (gameState.screen === "lobby"){
+        myPrivateCard = {
+          role: "crew",
+          word: "",
+          emoji: "🥥",
+          category: "",
+          imageUrl: null,
+          revealed: false
+        };
+      }
       // Sync local player's registered vote from host authoritative registry
       if (gameState.screen === "vote"){
         myVotedId = (gameState.votes && gameState.votes[myPlayerId]) ? gameState.votes[myPlayerId] : null;
@@ -1953,6 +2022,11 @@
       myPrivateCard = data.card;
       myVotedId = null;
       render();
+    } else if (data.type === "UPDATE_CARD_IMAGE"){
+      if (myPrivateCard && data.imageUrl){
+        myPrivateCard.imageUrl = data.imageUrl;
+        render();
+      }
     } else if (data.type === "JOIN_REJECT"){
       alert(data.reason || "Could not join room.");
       exitToMenu(false);
@@ -1980,6 +2054,7 @@
     if (!p) return;
     if (p.isHost){
       if (payload.type === "PRIVATE_CARD") myPrivateCard = payload.card;
+      else if (payload.type === "UPDATE_CARD_IMAGE" && myPrivateCard) myPrivateCard.imageUrl = payload.imageUrl;
     } else if (p.connId && clientConns.has(p.connId)){
       const conn = clientConns.get(p.connId);
       if (conn && conn.open) {
@@ -1992,7 +2067,7 @@
   // MULTIPLAYER GAME FLOW (Authoritative on Host)
   // ==========================================
   function hostStartMultiplayerGame(){
-    const activePlayers = gameState.players.filter(p => p.online);
+    const activePlayers = gameState.players.filter(p => p.online !== false);
     if (activePlayers.length < 3) {
       alert("Need at least 3 online players to start!");
       return;
@@ -2005,22 +2080,25 @@
     const firstP = activePlayers[getRandomInt(0, activePlayers.length)];
     gameState.firstPlayerName = firstP ? firstP.name : "First Player";
 
-    // Pick imposters randomly using unbiased Fisher-Yates shuffle
-    const shuffled = [...gameState.players];
-    for (let i = shuffled.length - 1; i > 0; i--){
+    // Pick imposters randomly from ACTIVE players ONLY using unbiased Fisher-Yates shuffle
+    const shuffledActive = [...activePlayers];
+    for (let i = shuffledActive.length - 1; i > 0; i--){
       const j = getRandomInt(0, i + 1);
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      [shuffledActive[i], shuffledActive[j]] = [shuffledActive[j], shuffledActive[i]];
     }
-    const imposterCount = Math.min(gameState.numImposters, Math.max(1, Math.floor((gameState.players.length - 1) / 2)));
-    const chosenImposters = shuffled.slice(0, imposterCount).map(p => p.id);
+    const maxAllowedImposters = Math.max(1, Math.floor((activePlayers.length - 1) / 2));
+    const imposterCount = Math.min(Math.max(1, gameState.numImposters || 1), maxAllowedImposters);
+    const chosenImposters = shuffledActive.slice(0, imposterCount).map(p => p.id);
     gameState.imposterIds = chosenImposters;
     const imposterIds = new Set(chosenImposters);
 
     gameState.secretWord = secret.word;
     gameState.secretEmoji = secret.emoji;
     gameState.secretCategory = secret.cat;
+    gameState.secretImageUrl = null;
     gameState.decoyWord = decoy.word;
     gameState.decoyEmoji = decoy.emoji;
+    gameState.decoyImageUrl = null;
     gameState.winner = null;
     gameState.gameOverReason = null;
     gameState.voteOutcome = null;
@@ -2029,10 +2107,11 @@
     gameState.voteRoundId = 1;
     gameState.imposterSurvivalCount = {};
 
-    // Reset round properties while preserving scores & tournament wins
+    // Reset round properties: only active online players are alive
     gameState.players.forEach(p => {
+      const isOnline = p.online !== false;
       p.ready = false;
-      p.alive = true;
+      p.alive = isOnline;
       p.votesReceived = 0;
       p.score = p.score || 0;
       p.roundsSurvived = p.roundsSurvived || 0;
@@ -2042,30 +2121,65 @@
     myVotedId = null;
     gameState.screen = "card";
 
-    // Fetch images and send private cards to each player's screen
-    fetchWikipediaThumbnail(secret.word, (secImg) => {
-      gameState.secretImageUrl = secImg;
-      fetchWikipediaThumbnail(decoy.word, (decImg) => {
-        gameState.decoyImageUrl = decImg;
+    // Instantly set Host's own private card
+    const isHostImp = imposterIds.has(myPlayerId);
+    myPrivateCard = {
+      role: isHostImp ? "imposter" : "crew",
+      word: isHostImp ? decoy.word : secret.word,
+      emoji: isHostImp ? decoy.emoji : secret.emoji,
+      category: secret.cat,
+      imageUrl: null,
+      revealed: false
+    };
 
-        gameState.players.forEach(p => {
-          const isImp = imposterIds.has(p.id);
-          sendToPlayer(p.id, {
-            type: "PRIVATE_CARD",
-            card: {
-              role: isImp ? "imposter" : "crew",
-              word: isImp ? decoy.word : secret.word,
-              emoji: isImp ? decoy.emoji : secret.emoji,
-              category: secret.cat,
-              imageUrl: isImp ? decImg : secImg,
-              revealed: false
-            }
-          });
-        });
-
-        broadcastGameState();
-        render();
+    // Instantly send private cards to all connected players synchronously
+    gameState.players.forEach(p => {
+      if (p.isHost) return;
+      const isImp = imposterIds.has(p.id);
+      sendToPlayer(p.id, {
+        type: "PRIVATE_CARD",
+        card: {
+          role: isImp ? "imposter" : "crew",
+          word: isImp ? decoy.word : secret.word,
+          emoji: isImp ? decoy.emoji : secret.emoji,
+          category: secret.cat,
+          imageUrl: null,
+          revealed: false
+        }
       });
+    });
+
+    // Broadcast state sync and render immediately
+    broadcastGameState();
+    render();
+
+    // Fetch images in the background asynchronously without blocking gameplay
+    fetchWikipediaThumbnail(secret.word, (secImg) => {
+      if (secImg && gameState.secretWord === secret.word){
+        gameState.secretImageUrl = secImg;
+        if (!isHostImp && myPrivateCard) myPrivateCard.imageUrl = secImg;
+        gameState.players.forEach(p => {
+          if (!p.isHost && !imposterIds.has(p.id)){
+            sendToPlayer(p.id, { type: "UPDATE_CARD_IMAGE", imageUrl: secImg });
+          }
+        });
+        if (gameState.screen === "results") broadcastGameState();
+        render();
+      }
+    });
+
+    fetchWikipediaThumbnail(decoy.word, (decImg) => {
+      if (decImg && gameState.decoyWord === decoy.word){
+        gameState.decoyImageUrl = decImg;
+        if (isHostImp && myPrivateCard) myPrivateCard.imageUrl = decImg;
+        gameState.players.forEach(p => {
+          if (!p.isHost && imposterIds.has(p.id)){
+            sendToPlayer(p.id, { type: "UPDATE_CARD_IMAGE", imageUrl: decImg });
+          }
+        });
+        if (gameState.screen === "results") broadcastGameState();
+        render();
+      }
     });
   }
 
@@ -2172,7 +2286,7 @@
   // ==========================================
   function hostCalculateVoteOutcome(){
     if (!isHost) return;
-    const alivePlayers = gameState.players.filter(p => p.alive);
+    const alivePlayers = gameState.players.filter(p => p.online !== false && p.alive);
     const totalVotes = Object.keys(gameState.votes || {}).length;
     const maxVotes = Math.max(...alivePlayers.map(p => p.votesReceived || 0), 0);
     
@@ -2207,7 +2321,7 @@
       const wasImposter = (gameState.imposterIds || []).includes(accused.id);
       accused.alive = false;
 
-      const aliveAfter = gameState.players.filter(p => p.alive);
+      const aliveAfter = gameState.players.filter(p => p.online !== false && p.alive);
       const aliveImpostersAfter = aliveAfter.filter(p => (gameState.imposterIds || []).includes(p.id));
       const remainingImposters = aliveImpostersAfter.length;
 
@@ -2400,12 +2514,22 @@
     }
     if (heartbeatInterval) clearInterval(heartbeatInterval);
     if (reconnectTimer) clearTimeout(reconnectTimer);
+    if (timerInterval) clearInterval(timerInterval);
     if (peer) { try { peer.destroy(); } catch(e){} }
+    clientConns.clear();
     appMode = "menu";
     roomCode = "";
     isHost = false;
     showScoreModal = false;
     showEmojiModal = false;
+    myPrivateCard = {
+      role: "crew",
+      word: "",
+      emoji: "🥥",
+      category: "",
+      imageUrl: null,
+      revealed: false
+    };
     render();
   }
 
@@ -2592,6 +2716,10 @@
           onclick: (e) => {
             e.stopPropagation();
             gameState.players = gameState.players.filter(x => x.id !== p.id);
+            if (p.connId && clientConns.has(p.connId)){
+              try { clientConns.get(p.connId).close(); } catch(err){}
+              clientConns.delete(p.connId);
+            }
             broadcastGameState();
             render();
           }
@@ -2610,11 +2738,16 @@
       const settingsPanel = el("div", {class:"panel", style:"width:100%"});
       
       // Imposter Count
+      const onlineCount = gameState.players.filter(p => p.online !== false).length;
+      const maxImpAllowed = Math.max(1, Math.floor((onlineCount - 1) / 2));
+      if (gameState.numImposters > maxImpAllowed) gameState.numImposters = maxImpAllowed;
+      if (gameState.numImposters < 1) gameState.numImposters = 1;
+
       settingsPanel.appendChild(el("label", {}, [document.createTextNode("Number of Imposters")]));
       const stepper = el("div", {class:"stepper"});
       stepper.appendChild(el("button", {onclick: () => { if (gameState.numImposters > 1) { gameState.numImposters--; broadcastGameState(); render(); }}}, [document.createTextNode("−")]));
       stepper.appendChild(el("div", {class:"value"}, [document.createTextNode(String(gameState.numImposters))]));
-      stepper.appendChild(el("button", {onclick: () => { if (gameState.numImposters < Math.floor(gameState.players.length / 2)) { gameState.numImposters++; broadcastGameState(); render(); }}}, [document.createTextNode("+")]));
+      stepper.appendChild(el("button", {onclick: () => { if (gameState.numImposters < maxImpAllowed) { gameState.numImposters++; broadcastGameState(); render(); }}}, [document.createTextNode("+")]));
       settingsPanel.appendChild(stepper);
 
       // Category filter
@@ -2631,7 +2764,6 @@
       screen.appendChild(settingsPanel);
 
       // Start button
-      const onlineCount = gameState.players.filter(p => p.online !== false).length;
       const canStart = onlineCount >= 3;
       const startBtn = el("button", {
         class:"primary",
@@ -2653,6 +2785,16 @@
   // ---------- Private Card Reveal Screen ----------
   function renderMultiplayerCard(app){
     const screen = el("div", {class:"screen"});
+
+    // Loading guard if private card has not yet arrived
+    if (!myPrivateCard || !myPrivateCard.word){
+      const loadPanel = el("div", {class:"panel", style:"width:100%; text-align:center; padding:30px;"});
+      loadPanel.appendChild(el("div", {style:"font-size:2.5rem; animation:pulse 1.2s infinite;"}, [document.createTextNode("🤫")]));
+      loadPanel.appendChild(el("div", {style:"margin-top:10px; font-weight:600; color:var(--gold);"}, [document.createTextNode("Receiving secret role card...")]));
+      screen.appendChild(loadPanel);
+      app.appendChild(screen);
+      return;
+    }
 
     // Card Container
     const wrap = el("div", {class:"card-wrap"});
@@ -2705,10 +2847,11 @@
       screen.appendChild(readyBanner);
     }
 
-    // Ready progress
-    const readyCount = gameState.players.filter(p => p.ready).length;
+    // Ready progress among active alive players
+    const activeAlivePlayers = gameState.players.filter(p => p.online !== false && p.alive);
+    const readyCount = activeAlivePlayers.filter(p => p.ready).length;
     screen.appendChild(el("div", {class:"hint"}, [
-      document.createTextNode("Ready Players: " + readyCount + " / " + gameState.players.length)
+      document.createTextNode("Ready Players: " + readyCount + " / " + activeAlivePlayers.length)
     ]));
 
     // Host can advance when ready
@@ -2724,6 +2867,48 @@
   }
 
   // ---------- Discussion Screen ----------
+  let peekWordVisible = true;
+
+  function renderSecretWordReminder(){
+    if (!myPrivateCard || !myPrivateCard.word) return null;
+    const wrap = el("div", {
+      class: "word-reminder-box",
+      title: "Tap to hide/show your secret word",
+      onclick: () => {
+        peekWordVisible = !peekWordVisible;
+        render();
+      }
+    });
+
+    const eyeIcon = el("span", { style: "font-size:.85rem; line-height:1;" }, [
+      document.createTextNode(peekWordVisible ? "👁️" : "🙈")
+    ]);
+    wrap.appendChild(eyeIcon);
+
+    const lbl = el("span", { style: "opacity:.75; font-size:.78rem;" }, [
+      document.createTextNode("Your Word:")
+    ]);
+    wrap.appendChild(lbl);
+
+    if (peekWordVisible){
+      const val = el("span", { class: "word-reminder-highlight" }, [
+        document.createTextNode((myPrivateCard.emoji ? (myPrivateCard.emoji + " ") : "") + myPrivateCard.word)
+      ]);
+      wrap.appendChild(val);
+      if (myPrivateCard.category){
+        wrap.appendChild(el("span", { style: "opacity:.6; font-size:.72rem; margin-left:2px;" }, [
+          document.createTextNode("(" + myPrivateCard.category + ")")
+        ]));
+      }
+    } else {
+      wrap.appendChild(el("span", { style: "letter-spacing:2px; opacity:.65; font-size:.78rem; font-weight:600;" }, [
+        document.createTextNode("•••••• (Tap to reveal)")
+      ]));
+    }
+
+    return wrap;
+  }
+
   function renderMultiplayerDiscuss(app){
     const screen = el("div", {class:"screen"});
 
@@ -2747,6 +2932,11 @@
     panel.appendChild(el("p", {style:"font-size:.85rem; opacity:.85; margin:0"}, [
       document.createTextNode("Listen to clues, look for suspicious behavior, and discuss before voting.")
     ]));
+
+    // Discreet Secret Word Reminder Badge
+    const reminder = renderSecretWordReminder();
+    if (reminder) panel.appendChild(reminder);
+
     screen.appendChild(panel);
 
     // Host control to proceed to vote
@@ -2766,7 +2956,7 @@
   function renderMultiplayerVote(app){
     const screen = el("div", {class:"screen"});
 
-    const alivePlayers = gameState.players.filter(p => p.alive);
+    const alivePlayers = gameState.players.filter(p => p.online !== false && p.alive);
     const votesMap = gameState.votes || {};
     const totalVotes = Object.keys(votesMap).length;
     const me = gameState.players.find(p => p.id === myPlayerId);
@@ -2794,6 +2984,11 @@
     progBox.appendChild(el("div", {class:"hint", style:"margin:0 0 4px; font-weight:600; color:var(--gold); font-size:.85rem;"}, [
       document.createTextNode("Votes Cast: " + totalVotes + " / " + alivePlayers.length + " alive players")
     ]));
+
+    // Discreet Secret Word Reminder Badge
+    const reminder = renderSecretWordReminder();
+    if (reminder) progBox.appendChild(reminder);
+
     panel.appendChild(progBox);
 
     const vGrid = el("div", {class:"vote-grid"});
@@ -2876,6 +3071,9 @@
       document.createTextNode(o.aliveCount + " players remain. Keep discussing clues and vote again in Round " + ((gameState.roundNumber || 1) + 1) + "!")
     ]));
 
+    const reminder = renderSecretWordReminder();
+    if (reminder) panel.appendChild(el("div", {style:"text-align:center; margin-top:8px;"}, [reminder]));
+
     screen.appendChild(panel);
 
     if (isHost){
@@ -2913,6 +3111,9 @@
       ? (o.remainingImposters + " imposter" + (o.remainingImposters > 1 ? "s" : "") + " still remain among the " + o.aliveCount + " players left. Keep going!")
       : (o.aliveCount + " players remain. Catch the imposter before too many crew are eliminated!");
     panel.appendChild(el("p", {style:"text-align:center; opacity:.9; font-size:.88rem; margin:8px 0 0;"}, [document.createTextNode(msg)]));
+
+    const reminder = renderSecretWordReminder();
+    if (reminder) panel.appendChild(el("div", {style:"text-align:center; margin-top:8px;"}, [reminder]));
 
     screen.appendChild(panel);
 
@@ -3002,6 +3203,29 @@
         class:"primary",
         onclick: () => {
           gameState.screen = "lobby";
+          gameState.secretWord = "";
+          gameState.decoyWord = "";
+          gameState.secretImageUrl = null;
+          gameState.decoyImageUrl = null;
+          gameState.imposterIds = [];
+          gameState.votes = {};
+          gameState.voteOutcome = null;
+          gameState.gameOverReason = null;
+          gameState.winner = null;
+          gameState.roundNumber = 1;
+          gameState.players.forEach(p => {
+            p.ready = false;
+            p.votesReceived = 0;
+            if (p.online !== false) p.alive = true;
+          });
+          myPrivateCard = {
+            role: "crew",
+            word: "",
+            emoji: "🥥",
+            category: "",
+            imageUrl: null,
+            revealed: false
+          };
           broadcastGameState();
           render();
         }
