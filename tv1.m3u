@@ -1,7 +1,10 @@
 #EXTM3U
 
+#EXTINF:-1 tvg-id="fox-sports-1" tvg-name="Fox Sports 1" tvg-logo="https://assetsv2.nyra.com/filer_public_thumbnails/filer_public/15/bc/15bc193e-022b-49d8-8a84-15766f2f9d91/filer_publicuploadswysiwygfs1_810x430.jpg__1600x1600_q85_ALIAS-lg_subsampling-2.jpg"  group-title="Sports",Liv vs Atm
+https://zubayerop.short.gy/LIV-V-ATM.m3u8
+
 #EXTINF:-1 tvg-id="fox-sports-1" tvg-name="Fox Sports 1" tvg-logo="https://assetsv2.nyra.com/filer_public_thumbnails/filer_public/15/bc/15bc193e-022b-49d8-8a84-15766f2f9d91/filer_publicuploadswysiwygfs1_810x430.jpg__1600x1600_q85_ALIAS-lg_subsampling-2.jpg"  group-title="Sports",Fox Sports 1
-#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0
 #EXTVLCOPT:http-referrer=https://cxfoot.pages.dev/
 #EXTVLCOPT:http-origin=https://cxfoot.pages.dev
 https://inproviszon.st/fox-sports-1.m3u8
