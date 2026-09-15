@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Imposter · Multiplayer Party Game</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
 <meta name="theme-color" content="#e8b93a">
@@ -34,14 +34,28 @@
       linear-gradient(160deg,#000000,var(--black-soft) 60%,var(--black-softer));
     color:var(--cream);
     overflow-x:hidden;
+    overscroll-behavior-y:contain;
   }
+  /* Guarantee the dark theme fills every overscroll / safe-area letterbox zone
+     (white bars at the bottom usually come from iOS safe-area or overscroll) */
+  html{
+    background-color:#050505;
+  }
+  html, body{
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+  }
+  html::-webkit-scrollbar, body::-webkit-scrollbar{ display:none; width:0; height:0; }
   #app{
     min-height:100vh;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:flex-start;
-    padding:16px 14px 40px;
+    padding-top:calc(16px + env(safe-area-inset-top));
+    padding-right:14px;
+    padding-bottom:calc(40px + env(safe-area-inset-bottom));
+    padding-left:14px;
   }
   h1{
     font-size:1.6rem;
@@ -921,11 +935,19 @@
   .chat-msgs{
     max-height:190px;
     overflow-y:auto;
+    overflow-x:hidden;
     padding:10px 12px 4px;
     display:flex;
     flex-direction:column;
     gap:6px;
   }
+  .chat-msgs, .chat-admin-players, .voice-chips{
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+  }
+  .chat-msgs::-webkit-scrollbar,
+  .chat-admin-players::-webkit-scrollbar,
+  .voice-chips::-webkit-scrollbar{ display:none; width:0; height:0; }
   .chat-msg{
     display:flex;
     align-items:flex-start;
@@ -1008,6 +1030,7 @@
     z-index:60;
     background:rgba(8,8,8,.97);
     box-shadow:0 -8px 30px rgba(0,0,0,.65);
+    padding-bottom:env(safe-area-inset-bottom);
   }
   .chat-box.docked .chat-msgs{
     max-height:30vh;
@@ -1058,6 +1081,7 @@
   .chat-admin-players{
     max-height:118px;
     overflow-y:auto;
+    overflow-x:hidden;
     display:flex;
     flex-direction:column;
     gap:5px;
@@ -1536,8 +1560,8 @@
   let chatHasFocus = false;
   let chatScrollSticky = true;
   let chatScrollTop = 0;
-  let kbPx = 0;               // height covered by the on-screen keyboard (visual viewport)
-  let chatWasDocked = false;  // whether the chat box was last rendered docked over the keyboard
+  let kbPx = 0;               // cached height covered by the on-screen keyboard (visual viewport)
+  let chatBoxEl = null;       // live reference to the chat panel so it can be repositioned without a re-render
   let voiceStates = {};       // { [playerId]: mic-on }
   let voiceUiOn = false;      // local user's mic preference
   let voiceStream = null;     // local getUserMedia stream (kept once armed)
@@ -2690,6 +2714,7 @@
     chatHasFocus = false;
     chatScrollSticky = true;
     chatScrollTop = 0;
+    chatBoxEl = null;
     voiceStates = {};
     closeAllVoiceCalls();
     if (voiceStream){
@@ -2773,7 +2798,9 @@
 
   // ---------- Mobile keyboard handling (Visual Viewport API) ----------
   function isTouchDevice(){
-    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    return ('ontouchstart' in window) ||
+      (navigator.maxTouchPoints > 0) ||
+      /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
   }
 
   function kbBarrierHeight(){
@@ -2785,14 +2812,28 @@
     return 0;
   }
 
+  // Reposition the EXISTING chat box over the keyboard without rebuilding its DOM,
+  // so the focused text input is never destroyed (which would dismiss the keyboard).
+  function applyDock(el, docked){
+    if (!el) return;
+    if (docked){
+      el.classList.add("docked");
+      el.style.bottom = kbBarrierHeight() + "px";
+    } else {
+      el.classList.remove("docked");
+      el.style.bottom = "";
+    }
+  }
+
+  function refreshChatDock(){
+    applyDock(chatBoxEl, !!(chatHasFocus && isTouchDevice()));
+  }
+
   function updateKbBarrier(){
-    const pvv = window.visualViewport;
-    if (pvv){
-      const next = kbBarrierHeight();
-      if (Math.abs(next - kbPx) > 2 && (chatHasFocus || chatWasDocked)){
-        kbPx = next;
-        render();
-      }
+    const next = kbBarrierHeight();
+    if (Math.abs(next - kbPx) > 2){
+      kbPx = next;
+      refreshChatDock();
     }
   }
 
@@ -2820,11 +2861,9 @@
 
     // Dock the whole chat panel above the on-screen keyboard while its input is focused (mobile only)
     const docked = chatHasFocus && isTouchDevice();
-    chatWasDocked = docked;
-    const box = el("div", {
-      class:"chat-box" + (docked ? " docked" : ""),
-      style: docked ? ("position:fixed; bottom:" + kbPx + "px; left:50%; transform:translateX(-50%); width:100%; max-width:440px;") : ""
-    });
+    const box = el("div", {class:"chat-box" + (docked ? " docked" : "")});
+    chatBoxEl = box;
+    applyDock(box, docked);
 
     // Header row: title + voice controls
     const head = el("div", {class:"chat-head"});
@@ -2962,8 +3001,10 @@
         maxlength:"300",
         autocomplete:"off",
         oninput: (e) => { chatDraft = e.target.value; },
-        onfocus: () => { chatHasFocus = true; if (!chatWasDocked) render(); },
-        onblur: () => { chatHasFocus = false; },
+        // NOTE: never call render() from focus handlers — rebuilding the DOM here
+        // destroys the focused input and suppresses the mobile keyboard.
+        onfocus: () => { chatHasFocus = true; setTimeout(refreshChatDock, 150); },
+        onblur: () => { chatHasFocus = false; setTimeout(refreshChatDock, 250); },
         onkeydown: (e) => { if (e.key === "Enter"){ sendChat(input.value); } }
       });
       input.value = chatDraft;
