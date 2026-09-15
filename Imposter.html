@@ -519,6 +519,20 @@
     from{ opacity:0; transform:translateY(-10px); }
     to{ opacity:1; transform:translateY(0); }
   }
+
+  .scorecard-panel{ width:100%; margin-top:10px; }
+  .scorecard-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .scorecard-table{ width:100%; border-collapse:collapse; margin-top:4px; font-size:.88rem; }
+  .scorecard-table th{ text-align:left; padding:6px 8px; border-bottom:1px solid rgba(255,255,255,.2); color:var(--gold); font-size:.75rem; text-transform:uppercase; }
+  .scorecard-table td{ padding:8px 8px; border-bottom:1px solid rgba(255,255,255,.07); vertical-align:middle; }
+  .score-badge{ display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:10px; font-weight:700; font-size:.85rem; background:rgba(232,185,58,.2); color:var(--gold); border:1px solid rgba(232,185,58,.4); }
+  .rank-badge{ font-weight:bold; min-width:24px; display:inline-block; text-align:center; font-size:.95rem; }
+  .score-events-box{ width:100%; display:flex; flex-direction:column; gap:6px; margin:10px 0; }
+  .score-event-item{ display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-radius:10px; background:rgba(46,204,113,.15); border:1px solid rgba(46,204,113,.4); font-size:.85rem; color:var(--cream); }
+  .score-event-pts{ font-weight:bold; color:#2ecc71; }
+  .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.78); backdrop-filter:blur(6px); z-index:999; display:flex; align-items:center; justify-content:center; padding:16px; animation:fadeIn 0.2s ease; }
+  .modal-panel{ width:100%; max-width:420px; max-height:85vh; overflow-y:auto; background:#121212; border:2px solid var(--gold); border-radius:20px; padding:18px; box-shadow:0 12px 36px rgba(0,0,0,.8); }
+  .modal-close-btn{ width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); color:var(--cream); display:inline-flex; align-items:center; justify-content:center; font-size:1.1rem; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -875,11 +889,17 @@
   const MIN_PLAYERS_TO_CONTINUE = 3;
 
   let state = {
-    screen: "title",       // title -> rules/setup -> names -> guard -> card -> discuss -> vote -> voteNoMajority/roundResult/results
-    numPlayers: 6,
+    screen: "title",
+    numPlayers: 3,
     numImposters: 1,
     categoryFilter: "All",
     names: [],
+    scores: [],
+    gamesWon: [],
+    roundsSurvived: [],
+    scoreEvents: [],
+    votingRoundId: 0,
+    showScoreModal: false,
     secret: null,
     secretImageUrl: null,
     secretImageStatus: "idle",
@@ -898,8 +918,8 @@
     justVoted: null,
     voteOutcome: null,
     gameOverReason: null,
-    firstPlayerIndex: 0, // Index of player who goes first; randomized on game start
-    revealedCount: 0     // How many players have revealed their card this round
+    firstPlayerIndex: 0,
+    revealedCount: 0
   };
 
   const CATEGORIES = ["All", ...new Set(WORDS.map(w => w.cat))];
@@ -1124,7 +1144,7 @@
           "Player " + (state.revealedCount + 1) + " / " + state.names.length
         )]));
       } else {
-        bar.appendChild(el("div"));
+        bar.appendChild(el("button", {class:"link-btn", style:"color:var(--gold); border:1px solid var(--gold); border-radius:12px; padding:4px 10px; background:rgba(232,185,58,.1);", onclick: () => { state.showScoreModal = true; render(); }}, [document.createTextNode("🏆 Scorecard")]));
       }
       app.appendChild(bar);
     }
@@ -1141,12 +1161,139 @@
     else if (state.screen === "roundResult") renderRoundResult(app);
     else if (state.screen === "results") renderResults(app);
 
+    if (state.showScoreModal) {
+      const scoreModal = renderScoreModal();
+      if (scoreModal) app.appendChild(scoreModal);
+    }
+
     app.appendChild(el("footer", {}, [document.createTextNode("Imposter Party Game · local pass-and-play game")]));
   }
 
+  // --- Scorecard Modal logic ---
+  function renderScoreModal(){
+    const overlay = el("div", {
+      class:"modal-overlay",
+      onclick: (e) => {
+        if (e.target === overlay){
+          state.showScoreModal = false;
+          render();
+        }
+      }
+    });
+
+    const panel = el("div", {class:"modal-panel"});
+    const topRow = el("div", {style:"display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;"});
+    topRow.appendChild(el("h3", {style:"margin:0; color:var(--gold); display:flex; align-items:center; gap:6px;"}, [
+      document.createTextNode("🏆 Scorecard")
+    ]));
+    topRow.appendChild(el("button", {
+      class:"modal-close-btn",
+      title:"Close",
+      onclick: () => {
+        state.showScoreModal = false;
+        render();
+      }
+    }, [document.createTextNode("✕")]));
+    panel.appendChild(topRow);
+
+    panel.appendChild(createScorecardElement());
+
+    panel.appendChild(el("button", {
+      class:"secondary",
+      style:"margin-top:14px;",
+      onclick: () => {
+        state.showScoreModal = false;
+        render();
+      }
+    }, [document.createTextNode("Close Scorecard")]));
+
+    overlay.appendChild(panel);
+    return overlay;
+  }
+
+  function createScorecardElement(){
+    const wrap = el("div", {class:"panel scorecard-panel"});
+    const header = el("div", {class:"scorecard-header"});
+    header.appendChild(el("label", {style:"margin:0; font-weight:700; color:var(--gold); font-size:.95rem;"}, [
+      document.createTextNode("🏆 Tournament Leaderboard")
+    ]));
+    wrap.appendChild(header);
+
+    const players = state.names.map((n, i) => ({
+        id: i,
+        name: n,
+        score: state.scores[i],
+        gamesWon: state.gamesWon[i],
+        roundsSurvived: state.roundsSurvived[i]
+    }));
+    const sorted = players.sort((a, b) => (b.score || 0) - (a.score || 0));
+    
+    if (sorted.length === 0){
+      wrap.appendChild(el("div", {class:"hint", style:"margin:8px 0;"}, [document.createTextNode("No players yet.")]));
+      return wrap;
+    }
+
+    const table = el("table", {class:"scorecard-table"});
+    const thead = el("thead");
+    const trHead = el("tr");
+    trHead.appendChild(el("th", {style:"width:38px; text-align:center;"}, [document.createTextNode("Rank")]));
+    trHead.appendChild(el("th", {}, [document.createTextNode("Player")]));
+    trHead.appendChild(el("th", {style:"text-align:center; width:55px;"}, [document.createTextNode("Survived")]));
+    trHead.appendChild(el("th", {style:"text-align:center; width:45px;"}, [document.createTextNode("Wins")]));
+    trHead.appendChild(el("th", {style:"text-align:right; width:70px;"}, [document.createTextNode("Points")]));
+    thead.appendChild(trHead);
+    table.appendChild(thead);
+
+    const tbody = el("tbody");
+    sorted.forEach((p, idx) => {
+      const row = el("tr", {class:"scorecard-row"});
+      
+      const rankCell = el("td", {style:"text-align:center;"});
+      const rankText = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : String(idx + 1);
+      rankCell.appendChild(el("span", {class:"rank-badge"}, [document.createTextNode(rankText)]));
+      row.appendChild(rankCell);
+
+      const nameCell = el("td");
+      nameCell.appendChild(el("span", {style:"font-weight:500"}, [
+        document.createTextNode(p.name)
+      ]));
+      row.appendChild(nameCell);
+
+      const survCell = el("td", {style:"text-align:center; opacity:.85;"}, [
+        document.createTextNode(String(p.roundsSurvived || 0))
+      ]);
+      row.appendChild(survCell);
+
+      const winCell = el("td", {style:"text-align:center; opacity:.85;"}, [
+        document.createTextNode(String(p.gamesWon || 0))
+      ]);
+      row.appendChild(winCell);
+
+      const scoreCell = el("td", {style:"text-align:right;"});
+      scoreCell.appendChild(el("span", {class:"score-badge"}, [
+        document.createTextNode(String(p.score || 0) + " pts")
+      ]));
+      row.appendChild(scoreCell);
+
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+
+    wrap.appendChild(el("div", {class:"hint", style:"margin-top:8px; text-align:left; font-size:.74rem; opacity:.75;"}, [
+      document.createTextNode("⭐ Scoring: Imposters earn +10 pts for every voting round survived! +10 pts for match victory.")
+    ]));
+
+    return wrap;
+  }
+  
   // ---------- Title screen ----------
   function renderTitle(app){
     const screen = el("div", {class:"screen title-screen"});
+    
+    const topBar = el("div", {style: "width:100%; display:flex; justify-content:flex-end; padding:4px 0;"});
+    topBar.appendChild(el("button", {class:"link-btn", style:"background:rgba(232,185,58,.15); border:1px solid var(--gold); color:var(--gold); font-weight:bold; padding:6px 12px; border-radius:12px;", onclick: () => { state.showScoreModal = true; render(); }}, [document.createTextNode("🏆 Scorecard")]));
+    screen.appendChild(topBar);
     screen.appendChild(el("img", {
       class:"title-mascot",
       src:MASCOT_IMG,
@@ -1300,10 +1447,19 @@
     for (let i = 0; i < state.names.length; i++){
       if (!state.names[i] || !state.names[i].trim()) state.names[i] = "Player " + (i + 1);
     }
+    
+    if (!state.scores || state.scores.length !== state.names.length){
+      state.scores = state.names.map(() => 0);
+      state.gamesWon = state.names.map(() => 0);
+      state.roundsSurvived = state.names.map(() => 0);
+    }
+    state.votingRoundId = 0;
+    state.scoreEvents = [];
+    
     // Always randomize the true first player and store it in state
-    state.firstPlayerIndex = Math.floor(Math.random() * state.numPlayers);
+    state.firstPlayerIndex = getRandomInt(0, state.numPlayers);
     savePlayers(state.names);
-    // Smart non-repeating random word pair selection
+    
     const { secret, decoy } = pickSecretAndDecoyWord();
     state.secret = secret;
     state.decoySecret = decoy;
@@ -1312,13 +1468,11 @@
     state.imposterSet = new Set(indices);
     state.eliminatedSet = new Set();
     state.gameOverReason = null;
-    // Start from the randomized first player index
     state.currentIndex = state.firstPlayerIndex;
     state.revealedCount = 0;
     state.flipped = false;
     state.screen = "guard";
     render();
-    // Announce who goes first
     announceFirstPlayer(state.names[state.firstPlayerIndex]);
   }
 
@@ -1474,6 +1628,7 @@
     state.votes = state.names.map(() => 0);
     state.voteHistory = [];
     state.justVoted = null;
+    state.votingRoundId++;
     state.screen = "vote";
     render();
   }
@@ -1576,9 +1731,44 @@
     if (remainingImposters === 0){
       state.gameOverReason = "crewWin";
       state.screen = "results";
+      
+      const scoreEvents = [];
+      const crewMembers = [];
+      for (let i = 0; i < state.names.length; i++) {
+        if (!state.imposterSet.has(i)) crewMembers.push(i);
+      }
+      crewMembers.forEach(i => {
+        state.scores[i] += 10;
+        state.gamesWon[i] += 1;
+        scoreEvents.push({ name: state.names[i], pts: "+10 pts (Crew Win)" });
+      });
+      state.imposterSet.forEach(i => {
+        const survivedCount = state.eliminatedSet.has(i) ? Math.max(0, state.votingRoundId - 1) : state.votingRoundId;
+        state.roundsSurvived[i] += survivedCount;
+        state.scores[i] += (survivedCount * 10);
+        scoreEvents.push({ name: state.names[i], pts: "+" + (survivedCount * 10) + " pts (Survived " + survivedCount + " rounds)" });
+      });
+      state.scoreEvents = scoreEvents;
+      
     } else if (aliveIndices.length <= MIN_PLAYERS_TO_CONTINUE){
       state.gameOverReason = "floorReached";
       state.screen = "results";
+      
+      const scoreEvents = [];
+      state.imposterSet.forEach(i => {
+        const survivedCount = state.eliminatedSet.has(i) ? Math.max(0, state.votingRoundId - 1) : state.votingRoundId;
+        state.roundsSurvived[i] += survivedCount;
+        state.scores[i] += (survivedCount * 10);
+        let pts = survivedCount * 10;
+        if (!state.eliminatedSet.has(i)){
+            state.scores[i] += 10;
+            state.gamesWon[i] += 1;
+            pts += 10;
+        }
+        scoreEvents.push({ name: state.names[i], pts: "+" + pts + " pts (Win + Survival)" });
+      });
+      state.scoreEvents = scoreEvents;
+      
     } else {
       state.screen = "roundResult";
     }
@@ -1699,14 +1889,25 @@
     listDiv.appendChild(el("b", {}, [document.createTextNode(imposterNames.join(", "))]));
     panel.appendChild(listDiv);
 
+    if (state.scoreEvents && state.scoreEvents.length > 0){
+      const eventsBox = el("div", {class:"score-events-box"});
+      state.scoreEvents.forEach(ev => {
+        const item = el("div", {class:"score-event-item"});
+        item.appendChild(el("span", {}, [document.createTextNode(ev.name)]));
+        item.appendChild(el("span", {class:"score-event-pts"}, [document.createTextNode(ev.pts)]));
+        eventsBox.appendChild(item);
+      });
+      panel.appendChild(eventsBox);
+    }
+    
     screen.appendChild(panel);
     screen.appendChild(el("button", {class:"primary", onclick: playAgainSamePlayers}, [document.createTextNode("Play Again (same players) ↻")]));
+    screen.appendChild(el("button", {style:"margin-top:0px; background:linear-gradient(135deg,var(--cyan),#0984e3); color:#fff", class:"primary", onclick: () => { state.showScoreModal = true; render(); }}, [document.createTextNode("🏆 View Leaderboard")]));
     screen.appendChild(el("button", {class:"secondary", onclick: resetGame}, [document.createTextNode("New Game / New Players")]));
     app.appendChild(screen);
   }
 
   function playAgainSamePlayers(){
-    // Smart non-repeating random word pair selection
     const { secret, decoy } = pickSecretAndDecoyWord();
     state.secret = secret;
     state.decoySecret = decoy;
@@ -1714,8 +1915,7 @@
     const indices = shuffle([...Array(state.numPlayers).keys()]).slice(0, state.numImposters);
     state.imposterSet = new Set(indices);
     state.eliminatedSet = new Set();
-    // Randomize the first player again for the new round
-    state.firstPlayerIndex = Math.floor(Math.random() * state.numPlayers);
+    state.firstPlayerIndex = getRandomInt(0, state.numPlayers);
     state.currentIndex = state.firstPlayerIndex;
     state.revealedCount = 0;
     state.flipped = false;
@@ -1726,9 +1926,10 @@
     state.justVoted = null;
     state.voteOutcome = null;
     state.gameOverReason = null;
+    state.votingRoundId = 0;
+    state.scoreEvents = [];
     state.screen = "guard";
     render();
-    // Announce who goes first
     announceFirstPlayer(state.names[state.firstPlayerIndex]);
   }
 
@@ -1736,10 +1937,16 @@
     clearInterval(state.timerHandle);
     state = {
       screen: "title",
-      numPlayers: 6,
+      numPlayers: 3,
       numImposters: 1,
       categoryFilter: "All",
       names: [],
+      scores: [],
+      gamesWon: [],
+      roundsSurvived: [],
+      scoreEvents: [],
+      votingRoundId: 0,
+      showScoreModal: false,
       secret: null,
       secretImageUrl: null,
       secretImageStatus: "idle",
