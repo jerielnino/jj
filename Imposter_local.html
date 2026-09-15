@@ -2528,6 +2528,8 @@
       render();
     } else if (hostConn && hostConn.open){
       try { hostConn.send({ type: "CHAT", msg: msg }); } catch(e){}
+      // Guest send doesn't re-render immediately, so recover the keyboard on our own.
+      if (isTouchDevice()) reopenChatKeyboard();
     } else {
       playBeep(300, 'square', 0.1);
     }
@@ -2858,9 +2860,8 @@
   // Keep the chat input visible above the on-screen keyboard while it's focused.
   // NOTE: we deliberately avoid position:fixed + visualViewport math — on several Android
   // builds it reports ~0 offset, so a fixed chat box ends up UNDER the keyboard's
-  // suggestion/toolbar bar and the input disappears. Instead we let the browser scroll the
-  // focused input natively (it already accounts for the IME and its suggestion bar), then
-  // verify and nudge so the input always clears the keyboard.
+  // suggestion/toolbar bar and the input disappears. Focusing the input instead lets the
+  // browser scroll it into view natively (accounting for the IME and its suggestion bar).
   function applyDock(el, docked){
     if (!el) return;
     if (docked) keepChatInputVisible();
@@ -2869,31 +2870,24 @@
   function keepChatInputVisible(){
     if (!chatInputEl || !chatInputEl.isConnected) return;
     if (chatInputEl.style.display === "none") return;
-    try { chatInputEl.scrollIntoView({block:"end"}); }
+    // Re-focusing both re-opens the mobile keyboard after an IME hide-on-send and scrolls
+    // the input above the keyboard natively — no manual scroll math to get wrong.
+    try { chatInputEl.focus(); }
     catch(e){ try { chatInputEl.scrollIntoView(false); } catch(_){} }
-    const vv = window.visualViewport;
-    if (!vv || !isTouchDevice()) return;
-    // Keyboard actually open? Two viewport models: (A) layout viewport unchanged and the
-    // keyboard overlaps it, or (B) the layout viewport shrank itself to the keyboard top.
-    const keyboardOpen =
-      (vv.height < window.innerHeight - 24) ||
-      (window.innerHeight < window.screen.height - 120);
-    if (!keyboardOpen) return;
-    requestAnimationFrame(() => {
-      try {
-        const r = chatInputEl.getBoundingClientRect();
-        // Reserve room so the IME suggestion/toolbar strip can never cover the input.
-        const reserve = Math.min(56, Math.max(24, vv.height * 0.12));
-        if (r.bottom > (vv.height - reserve) || r.top < 0){
-          window.scrollBy(0, Math.round((r.bottom - vv.height) + reserve));
-        }
-        // If our own scroll cost the input its focus (Chrome Android can dismiss the IME
-        // on programmatic scrolls), put it back so the keyboard stays open while composing.
-        if (document.activeElement !== chatInputEl){
-          try { chatInputEl.focus(); } catch(_){}
-        }
-      } catch(_){}
-    });
+  }
+
+  // Android IMEs often hide the keyboard on send while KEEPING focus on the input, so we
+  // can't detect it via activeElement. Retry the focus over ~400ms so the keyboard reliably
+  // returns even if the IME hides a beat after the send. Stops if the user moves away.
+  function reopenChatKeyboard(){
+    let tries = 0;
+    const attempt = () => {
+      if (!chatWantsFocus || !chatInputEl || !chatInputEl.isConnected) return;
+      if (chatInputEl.style.display === "none") return;
+      try { chatInputEl.focus(); } catch(_){}
+      if (++tries < 4) setTimeout(attempt, 90 + tries * 60);
+    };
+    attempt();
   }
 
   function refreshChatDock(){
@@ -3194,13 +3188,12 @@
       });
     }
 
-    // If the user was mid-composition (e.g., just sent a message and the IME or our own
-    // scroll dropped focus), restore focus so they can keep typing without re-tapping.
+    // If the user was mid-composition, keep the input focused and the keyboard up after the
+    // send — even though the IME often hides itself a beat later while keeping focus.
     if (chatWantsFocus && chatInputEl &&
         gameState.chatEnabled !== false &&
         !(gameState.hostMuteChat && gameState.hostMuteChat[myPlayerId])){
-      try { if (document.activeElement !== chatInputEl) chatInputEl.focus(); } catch(_){}
-      keepChatInputVisible();
+      reopenChatKeyboard();
     }
 
     return box;
