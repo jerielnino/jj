@@ -1595,6 +1595,8 @@
   let chatMessages = [];      // [{ playerId, playerName, avatar, text, ts, sys? }]
   let chatDraft = "";         // preserves in-progress text across re-renders
   let chatHasFocus = false;
+  let chatWantsFocus = false; // user mid-composition — restore focus+keyboard after a send
+  let chatBlurTimer = null;
   let chatScrollSticky = true;
   let chatScrollTop = 0;
   let kbPx = 0;               // cached height covered by the on-screen keyboard (visual viewport)
@@ -2885,6 +2887,11 @@
         if (r.bottom > (vv.height - reserve) || r.top < 0){
           window.scrollBy(0, Math.round((r.bottom - vv.height) + reserve));
         }
+        // If our own scroll cost the input its focus (Chrome Android can dismiss the IME
+        // on programmatic scrolls), put it back so the keyboard stays open while composing.
+        if (document.activeElement !== chatInputEl){
+          try { chatInputEl.focus(); } catch(_){}
+        }
       } catch(_){}
     });
   }
@@ -2962,8 +2969,20 @@
           oninput: (e) => { chatDraft = e.target.value; },
           // NOTE: never call render() from focus handlers — the panel is DOM-persistent
           // now, but rebuilding mid-focus still disturbs the mobile keyboard.
-          onfocus: () => { chatHasFocus = true; setTimeout(refreshChatDock, 150); },
-          onblur: () => { chatHasFocus = false; setTimeout(refreshChatDock, 250); },
+          onfocus: () => {
+            chatHasFocus = true;
+            chatWantsFocus = true;               // user is composing — keep keyboard after sends
+            if (chatBlurTimer){ clearTimeout(chatBlurTimer); chatBlurTimer = null; }
+            setTimeout(refreshChatDock, 150);
+          },
+          onblur: () => {
+            chatHasFocus = false;
+            // Give the send/render path a short grace to restore focus before deciding the
+            // user really moved away. If focus isn't back within ~400ms, stop auto-restoring.
+            if (chatBlurTimer) clearTimeout(chatBlurTimer);
+            chatBlurTimer = setTimeout(() => { chatWantsFocus = false; }, 400);
+            setTimeout(refreshChatDock, 250);
+          },
           onkeydown: (e) => { if (e.key === "Enter"){ sendChat(chatInputEl.value); } }
         });
         // Kill the on-screen suggestion / quick-type bar so it can't sit over the text
@@ -3175,9 +3194,14 @@
       });
     }
 
-    // If the user is typing, make sure the message list growing didn't push the input
-    // under the keyboard — re-align it after this render settles.
-    if (chatHasFocus) keepChatInputVisible();
+    // If the user was mid-composition (e.g., just sent a message and the IME or our own
+    // scroll dropped focus), restore focus so they can keep typing without re-tapping.
+    if (chatWantsFocus && chatInputEl &&
+        gameState.chatEnabled !== false &&
+        !(gameState.hostMuteChat && gameState.hostMuteChat[myPlayerId])){
+      try { if (document.activeElement !== chatInputEl) chatInputEl.focus(); } catch(_){}
+      keepChatInputVisible();
+    }
 
     return box;
   }
