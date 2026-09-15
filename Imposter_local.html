@@ -833,6 +833,171 @@
     font-size:.72rem;
     text-align:center;
   }
+
+  /* ===== CHAT & VOICE ===== */
+  .chat-box{
+    width:100%;
+    max-width:440px;
+    margin-top:14px;
+    background:rgba(0,0,0,.35);
+    border:1px solid rgba(255,255,255,.15);
+    border-radius:16px;
+    overflow:hidden;
+  }
+  .chat-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:8px 12px;
+    background:rgba(255,255,255,.05);
+    border-bottom:1px solid rgba(255,255,255,.1);
+  }
+  .chat-head .chat-title{
+    font-weight:700;
+    font-size:.85rem;
+    color:var(--gold);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    white-space:nowrap;
+    overflow:hidden;
+  }
+  .chat-voice-toggle{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:5px 10px;
+    border-radius:20px;
+    border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.06);
+    color:var(--cream);
+    font-size:.78rem;
+    cursor:pointer;
+    transition:background .2s, border-color .2s;
+    white-space:nowrap;
+  }
+  .chat-voice-toggle.on{
+    background:linear-gradient(135deg,var(--cyan),#0984e3);
+    color:#fff;
+    border-color:var(--cyan);
+  }
+  .chat-voice-toggle:active{ transform:scale(.96); }
+  .chat-voice-toggle.speaker{
+    background:none;
+    border:none;
+    font-size:1.05rem;
+    opacity:.85;
+    padding:4px 6px;
+    min-width:34px;
+  }
+  .voice-chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    padding:8px 12px 4px;
+  }
+  .voice-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:4px 9px;
+    border-radius:16px;
+    font-size:.76rem;
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.14);
+    color:var(--cream);
+  }
+  .voice-chip.mic-on{ border-color:var(--success); color:var(--success); }
+  .voice-chip.speaking{
+    border-color:var(--danger);
+    color:var(--danger);
+    box-shadow:0 0 8px rgba(231,76,60,.4);
+  }
+  .voice-chip .speak-dot{
+    width:7px; height:7px; border-radius:50%; background:var(--danger);
+    animation:pulse .7s infinite;
+  }
+  .chat-msgs{
+    max-height:190px;
+    overflow-y:auto;
+    padding:10px 12px 4px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .chat-msg{
+    display:flex;
+    align-items:flex-start;
+    gap:7px;
+    font-size:.84rem;
+    line-height:1.35;
+    animation:fadeIn .18s ease-out;
+  }
+  .chat-msg .chat-avatar{
+    flex:0 0 26px;
+    width:26px; height:26px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255,255,255,.08);
+    border-radius:50%;
+    font-size:1rem;
+  }
+  .chat-msg .chat-body{ flex:1; min-width:0; }
+  .chat-msg .chat-name{ font-weight:700; font-size:.76rem; opacity:.85; }
+  .chat-msg .chat-name.me{ color:var(--gold); }
+  .chat-msg .chat-text{ word-wrap:break-word; overflow-wrap:break-word; }
+  .chat-msg.sys .chat-text{ opacity:.75; font-style:italic; }
+  .chat-empty{
+    text-align:center;
+    opacity:.6;
+    font-size:.78rem;
+    padding:8px 0;
+  }
+  .chat-input-row{
+    display:flex;
+    gap:8px;
+    padding:10px 12px;
+    border-top:1px solid rgba(255,255,255,.1);
+  }
+  .chat-input-row input{
+    flex:1;
+    min-width:0;
+    padding:10px 12px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.2);
+    background:var(--black-softer);
+    color:var(--cream);
+    font-size:.9rem;
+    outline:none;
+  }
+  .chat-input-row input:focus{ border-color:var(--gold); }
+  .chat-input-row button{
+    padding:0 16px;
+    border:none;
+    border-radius:12px;
+    background:linear-gradient(135deg,var(--gold),var(--gold-dark));
+    color:var(--ink);
+    font-weight:700;
+    font-size:.9rem;
+    cursor:pointer;
+  }
+  .chat-input-row button:active{ transform:scale(.96); }
+  .chat-notice{
+    padding:8px 12px;
+    font-size:.76rem;
+    opacity:.85;
+    text-align:center;
+    border-top:1px solid rgba(255,255,255,.08);
+  }
+  .chat-notice.warn{
+    color:var(--gold);
+    opacity:1;
+    border:1px solid rgba(232,185,58,.3);
+    border-radius:12px;
+    margin-top:8px;
+  }
 </style>
 </head>
 <body>
@@ -1269,6 +1434,26 @@
 
   let myVotedId = null;
   let timerInterval = null;
+
+  // ===== Chat + Voice (host-relayed text chat · WebRTC mesh audio) =====
+  const MAX_CHAT = 200;
+  let chatMessages = [];      // [{ playerId, playerName, avatar, text, ts, sys? }]
+  let chatDraft = "";         // preserves in-progress text across re-renders
+  let chatHasFocus = false;
+  let chatScrollSticky = true;
+  let chatScrollTop = 0;
+  let voiceStates = {};       // { [playerId]: mic-on }
+  let voiceUiOn = false;      // local user's mic preference
+  let voiceStream = null;     // local getUserMedia stream (kept once armed)
+  let speakerOn = true;
+  let voiceCalls = {};        // { [peerId]: PeerJS call }
+  let voiceCallMine = {};     // { [peerId]: true if I initiated the call }
+  let voiceCallAnsweredLive = {}; // { [peerId]: true if I answered with a live mic stream }
+  let remoteAudioEls = {};    // { [peerId]: <audio> element }
+  let voiceSpeaking = {};     // { [peerId]: bool } live speaking indicator
+  let voiceAnalysers = {};    // { [peerId]: { src, an } }
+  let voiceCtx = null;        // dedicated AudioContext for speaking detection
+  let voiceSpeakTimer = null;
 
   // Sound Synth (Web Audio API)
   const audioCtx = (window.AudioContext || window.webkitAudioContext) ? new (window.AudioContext || window.webkitAudioContext)() : null;
@@ -1743,6 +1928,7 @@
         gamesWon: 0
       }];
       startHeartbeat();
+      addSystemChat("Room " + roomCode + " is live! Invite friends with the room code or QR.");
       render();
     });
 
@@ -1774,6 +1960,14 @@
       });
     });
 
+    peer.on('call', (call) => {
+      // Inbound WebRTC audio: answer, then play the caller's stream
+      voiceCallMine[call.peer] = false;
+      voiceCallAnsweredLive[call.peer] = !!voiceStream;
+      registerVoiceCall(call.peer, call);
+      try { call.answer(voiceStream || new MediaStream()); } catch(e){}
+    });
+
     peer.on('disconnected', () => {
       if (peer && !peer.destroyed){
         try { peer.reconnect(); } catch(e){}
@@ -1801,6 +1995,14 @@
 
     peer.on('open', () => {
       connectToHost();
+    });
+
+    peer.on('call', (call) => {
+      // Inbound WebRTC audio: answer, then play the caller's stream
+      voiceCallMine[call.peer] = false;
+      voiceCallAnsweredLive[call.peer] = !!voiceStream;
+      registerVoiceCall(call.peer, call);
+      try { call.answer(voiceStream || new MediaStream()); } catch(e){}
     });
 
     peer.on('disconnected', () => {
@@ -1926,6 +2128,9 @@
         // Send state sync
         conn.send({ type: "STATE_SYNC", state: gameState });
 
+        // Restore chat history so rejoining players don't miss the conversation
+        conn.send({ type: "CHAT_HISTORY", messages: chatMessages });
+
         // If game is in progress, re-send their private role card so their screen recovers immediately!
         if (gameState.screen !== "lobby"){
           const isImp = (gameState.imposterIds || []).includes(existing.id);
@@ -1974,7 +2179,9 @@
 
       clientConns.set(peerId, conn);
       conn.send({ type: "STATE_SYNC", state: gameState });
+      conn.send({ type: "CHAT_HISTORY", messages: chatMessages });
       playBeep(600, 'sine', 0.1);
+      addSystemChat((incomingName || "A player") + " joined the lobby.");
       broadcastGameState();
       render();
 
@@ -1992,6 +2199,24 @@
       render();
     } else if (data.type === "CAST_VOTE"){
       handlePlayerVote(data.voterId, data.targetId);
+    } else if (data.type === "CHAT"){
+      const sender = gameState.players.find(x => x.id === data.id);
+      const msg = data.msg || {};
+      appendChat({
+        playerId: data.id,
+        playerName: sender ? sender.name : (msg.playerName || "Player"),
+        avatar: sender ? sender.avatar : (msg.avatar || "👤"),
+        text: (data.text || msg.text || "").toString().slice(0, 300),
+        ts: Date.now()
+      });
+      sendChatBroadcast(chatMessages[chatMessages.length - 1]);
+      playBeep(520, 'sine', 0.05);
+      render();
+    } else if (data.type === "VOICE_STATE"){
+      voiceStates[data.id] = data.on;
+      broadcastVoiceState(data.id, data.on);
+      reconcileVoiceMesh();
+      render();
     } else if (data.type === "PING"){
       try { conn.send({ type: "PONG" }); } catch(e){}
     }
@@ -2037,6 +2262,20 @@
       if (hostConn && hostConn.open){
         try { hostConn.send({ type: "PONG" }); } catch(e){}
       }
+    } else if (data.type === "CHAT_BROADCAST"){
+      appendChat(data.msg);
+      if (data.msg && !data.msg.sys && !chatHasFocus) playBeep(560, 'sine', 0.05);
+      render();
+    } else if (data.type === "CHAT_HISTORY"){
+      chatMessages = (data.messages || []).slice(-MAX_CHAT);
+      render();
+    } else if (data.type === "VOICE_STATE"){
+      const changed = voiceStates[data.id] !== data.on;
+      voiceStates[data.id] = data.on;
+      if (changed){
+        reconcileVoiceMesh();
+        render();
+      }
     }
   }
 
@@ -2061,6 +2300,407 @@
         try { conn.send(payload); } catch(e){}
       }
     }
+  }
+
+  // ==========================================
+  // TEXT CHAT & VOICE (PeerJS)
+  // ==========================================
+
+  // ---------- Text Chat (host-relayed) ----------
+  function appendChat(msg){
+    if (!msg) return;
+    chatMessages.push(msg);
+    if (chatMessages.length > MAX_CHAT) chatMessages = chatMessages.slice(-MAX_CHAT);
+  }
+
+  function sendChatBroadcast(msg){
+    const payload = { type: "CHAT_BROADCAST", msg: msg };
+    clientConns.forEach(conn => {
+      if (conn && conn.open){
+        try { conn.send(payload); } catch(e){}
+      }
+    });
+  }
+
+  function sendChat(raw){
+    const text = (raw || "").trim().slice(0, 300);
+    if (!text || appMode !== "multiplayer") return;
+    const me = gameState.players.find(p => p.id === myPlayerId);
+    const msg = {
+      playerId: myPlayerId,
+      playerName: me ? me.name : (myPlayerName || "You"),
+      avatar: me ? me.avatar : myAvatar,
+      text: text,
+      ts: Date.now()
+    };
+    chatDraft = "";
+    playBeep(660, 'sine', 0.05);
+    if (isHost){
+      appendChat(msg);
+      sendChatBroadcast(msg);
+      render();
+    } else if (hostConn && hostConn.open){
+      try { hostConn.send({ type: "CHAT", msg: msg }); } catch(e){}
+    } else {
+      playBeep(300, 'square', 0.1);
+    }
+  }
+
+  function addSystemChat(text){
+    const sys = {
+      sys: true,
+      playerId: null,
+      playerName: "System",
+      avatar: "🛎️",
+      text: text,
+      ts: Date.now()
+    };
+    appendChat(sys);
+    sendChatBroadcast(sys);
+  }
+
+  // ---------- Voice (WebRTC mesh over the existing peers) ----------
+  function hostPeerId(){
+    return "imposter-p2p-" + roomCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+  }
+
+  function playerPeerId(p){
+    if (!p) return null;
+    return p.isHost ? hostPeerId() : (p.connId || null);
+  }
+
+  function applyVoiceMute(){
+    if (!voiceStream) return;
+    const suspended = appMode === "multiplayer" && gameState.screen === "card";
+    const want = voiceUiOn && !suspended;
+    voiceStream.getAudioTracks().forEach(t => { t.enabled = want; });
+  }
+
+  function armMic(on){
+    if (appMode !== "multiplayer") return;
+    if (on){
+      if (!voiceStream){
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+          alert("Microphone not supported in this browser.");
+          return;
+        }
+        navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
+          .then(s => {
+            voiceStream = s;
+            voiceUiOn = true;
+            voiceStates[myPlayerId] = true;
+            setupVoiceAnalysis();
+            applyVoiceMute();
+            notifyVoiceState(true);
+            reconcileVoiceMesh();
+            if (isHost) broadcastVoiceState(myPlayerId, true);
+            render();
+          })
+          .catch(err => {
+            alert("Microphone access denied: " + ((err && err.message) || "unknown error"));
+          });
+      } else {
+        voiceUiOn = true;
+        voiceStates[myPlayerId] = true;
+        applyVoiceMute();
+        setupVoiceAnalysis();
+        notifyVoiceState(true);
+        reconcileVoiceMesh();
+        if (isHost) broadcastVoiceState(myPlayerId, true);
+        render();
+      }
+    } else {
+      voiceUiOn = false;
+      voiceStates[myPlayerId] = false;
+      applyVoiceMute();
+      notifyVoiceState(false);
+      if (isHost) broadcastVoiceState(myPlayerId, false);
+      render();
+    }
+  }
+
+  function notifyVoiceState(on){
+    if (appMode !== "multiplayer" || isHost) return;
+    if (hostConn && hostConn.open){
+      try { hostConn.send({ type: "VOICE_STATE", id: myPlayerId, on: !!on }); } catch(e){}
+    }
+  }
+
+  function broadcastVoiceState(id, on){
+    const payload = { type: "VOICE_STATE", id: id, on: !!on };
+    clientConns.forEach(conn => {
+      if (conn && conn.open){
+        try { conn.send(payload); } catch(e){}
+      }
+    });
+  }
+
+  // Call ownership rules:
+  //  * The *designated initiator* for a pair is the lower player id when both parties
+  //    are on mic, otherwise the only party with mic on. Only that side opens a call,
+  //    so each pair has exactly one WebRTC call (no double audio).
+  //  * Calls are never rebuilt on mute/unmute (muted tracks = silence). But if I
+  //    answered an inbound call while my mic was off (dark direction), tearing it
+  //    down forces the designated initiator to re-establish a call I can answer live.
+  //  * Closing a call re-runs reconcile on both ends so they re-negotiate promptly.
+  function reconcileVoiceMesh(){
+    if (appMode !== "multiplayer") return;
+    if (!peer || peer.destroyed || !peer.open) return;
+    if (!voiceUiOn || !voiceStream) return; // muted players never initiate
+    const me = gameState.players.find(p => p.id === myPlayerId);
+    if (!me) return;
+    gameState.players.forEach(p => {
+      if (p.id === myPlayerId) return;
+      if (p.online === false) return;
+      const pid = playerPeerId(p);
+      if (!pid) return;
+      const theirVoiceOn = voiceStates[p.id] === true;
+      const iAmDesignated = !theirVoiceOn || myPlayerId < p.id;
+      const existing = voiceCalls[pid];
+      let canOpen = !existing;
+      if (existing){
+        if (voiceCallMine[pid] === true) return;                 // I initiated: keep
+        if (voiceCallAnsweredLive[pid] === true) return;         // duplex passive call: keep
+        // Dark passive call (I answered while muted, now I can speak) — force re-negotiation
+        teardownVoice(pid);
+        canOpen = true;
+      }
+      if (!canOpen) return;
+      if (!iAmDesignated) return;   // designated initiator is them: they will call us
+      try {
+        const call = peer.call(pid, voiceStream);
+        voiceCallMine[pid] = true;
+        registerVoiceCall(pid, call);
+      } catch(e){}
+    });
+  }
+
+  function registerVoiceCall(pid, call){
+    voiceCalls[pid] = call;
+    call.on("stream", (stream) => {
+      bindRemoteAudio(pid, stream);
+    });
+    call.on("close", () => { teardownVoice(pid); reconcileVoiceMesh(); });
+    call.on("error", () => { teardownVoice(pid); reconcileVoiceMesh(); });
+  }
+
+  function bindRemoteAudio(pid, stream){
+    let el = remoteAudioEls[pid];
+    if (!el){
+      el = document.createElement("audio");
+      el.autoplay = true;
+      el.style.display = "none";
+      document.body.appendChild(el);
+      remoteAudioEls[pid] = el;
+    }
+    try { el.srcObject = stream; } catch(e){}
+    el.volume = speakerOn ? 1 : 0;
+    attachVoiceAnalyser(pid, stream);
+  }
+
+  // Lightweight live "speaking" detection per remote stream
+  function setupVoiceAnalysis(){
+    if (!voiceCtx){
+      try { voiceCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+    }
+    if (!voiceSpeakTimer && voiceCtx){
+      voiceSpeakTimer = setInterval(() => {
+        let voiceDirty = false;
+        for (const pid in voiceAnalysers){
+          const a = voiceAnalysers[pid];
+          if (!a) continue;
+          try {
+            const d = new Uint8Array(a.frequencyBinCount);
+            a.getByteFrequencyData(d);
+            let sum = 0;
+            for (let i = 0; i < d.length; i++) sum += d[i];
+            const speaking = sum > 3000;
+            if (voiceSpeaking[pid] !== speaking){ voiceSpeaking[pid] = speaking; voiceDirty = true; }
+          } catch(e){}
+        }
+        if (voiceDirty) render();
+      }, 250);
+    }
+    if (voiceCtx && voiceCtx.state === "suspended"){ try { voiceCtx.resume(); } catch(e){} }
+  }
+
+  function attachVoiceAnalyser(pid, stream){
+    if (!voiceCtx) return;
+    try {
+      const src = voiceCtx.createMediaStreamSource(stream);
+      const an = voiceCtx.createAnalyser();
+      an.fftSize = 512;
+      src.connect(an);
+      // analyser is not connected to a destination; the hidden <audio> element drives playback
+      voiceAnalysers[pid] = { src: src, an: an };
+    } catch(e){}
+  }
+
+  function teardownVoice(pid){
+    if (voiceCalls[pid]){
+      try { voiceCalls[pid].close(); } catch(e){}
+    }
+    delete voiceCalls[pid];
+    delete voiceCallMine[pid];
+    delete voiceCallAnsweredLive[pid];
+    const el = remoteAudioEls[pid];
+    if (el){ try { el.srcObject = null; } catch(e){} el.remove(); }
+    delete remoteAudioEls[pid];
+    delete voiceSpeaking[pid];
+    delete voiceAnalysers[pid];
+  }
+
+  function closeAllVoiceCalls(){
+    for (const pid in voiceCalls){
+      teardownVoice(pid);
+    }
+    voiceCalls = {};
+    voiceCallMine = {};
+    voiceCallAnsweredLive = {};
+  }
+
+  function teardownComms(){
+    chatMessages = [];
+    chatDraft = "";
+    chatHasFocus = false;
+    chatScrollSticky = true;
+    chatScrollTop = 0;
+    voiceStates = {};
+    closeAllVoiceCalls();
+    if (voiceStream){
+      try { voiceStream.getAudioTracks().forEach(t => t.stop()); } catch(e){}
+      voiceStream = null;
+    }
+    voiceUiOn = false;
+    speakerOn = true;
+    voiceSpeaking = {};
+    voiceAnalysers = {};
+    if (voiceSpeakTimer){ clearInterval(voiceSpeakTimer); voiceSpeakTimer = null; }
+    if (voiceCtx){ try { voiceCtx.close(); } catch(e){} voiceCtx = null; }
+  }
+
+  // ---------- Chat Panel UI ----------
+  function renderChatPanel(){
+    if (appMode !== "multiplayer") return null;
+    if (gameState.screen === "card") return null; // anti-leak: no chat while viewing your secret card
+
+    const titles = {
+      lobby: "Lobby",
+      discuss: "Discussion",
+      vote: "Voting",
+      voteTie: "Tie Break",
+      roundResult: "Round Result",
+      results: "Results"
+    };
+    const title = titles[gameState.screen] || "Game";
+
+    const box = el("div", {class:"chat-box"});
+
+    // Header row: title + voice controls
+    const head = el("div", {class:"chat-head"});
+    head.appendChild(el("div", {class:"chat-title"}, [document.createTextNode("💬 " + title + " Chat")]));
+
+    const vbar = el("div", {style:"display:flex; align-items:center; gap:6px;"});
+    vbar.appendChild(el("button", {
+      class:"chat-voice-toggle speaker",
+      title: speakerOn ? "Speakers on — tap to mute" : "Speakers muted — tap to unmute",
+      onclick: () => {
+        speakerOn = !speakerOn;
+        for (const pid in remoteAudioEls){
+          try { remoteAudioEls[pid].volume = speakerOn ? 1 : 0; } catch(e){}
+        }
+        render();
+      }
+    }, [document.createTextNode(speakerOn ? "🔊" : "🔇")]));
+    vbar.appendChild(el("button", {
+      class:"chat-voice-toggle" + (voiceUiOn ? " on" : ""),
+      title: voiceUiOn ? "Mic is live — tap to mute" : "Mic is off — tap to unmute",
+      onclick: () => armMic(!voiceUiOn)
+    }, [document.createTextNode("🎤 " + (voiceUiOn ? "On" : "Off"))]));
+    head.appendChild(vbar);
+    box.appendChild(head);
+
+    // Live mic chips (who is talking)
+    let anyVoice = false;
+    const chips = el("div", {class:"voice-chips"});
+    gameState.players.forEach(p => {
+      if (p.online === false) return;
+      const on = voiceStates[p.id] === true;
+      const iAm = p.id === myPlayerId;
+      if (!on && !voiceUiOn) return;
+      anyVoice = true;
+      const speaking = voiceSpeaking[playerPeerId(p)] === true;
+      const chip = el("div", {class:"voice-chip" + (speaking ? " speaking" : "") + (iAm || on ? " mic-on" : "")}, [
+        document.createTextNode(p.avatar + " " + (p.name || "?") + (iAm ? " (You)" : ""))
+      ]);
+      if (speaking) chip.appendChild(el("span", {class:"speak-dot"}));
+      chips.appendChild(chip);
+    });
+    if (!anyVoice){
+      chips.appendChild(el("div", {class:"chat-empty"}, [
+        document.createTextNode("No one on mic yet. Tap 🎤 Off to start talking.")
+      ]));
+    }
+    box.appendChild(chips);
+
+    // Messages
+    const msgs = el("div", {
+      class:"chat-msgs",
+      onscroll: (e) => {
+        const el = e.target;
+        const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 16;
+        chatScrollSticky = nearBottom;
+        if (!nearBottom) chatScrollTop = el.scrollTop;
+      }
+    });
+    if (chatMessages.length === 0){
+      msgs.appendChild(el("div", {class:"chat-empty"}, [document.createTextNode("No messages yet. Say hi! 👋")]));
+    } else {
+      chatMessages.forEach(m => {
+        const row = el("div", {class:"chat-msg" + (m.sys ? " sys" : "")});
+        row.appendChild(el("span", {class:"chat-avatar"}, [document.createTextNode(m.avatar || "👤")]));
+        const body = el("div", {class:"chat-body"});
+        body.appendChild(el("div", {class:"chat-name" + (m.playerId === myPlayerId ? " me" : "")}, [
+          document.createTextNode(m.playerName || "Player")
+        ]));
+        body.appendChild(el("div", {class:"chat-text"}, [document.createTextNode(m.text)]));
+        row.appendChild(body);
+        msgs.appendChild(row);
+      });
+    }
+    box.appendChild(msgs);
+
+    // Input row
+    const inputRow = el("div", {class:"chat-input-row"});
+    const input = el("input", {
+      type:"text",
+      placeholder:"Type a message…",
+      maxlength:"300",
+      autocomplete:"off",
+      oninput: (e) => { chatDraft = e.target.value; },
+      onfocus: () => { chatHasFocus = true; },
+      onblur: () => { chatHasFocus = false; },
+      onkeydown: (e) => { if (e.key === "Enter"){ sendChat(input.value); } }
+    });
+    input.value = chatDraft;
+    if (chatHasFocus){
+      try { input.focus(); input.setSelectionRange(chatDraft.length, chatDraft.length); } catch(e){}
+    }
+    inputRow.appendChild(input);
+    inputRow.appendChild(el("button", {onclick: () => sendChat(input.value)}, [document.createTextNode("Send ➤")]));
+    box.appendChild(inputRow);
+
+    box.appendChild(el("div", {class:"chat-notice"}, [
+      document.createTextNode("Chat is seen by everyone · mics start OFF to avoid echo 🔊")
+    ]));
+
+    // Keep scroll pinned to bottom unless the user scrolled up
+    requestAnimationFrame(() => {
+      if (chatScrollSticky) msgs.scrollTop = msgs.scrollHeight;
+      else msgs.scrollTop = chatScrollTop || 0;
+    });
+
+    return box;
   }
 
   // ==========================================
@@ -2498,6 +3138,14 @@
       else if (gameState.screen === "results") renderMultiplayerResults(app);
     }
 
+    // Keep voice state in sync (auto-mute during private card reveal) and show chat
+    if (appMode === "multiplayer"){
+      applyVoiceMute();
+      reconcileVoiceMesh();
+      const chatPanel = renderChatPanel();
+      if (chatPanel) app.appendChild(chatPanel);
+    }
+
     // Render modals
     const emojiModal = renderEmojiModal();
     if (emojiModal) app.appendChild(emojiModal);
@@ -2517,6 +3165,7 @@
     if (timerInterval) clearInterval(timerInterval);
     if (peer) { try { peer.destroy(); } catch(e){} }
     clientConns.clear();
+    teardownComms();
     appMode = "menu";
     roomCode = "";
     isHost = false;
@@ -2845,6 +3494,12 @@
         document.createTextNode("✓ You are ready! Waiting for other players...")
       ]);
       screen.appendChild(readyBanner);
+    }
+
+    if (voiceUiOn){
+      screen.appendChild(el("div", {class:"chat-notice warn"}, [
+        document.createTextNode("🎙 Voice is auto-muted while you view your secret card. It resumes when discussion starts.")
+      ]));
     }
 
     // Ready progress among active alive players
