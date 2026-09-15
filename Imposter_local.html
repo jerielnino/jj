@@ -57,6 +57,15 @@
     padding-bottom:calc(40px + env(safe-area-inset-bottom));
     padding-left:14px;
   }
+  /* Games/menus render into this sub-container, which render() clears each time.
+     The chat panel sits NEXT to it (direct child of #app) and is never cleared,
+     so a focused input survives every re-render. */
+  #screen{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
   h1{
     font-size:1.6rem;
     text-align:center;
@@ -1141,7 +1150,9 @@
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app">
+  <div id="screen"></div>
+</div>
 
 <script>
 (function(){
@@ -1588,8 +1599,9 @@
   let chatScrollTop = 0;
   let kbPx = 0;               // cached height covered by the on-screen keyboard (visual viewport)
   let chatBoxEl = null;       // live reference to the chat panel so it can be repositioned without a re-render
-  let chatPanelEl = null;     // persistent chat panel — detached & re-attached, never rebuilt
+  let chatPanelEl = null;     // persistent chat panel — direct child of #app, never cleared by render()
   let chatInputEl = null;     // persistent input element (never destroyed across renders)
+  let appFooterEl = null;     // persistent footer (appended after the chat panel each render)
   let adminOpen = true;       // host admin section open/closed
   let voiceStates = {};       // { [playerId]: mic-on }
   let voiceUiOn = false;      // local user's mic preference
@@ -2882,7 +2894,14 @@
   }
 
   function renderChatPanel(){
-    if (appMode !== "multiplayer" || gameState.screen === "card") return null; // anti-leak: no chat while viewing your secret card
+    if (appMode !== "multiplayer" || gameState.screen === "card"){
+      // anti-leak: no chat while viewing your secret card. The panel is a persistent child
+      // of #app, so when chat isn't shown we MUST detach it explicitly (the focused input
+      // being removed is fine here — the user left the chat context anyway).
+      if (chatPanelEl && chatPanelEl.parentNode) chatPanelEl.parentNode.removeChild(chatPanelEl);
+      chatPanelEl = null;
+      return null;
+    }
 
     const titles = {
       lobby: "Lobby",
@@ -2906,7 +2925,36 @@
       box.appendChild(el("div", {class:"ch-chip-slot"}));
       box.appendChild(el("div", {class:"ch-msgs-slot"}));
       box.appendChild(el("div", {class:"ch-admin-slot"}));
-      box.appendChild(el("div", {class:"ch-input-slot"}));
+      box.appendChild(el("div", {class:"ch-pause-slot"}));
+      // Persistent input row: built ONCE here and never removed from the DOM afterwards.
+      // Renders only toggle its visibility and value, so a focused <input> is never
+      // detached — no blur, no IME re-initialization — and the keyboard's suggestion bar
+      // stays out of the way of the text you're typing.
+      const inputRow = el("div", {class:"chat-input-row"});
+      if (!chatInputEl){
+        chatInputEl = el("input", {
+          type:"text",
+          placeholder:"Type a message…",
+          maxlength:"300",
+          oninput: (e) => { chatDraft = e.target.value; },
+          // NOTE: never call render() from focus handlers — the panel is DOM-persistent
+          // now, but rebuilding mid-focus still disturbs the mobile keyboard.
+          onfocus: () => { chatHasFocus = true; setTimeout(refreshChatDock, 150); },
+          onblur: () => { chatHasFocus = false; setTimeout(refreshChatDock, 250); },
+          onkeydown: (e) => { if (e.key === "Enter"){ sendChat(chatInputEl.value); } }
+        });
+        // Kill the on-screen suggestion / quick-type bar so it can't sit over the text
+        chatInputEl.setAttribute("autocomplete", "off");
+        chatInputEl.setAttribute("autocorrect", "off");
+        chatInputEl.setAttribute("autocapitalize", "off");
+        chatInputEl.setAttribute("spellcheck", "false");
+        chatInputEl.setAttribute("inputmode", "text");
+        chatInputEl.setAttribute("enterkeyhint", "send");
+      }
+      chatInputEl.value = chatDraft;
+      inputRow.appendChild(chatInputEl);
+      inputRow.appendChild(el("button", {onclick: () => sendChat(chatInputEl.value)}, [document.createTextNode("Send ➤")]));
+      box.appendChild(inputRow);
       box.appendChild(el("div", {class:"ch-note-slot"}));
     }
     chatBoxEl = box;
@@ -3063,50 +3111,29 @@
       }
     }
 
-    // Input row — hidden/replaced when chat is paused or I am blocked by the host.
-    // The <input> itself is created once and only re-attached, never recreated, so the
-    // mobile IME keeps its state across message sends.
+    // Input row — the SAME row persists across renders; we only toggle its visibility when
+    // chat is paused or I am blocked. Never re-parent the <input> while the user is typing:
+    // detaching it fires blur, which makes the mobile keyboard's suggestion bar jump over
+    // the text being composed.
     {
-      const slot = box.querySelector(".ch-input-slot");
       const chatPaused = gameState.chatEnabled === false;
       const chatBlockedMe = gameState.hostMuteChat && gameState.hostMuteChat[myPlayerId];
+      const inputRow = box.querySelector(".chat-input-row");
+      if (inputRow && chatInputEl){
+        chatInputEl.value = chatDraft;
+        inputRow.style.display = (chatPaused || chatBlockedMe) ? "none" : "";
+      }
+      const pauseSlot = box.querySelector(".ch-pause-slot");
       if (chatPaused){
-        setSlot(slot, el("div", {class:"chat-notice warn"}, [
+        setSlot(pauseSlot, el("div", {class:"chat-notice warn"}, [
           document.createTextNode("💬 Chat is paused by the host.")
         ]));
       } else if (chatBlockedMe){
-        setSlot(slot, el("div", {class:"chat-notice warn"}, [
+        setSlot(pauseSlot, el("div", {class:"chat-notice warn"}, [
           document.createTextNode("💬 You were muted from chat by the host.")
         ]));
       } else {
-        const inputRow = el("div", {class:"chat-input-row"});
-        if (!chatInputEl){
-          chatInputEl = el("input", {
-            type:"text",
-            placeholder:"Type a message…",
-            maxlength:"300",
-            oninput: (e) => { chatDraft = e.target.value; },
-            // NOTE: never call render() from focus handlers — the panel is DOM-persistent
-            // now, but rebuilding mid-focus still disturbs the mobile keyboard.
-            onfocus: () => { chatHasFocus = true; setTimeout(refreshChatDock, 150); },
-            onblur: () => { chatHasFocus = false; setTimeout(refreshChatDock, 250); },
-            onkeydown: (e) => { if (e.key === "Enter"){ sendChat(chatInputEl.value); } }
-          });
-          // Kill the on-screen suggestion / quick-type bar so it can't sit over the text
-          chatInputEl.setAttribute("autocomplete", "off");
-          chatInputEl.setAttribute("autocorrect", "off");
-          chatInputEl.setAttribute("autocapitalize", "off");
-          chatInputEl.setAttribute("spellcheck", "false");
-          chatInputEl.setAttribute("inputmode", "text");
-          chatInputEl.setAttribute("enterkeyhint", "send");
-        }
-        chatInputEl.value = chatDraft;
-        inputRow.appendChild(chatInputEl);
-        inputRow.appendChild(el("button", {onclick: () => sendChat(chatInputEl.value)}, [document.createTextNode("Send ➤")]));
-        setSlot(slot, inputRow);
-        if (chatHasFocus){
-          try { chatInputEl.focus(); chatInputEl.setSelectionRange(chatDraft.length, chatDraft.length); } catch(e){}
-        }
+        setSlot(pauseSlot, null);
       }
     }
 
@@ -3503,24 +3530,24 @@
   // ==========================================
   function render(){
     const app = document.getElementById("app");
-    // Detach the live chat panel (if any) BEFORE clearing the app. Its DOM — including
-    // the focused chat <input> — is re-attached in place by renderChatPanel(), so the
-    // mobile IME never sees the input destroyed/recreated and stays put.
-    if (chatPanelEl && chatPanelEl.parentNode === app) app.removeChild(chatPanelEl);
-    app.innerHTML = "";
+    const screen = document.getElementById("screen");
+    // The chat panel and footer live directly under #app and are NEVER cleared here, so a
+    // focused chat <input> keeps its DOM identity (and the mobile IME keeps its state)
+    // across every render. Only the game/menu content inside #screen is rebuilt.
+    screen.innerHTML = "";
 
     // App Header
     const h1 = el("h1", {}, [
       el("img", {class:"header-icon", src:MASCOT_IMG, alt:"Icon"}),
       document.createTextNode("Imposter")
     ]);
-    app.appendChild(h1);
-    app.appendChild(el("div", {class:"subtitle"}, [document.createTextNode("Multiplayer LAN / Web Party Game")]));
+    screen.appendChild(h1);
+    screen.appendChild(el("div", {class:"subtitle"}, [document.createTextNode("Multiplayer LAN / Web Party Game")]));
 
     // Top Bar if in room
     if (appMode === "multiplayer" && roomCode){
       const topBar = el("div", {class:"top-bar"});
-      
+
       const netBadge = el("div", {class:"net-badge " + (netStatus === "connected" ? "online" : netStatus === "connecting" ? "connecting" : "error")}, [
         el("div", {class:"dot"}),
         document.createTextNode(roomCode + " · " + (isHost ? "Host" : "Player"))
@@ -3554,36 +3581,44 @@
       rightControls.appendChild(el("button", {onclick: () => exitToMenu(true)}, [document.createTextNode("✕ Leave")]));
       topBar.appendChild(rightControls);
 
-      app.appendChild(topBar);
+      screen.appendChild(topBar);
     }
 
-    if (appMode === "menu") renderMenu(app);
+    if (appMode === "menu") renderMenu(screen);
     else if (appMode === "multiplayer"){
-      if (gameState.screen === "lobby") renderLobby(app);
-      else if (gameState.screen === "card") renderMultiplayerCard(app);
-      else if (gameState.screen === "discuss") renderMultiplayerDiscuss(app);
-      else if (gameState.screen === "vote") renderMultiplayerVote(app);
-      else if (gameState.screen === "voteTie") renderMultiplayerVoteTie(app);
-      else if (gameState.screen === "roundResult") renderMultiplayerRoundResult(app);
-      else if (gameState.screen === "results") renderMultiplayerResults(app);
+      if (gameState.screen === "lobby") renderLobby(screen);
+      else if (gameState.screen === "card") renderMultiplayerCard(screen);
+      else if (gameState.screen === "discuss") renderMultiplayerDiscuss(screen);
+      else if (gameState.screen === "vote") renderMultiplayerVote(screen);
+      else if (gameState.screen === "voteTie") renderMultiplayerVoteTie(screen);
+      else if (gameState.screen === "roundResult") renderMultiplayerRoundResult(screen);
+      else if (gameState.screen === "results") renderMultiplayerResults(screen);
     }
 
-    // Keep voice state in sync (auto-mute during private card reveal) and show chat
+    // Keep voice state in sync (auto-mute during private card reveal) and show chat.
+    // renderChatPanel() returns null (and detaches any stale panel) whenever chat
+    // shouldn't be shown — menu, or the secret-card reveal — so calling it on every
+    // render keeps the persistent panel from lingering after leaving a room.
     if (appMode === "multiplayer"){
       applyVoiceMute();
       reconcileVoiceMesh();
-      const chatPanel = renderChatPanel();
-      if (chatPanel) app.appendChild(chatPanel);
     }
+    const chatPanel = renderChatPanel();
+    // Persistent child of #app (never cleared), so the focused input survives renders
+    if (chatPanel) app.appendChild(chatPanel);
 
     // Render modals
     const emojiModal = renderEmojiModal();
-    if (emojiModal) app.appendChild(emojiModal);
+    if (emojiModal) screen.appendChild(emojiModal);
 
     const scoreModal = renderScoreModal();
-    if (scoreModal) app.appendChild(scoreModal);
+    if (scoreModal) screen.appendChild(scoreModal);
 
-    app.appendChild(el("footer", {}, [document.createTextNode("Imposter · Kerala Themed Multiplayer & Offline Game")]));
+    // Footer — persistent too, appended after the chat panel to preserve visual order
+    if (!appFooterEl){
+      appFooterEl = el("footer", {}, [document.createTextNode("Imposter · Kerala Themed Multiplayer & Offline Game")]);
+    }
+    app.appendChild(appFooterEl);
   }
 
   function exitToMenu(confirmFirst){
