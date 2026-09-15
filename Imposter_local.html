@@ -2853,17 +2853,40 @@
     return 0;
   }
 
-  // Reposition the EXISTING chat box over the keyboard without rebuilding its DOM,
-  // so the focused text input is never destroyed (which would dismiss the keyboard).
+  // Keep the chat input visible above the on-screen keyboard while it's focused.
+  // NOTE: we deliberately avoid position:fixed + visualViewport math — on several Android
+  // builds it reports ~0 offset, so a fixed chat box ends up UNDER the keyboard's
+  // suggestion/toolbar bar and the input disappears. Instead we let the browser scroll the
+  // focused input natively (it already accounts for the IME and its suggestion bar), then
+  // verify and nudge so the input always clears the keyboard.
   function applyDock(el, docked){
     if (!el) return;
-    if (docked){
-      el.classList.add("docked");
-      el.style.bottom = kbBarrierHeight() + "px";
-    } else {
-      el.classList.remove("docked");
-      el.style.bottom = "";
-    }
+    if (docked) keepChatInputVisible();
+  }
+
+  function keepChatInputVisible(){
+    if (!chatInputEl || !chatInputEl.isConnected) return;
+    if (chatInputEl.style.display === "none") return;
+    try { chatInputEl.scrollIntoView({block:"end"}); }
+    catch(e){ try { chatInputEl.scrollIntoView(false); } catch(_){} }
+    const vv = window.visualViewport;
+    if (!vv || !isTouchDevice()) return;
+    // Keyboard actually open? Two viewport models: (A) layout viewport unchanged and the
+    // keyboard overlaps it, or (B) the layout viewport shrank itself to the keyboard top.
+    const keyboardOpen =
+      (vv.height < window.innerHeight - 24) ||
+      (window.innerHeight < window.screen.height - 120);
+    if (!keyboardOpen) return;
+    requestAnimationFrame(() => {
+      try {
+        const r = chatInputEl.getBoundingClientRect();
+        // Reserve room so the IME suggestion/toolbar strip can never cover the input.
+        const reserve = Math.min(56, Math.max(24, vv.height * 0.12));
+        if (r.bottom > (vv.height - reserve) || r.top < 0){
+          window.scrollBy(0, Math.round((r.bottom - vv.height) + reserve));
+        }
+      } catch(_){}
+    });
   }
 
   function refreshChatDock(){
@@ -2959,10 +2982,9 @@
     }
     chatBoxEl = box;
 
-    // Dock the whole chat panel above the on-screen keyboard while its input is focused (mobile only)
-    const docked = !!(chatHasFocus && isTouchDevice());
-    box.classList.toggle("docked", docked);
-    applyDock(box, docked);
+    // On mobile, keep the focused chat input visible above the on-screen keyboard (native
+    // scroll-into-view, no fixed positioning — see keepChatInputVisible above).
+    applyDock(box, !!(chatHasFocus && isTouchDevice()));
 
     // Header row: title + voice controls
     {
@@ -3152,6 +3174,10 @@
         }
       });
     }
+
+    // If the user is typing, make sure the message list growing didn't push the input
+    // under the keyboard — re-align it after this render settles.
+    if (chatHasFocus) keepChatInputVisible();
 
     return box;
   }
