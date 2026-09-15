@@ -1047,71 +1047,97 @@
     border-color:rgba(255,255,255,.25);
     color:var(--cream);
   }
-  /* Host (admin) moderation strip */
+  /* Host (admin) moderation strip — compact, collapsible */
   .chat-admin{
-    padding:8px 12px 10px;
+    padding:6px 10px 8px;
     border-top:1px solid rgba(255,255,255,.1);
     background:rgba(9,132,227,.08);
   }
+  .chat-admin-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:4px;
+  }
   .chat-admin-title{
-    font-size:.72rem;
-    opacity:.75;
-    margin-bottom:6px;
+    font-size:.68rem;
+    opacity:.7;
     text-transform:uppercase;
     letter-spacing:1px;
     color:var(--cyan);
+    margin:0;
   }
+  .chat-admin-toggle{
+    font-size:.9rem;
+    background:none;
+    border:none;
+    color:var(--cyan);
+    opacity:.8;
+    cursor:pointer;
+    padding:0 4px;
+  }
+  .chat-admin-toggle:active{ transform:scale(.9); }
+  .chat-admin-inner{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .chat-admin-inner.closed{ display:none; }
   .chat-admin-actions{
     display:flex;
-    gap:6px;
+    gap:4px;
     flex-wrap:wrap;
-    margin-bottom:6px;
   }
   .chat-admin-actions button{
-    padding:5px 10px;
-    border-radius:14px;
-    border:1px solid rgba(255,255,255,.25);
-    background:rgba(255,255,255,.06);
+    padding:4px 8px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.05);
     color:var(--cream);
-    font-size:.74rem;
+    font-size:.7rem;
     cursor:pointer;
   }
-  .chat-admin-actions button:active{ transform:scale(.96); background:rgba(255,255,255,.14); }
+  .chat-admin-actions button:active{ transform:scale(.94); background:rgba(255,255,255,.12); }
   .chat-admin-actions button.red{ border-color:var(--danger); color:var(--danger); }
   .chat-admin-players{
-    max-height:118px;
+    max-height:90px;
     overflow-y:auto;
     overflow-x:hidden;
     display:flex;
     flex-direction:column;
-    gap:5px;
+    gap:3px;
   }
   .chat-admin-row{
     display:flex;
     align-items:center;
-    gap:8px;
-    font-size:.8rem;
+    gap:5px;
+    font-size:.76rem;
   }
   .chat-admin-row .nm{
     flex:1;
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
-    opacity:.95;
+    opacity:.9;
   }
   .chat-admin-row button{
     border:none;
-    background:rgba(255,255,255,.08);
+    background:rgba(255,255,255,.07);
     color:var(--cream);
-    border-radius:10px;
-    font-size:.9rem;
-    padding:4px 7px;
+    border-radius:8px;
+    font-size:.85rem;
+    padding:3px 6px;
     cursor:pointer;
     line-height:1;
   }
   .chat-admin-row button.on{ background:var(--danger); }
   .chat-admin-row button.offok{ background:var(--success); }
-  .chat-admin-row button:active{ transform:scale(.92); }
+  .chat-admin-row button:active{ transform:scale(.9); }
+  /* Keep the focused input visually stable when the IME suggestion bar appears */
+  .chat-input-row input{
+    -webkit-text-security:none !important;
+  }
 </style>
 </head>
 <body>
@@ -1562,6 +1588,9 @@
   let chatScrollTop = 0;
   let kbPx = 0;               // cached height covered by the on-screen keyboard (visual viewport)
   let chatBoxEl = null;       // live reference to the chat panel so it can be repositioned without a re-render
+  let chatPanelEl = null;     // persistent chat panel — detached & re-attached, never rebuilt
+  let chatInputEl = null;     // persistent input element (never destroyed across renders)
+  let adminOpen = true;       // host admin section open/closed
   let voiceStates = {};       // { [playerId]: mic-on }
   let voiceUiOn = false;      // local user's mic preference
   let voiceStream = null;     // local getUserMedia stream (kept once armed)
@@ -2845,9 +2874,15 @@
   window.addEventListener("resize", updateKbBarrier);
 
   // ---------- Chat Panel UI ----------
+  // Swap the *content* of a persistent panel section without remaking the container,
+  // so the focused <input> (in the input slot) keeps its identity across renders.
+  function setSlot(slot, content){
+    slot.innerHTML = "";
+    if (content) slot.appendChild(content);
+  }
+
   function renderChatPanel(){
-    if (appMode !== "multiplayer") return null;
-    if (gameState.screen === "card") return null; // anti-leak: no chat while viewing your secret card
+    if (appMode !== "multiplayer" || gameState.screen === "card") return null; // anti-leak: no chat while viewing your secret card
 
     const titles = {
       lobby: "Lobby",
@@ -2859,172 +2894,237 @@
     };
     const title = titles[gameState.screen] || "Game";
 
-    // Dock the whole chat panel above the on-screen keyboard while its input is focused (mobile only)
-    const docked = chatHasFocus && isTouchDevice();
-    const box = el("div", {class:"chat-box" + (docked ? " docked" : "")});
+    // DOM-persistent panel: the skeleton is built ONCE; later renders only swap the
+    // (unfocused) inner sections. The <input> in the input slot survives every render,
+    // so on mobile the IME never re-initializes and its suggestion bar stays out of the
+    // way of the text you're typing.
+    let box = chatPanelEl;
+    if (!box){
+      box = el("div", {class:"chat-box"});
+      chatPanelEl = box;
+      box.appendChild(el("div", {class:"ch-head-slot"}));
+      box.appendChild(el("div", {class:"ch-chip-slot"}));
+      box.appendChild(el("div", {class:"ch-msgs-slot"}));
+      box.appendChild(el("div", {class:"ch-admin-slot"}));
+      box.appendChild(el("div", {class:"ch-input-slot"}));
+      box.appendChild(el("div", {class:"ch-note-slot"}));
+    }
     chatBoxEl = box;
+
+    // Dock the whole chat panel above the on-screen keyboard while its input is focused (mobile only)
+    const docked = !!(chatHasFocus && isTouchDevice());
+    box.classList.toggle("docked", docked);
     applyDock(box, docked);
 
     // Header row: title + voice controls
-    const head = el("div", {class:"chat-head"});
-    head.appendChild(el("div", {class:"chat-title"}, [document.createTextNode("💬 " + title + " Chat")]));
+    {
+      const slot = box.querySelector(".ch-head-slot");
+      const head = el("div", {class:"chat-head"});
+      head.appendChild(el("div", {class:"chat-title"}, [document.createTextNode("💬 " + title + " Chat")]));
 
-    const vbar = el("div", {style:"display:flex; align-items:center; gap:6px;"});
-    vbar.appendChild(el("button", {
-      class:"chat-voice-toggle speaker",
-      title: speakerOn ? "Speakers on — tap to mute" : "Speakers muted — tap to unmute",
-      onclick: () => {
-        speakerOn = !speakerOn;
-        for (const pid in remoteAudioEls){
-          try { remoteAudioEls[pid].volume = speakerOn ? 1 : 0; } catch(e){}
+      const vbar = el("div", {style:"display:flex; align-items:center; gap:6px;"});
+      vbar.appendChild(el("button", {
+        class:"chat-voice-toggle speaker",
+        title: speakerOn ? "Speakers on — tap to mute" : "Speakers muted — tap to unmute",
+        onclick: () => {
+          speakerOn = !speakerOn;
+          for (const pid in remoteAudioEls){
+            try { remoteAudioEls[pid].volume = speakerOn ? 1 : 0; } catch(e){}
+          }
+          render();
         }
-        render();
-      }
-    }, [document.createTextNode(speakerOn ? "🔊" : "🔇")]));
-    const hostMicMuted = gameState.hostMuteMic && gameState.hostMuteMic[myPlayerId];
-    vbar.appendChild(el("button", {
-      class:"chat-voice-toggle" + (hostMicMuted ? " muted" : (voiceUiOn ? " on" : "")),
-      title: hostMicMuted ? "Your mic is muted by the host" : (voiceUiOn ? "Mic is live — tap to mute" : "Mic is off — tap to unmute"),
-      onclick: () => armMic(!voiceUiOn)
-    }, [document.createTextNode("🎤 " + (hostMicMuted ? "Host" : (voiceUiOn ? "On" : "Off")))]));
-    head.appendChild(vbar);
-    box.appendChild(head);
+      }, [document.createTextNode(speakerOn ? "🔊" : "🔇")]));
+      const hostMicMuted = gameState.hostMuteMic && gameState.hostMuteMic[myPlayerId];
+      vbar.appendChild(el("button", {
+        class:"chat-voice-toggle" + (hostMicMuted ? " muted" : (voiceUiOn ? " on" : "")),
+        title: hostMicMuted ? "Your mic is muted by the host" : (voiceUiOn ? "Mic is live — tap to mute" : "Mic is off — tap to unmute"),
+        onclick: () => armMic(!voiceUiOn)
+      }, [document.createTextNode("🎤 " + (hostMicMuted ? "Host" : (voiceUiOn ? "On" : "Off")))]));
+      head.appendChild(vbar);
+      setSlot(slot, head);
+    }
 
     // Live mic chips (who is talking)
-    let anyVoice = false;
-    const chips = el("div", {class:"voice-chips"});
-    gameState.players.forEach(p => {
-      if (p.online === false) return;
-      const on = voiceStates[p.id] === true;
-      const iAm = p.id === myPlayerId;
-      if (!on && !voiceUiOn) return;
-      anyVoice = true;
-      const speaking = voiceSpeaking[playerPeerId(p)] === true;
-      const chip = el("div", {class:"voice-chip" + (speaking ? " speaking" : "") + (iAm || on ? " mic-on" : "")}, [
-        document.createTextNode(p.avatar + " " + (p.name || "?") + (iAm ? " (You)" : ""))
-      ]);
-      if (speaking) chip.appendChild(el("span", {class:"speak-dot"}));
-      chips.appendChild(chip);
-    });
-    if (!anyVoice){
-      chips.appendChild(el("div", {class:"chat-empty"}, [
-        document.createTextNode("No one on mic yet. Tap 🎤 Off to start talking.")
-      ]));
+    {
+      const slot = box.querySelector(".ch-chip-slot");
+      const chips = el("div", {class:"voice-chips"});
+      let anyVoice = false;
+      gameState.players.forEach(p => {
+        if (p.online === false) return;
+        const on = voiceStates[p.id] === true;
+        const iAm = p.id === myPlayerId;
+        if (!on && !voiceUiOn) return;
+        anyVoice = true;
+        const speaking = voiceSpeaking[playerPeerId(p)] === true;
+        const chip = el("div", {class:"voice-chip" + (speaking ? " speaking" : "") + (iAm || on ? " mic-on" : "")}, [
+          document.createTextNode(p.avatar + " " + (p.name || "?") + (iAm ? " (You)" : ""))
+        ]);
+        if (speaking) chip.appendChild(el("span", {class:"speak-dot"}));
+        chips.appendChild(chip);
+      });
+      if (!anyVoice){
+        chips.appendChild(el("div", {class:"chat-empty"}, [
+          document.createTextNode("No one on mic yet. Tap 🎤 Off to start talking.")
+        ]));
+      }
+      setSlot(slot, chips);
     }
-    box.appendChild(chips);
 
     // Messages
-    const msgs = el("div", {
-      class:"chat-msgs",
-      onscroll: (e) => {
-        const el = e.target;
-        const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 16;
+    {
+      const slot = box.querySelector(".ch-msgs-slot");
+      const list = el("div", {class:"chat-msgs"});
+      list.addEventListener("scroll", () => {
+        const nearBottom = list.scrollTop + list.clientHeight >= list.scrollHeight - 16;
         chatScrollSticky = nearBottom;
-        if (!nearBottom) chatScrollTop = el.scrollTop;
+        if (!nearBottom) chatScrollTop = list.scrollTop;
+      });
+      if (chatMessages.length === 0){
+        list.appendChild(el("div", {class:"chat-empty"}, [document.createTextNode("No messages yet. Say hi! 👋")]));
+      } else {
+        chatMessages.forEach(m => {
+          const row = el("div", {class:"chat-msg" + (m.sys ? " sys" : "")});
+          row.appendChild(el("span", {class:"chat-avatar"}, [document.createTextNode(m.avatar || "👤")]));
+          const body = el("div", {class:"chat-body"});
+          body.appendChild(el("div", {class:"chat-name" + (m.playerId === myPlayerId ? " me" : "")}, [
+            document.createTextNode(m.playerName || "Player")
+          ]));
+          body.appendChild(el("div", {class:"chat-text"}, [document.createTextNode(m.text)]));
+          row.appendChild(body);
+          list.appendChild(row);
+        });
       }
-    });
-    if (chatMessages.length === 0){
-      msgs.appendChild(el("div", {class:"chat-empty"}, [document.createTextNode("No messages yet. Say hi! 👋")]));
-    } else {
-      chatMessages.forEach(m => {
-        const row = el("div", {class:"chat-msg" + (m.sys ? " sys" : "")});
-        row.appendChild(el("span", {class:"chat-avatar"}, [document.createTextNode(m.avatar || "👤")]));
-        const body = el("div", {class:"chat-body"});
-        body.appendChild(el("div", {class:"chat-name" + (m.playerId === myPlayerId ? " me" : "")}, [
-          document.createTextNode(m.playerName || "Player")
-        ]));
-        body.appendChild(el("div", {class:"chat-text"}, [document.createTextNode(m.text)]));
-        row.appendChild(body);
-        msgs.appendChild(row);
-      });
-    }
-    box.appendChild(msgs);
-
-    // Host admin strip — mute mics, block chat, clear/pause everything
-    if (isHost){
-      const admin = el("div", {class:"chat-admin"});
-      admin.appendChild(el("div", {class:"chat-admin-title"}, [document.createTextNode("🛠 Host Controls")]));
-
-      const actions = el("div", {class:"chat-admin-actions"});
-      actions.appendChild(el("button", {onclick: () => hostSetAll("mic", true)}, [document.createTextNode("🔇 Mute All Mics")]));
-      actions.appendChild(el("button", {onclick: () => hostSetAll("mic", false)}, [document.createTextNode("🔊 Unmute Mics")]));
-      actions.appendChild(el("button", {onclick: () => hostSetAll("chat", true)}, [document.createTextNode("⛔ Block All Chat")]));
-      actions.appendChild(el("button", {onclick: () => hostSetAll("chat", false)}, [document.createTextNode("💬 Unblock Chat")]));
-      actions.appendChild(el("button", {class:"red", onclick: hostClearChat}, [document.createTextNode("🗑 Clear Chat")]));
-      actions.appendChild(el("button", {
-        style:"border-color:var(--gold); color:var(--gold);",
-        onclick: hostToggleChatEnabled
-      }, [document.createTextNode(gameState.chatEnabled === false ? "▶ Resume Chat" : "⏸ Pause Chat")]));
-      admin.appendChild(actions);
-
-      const rows = el("div", {class:"chat-admin-players"});
-      gameState.players.forEach(p => {
-        if (p.isHost || p.online === false) return;
-        const micMuted = gameState.hostMuteMic && gameState.hostMuteMic[p.id];
-        const chatMuted = gameState.hostMuteChat && gameState.hostMuteChat[p.id];
-        const row = el("div", {class:"chat-admin-row"});
-        row.appendChild(el("span", {class:"nm"}, [
-          document.createTextNode((p.avatar || "👤") + " " + (p.name || "Player"))
-        ]));
-        row.appendChild(el("button", {
-          class: micMuted ? "on" : "offok",
-          title: "Toggle mic for " + p.name,
-          onclick: () => toggleHostMute("mic", p.id)
-        }, [document.createTextNode(micMuted ? "🔇" : "🎤")]));
-        row.appendChild(el("button", {
-          class: chatMuted ? "on" : "offok",
-          title: "Toggle chat for " + p.name,
-          onclick: () => toggleHostMute("chat", p.id)
-        }, [document.createTextNode(chatMuted ? "⛔" : "💬")]));
-        rows.appendChild(row);
-      });
-      admin.appendChild(rows);
-      box.appendChild(admin);
+      setSlot(slot, list);
     }
 
-    // Input row — hidden/replaced when chat is paused or I am blocked by the host
-    const chatPaused = gameState.chatEnabled === false;
-    const chatBlockedMe = gameState.hostMuteChat && gameState.hostMuteChat[myPlayerId];
-    if (chatPaused){
-      box.appendChild(el("div", {class:"chat-notice warn"}, [
-        document.createTextNode("💬 Chat is paused by the host.")
-      ]));
-    } else if (chatBlockedMe){
-      box.appendChild(el("div", {class:"chat-notice warn"}, [
-        document.createTextNode("💬 You were muted from chat by the host.")
-      ]));
-    } else {
-      const inputRow = el("div", {class:"chat-input-row"});
-      const input = el("input", {
-        type:"text",
-        placeholder:"Type a message…",
-        maxlength:"300",
-        autocomplete:"off",
-        oninput: (e) => { chatDraft = e.target.value; },
-        // NOTE: never call render() from focus handlers — rebuilding the DOM here
-        // destroys the focused input and suppresses the mobile keyboard.
-        onfocus: () => { chatHasFocus = true; setTimeout(refreshChatDock, 150); },
-        onblur: () => { chatHasFocus = false; setTimeout(refreshChatDock, 250); },
-        onkeydown: (e) => { if (e.key === "Enter"){ sendChat(input.value); } }
-      });
-      input.value = chatDraft;
-      if (chatHasFocus){
-        try { input.focus(); input.setSelectionRange(chatDraft.length, chatDraft.length); } catch(e){}
+    // Host admin strip — compact icon chips, collapsible
+    {
+      const slot = box.querySelector(".ch-admin-slot");
+      if (isHost){
+        const admin = el("div", {class:"chat-admin"});
+
+        const header = el("div", {class:"chat-admin-header"});
+        header.appendChild(el("span", {class:"chat-admin-title"}, [document.createTextNode("🛠 Host Controls")]));
+        const toggle = el("button", {
+          class:"chat-admin-toggle",
+          title: adminOpen ? "Collapse host controls" : "Expand host controls",
+          onclick: () => {
+            adminOpen = !adminOpen;
+            const inner = admin.querySelector(".chat-admin-inner");
+            if (inner) inner.classList.toggle("closed", !adminOpen);
+            toggle.textContent = adminOpen ? "▾" : "▸";
+            toggle.title = adminOpen ? "Collapse host controls" : "Expand host controls";
+          }
+        }, [document.createTextNode(adminOpen ? "▾" : "▸")]);
+        header.appendChild(toggle);
+        admin.appendChild(header);
+
+        const inner = el("div", {class:"chat-admin-inner" + (adminOpen ? "" : " closed")});
+
+        const actions = el("div", {class:"chat-admin-actions"});
+        actions.appendChild(el("button", {title:"Mute all mics", onclick: () => hostSetAll("mic", true)}, [document.createTextNode("🔇")]));
+        actions.appendChild(el("button", {title:"Unmute all mics", onclick: () => hostSetAll("mic", false)}, [document.createTextNode("🔊")]));
+        actions.appendChild(el("button", {title:"Block all chat", onclick: () => hostSetAll("chat", true)}, [document.createTextNode("⛔")]));
+        actions.appendChild(el("button", {title:"Unblock all chat", onclick: () => hostSetAll("chat", false)}, [document.createTextNode("💬")]));
+        actions.appendChild(el("button", {class:"red", title:"Clear chat", onclick: hostClearChat}, [document.createTextNode("🗑")]));
+        actions.appendChild(el("button", {
+          style:"border-color:var(--gold); color:var(--gold);",
+          title: gameState.chatEnabled === false ? "Resume chat" : "Pause chat",
+          onclick: hostToggleChatEnabled
+        }, [document.createTextNode(gameState.chatEnabled === false ? "▶" : "⏸")]));
+        inner.appendChild(actions);
+
+        const rows = el("div", {class:"chat-admin-players"});
+        gameState.players.forEach(p => {
+          if (p.isHost || p.online === false) return;
+          const micMuted = gameState.hostMuteMic && gameState.hostMuteMic[p.id];
+          const chatMuted = gameState.hostMuteChat && gameState.hostMuteChat[p.id];
+          const row = el("div", {class:"chat-admin-row"});
+          row.appendChild(el("span", {class:"nm"}, [
+            document.createTextNode((p.avatar || "👤") + " " + (p.name || "Player"))
+          ]));
+          row.appendChild(el("button", {
+            class: micMuted ? "on" : "offok",
+            title: "Toggle mic for " + p.name,
+            onclick: () => toggleHostMute("mic", p.id)
+          }, [document.createTextNode(micMuted ? "🔇" : "🎤")]));
+          row.appendChild(el("button", {
+            class: chatMuted ? "on" : "offok",
+            title: "Toggle chat for " + p.name,
+            onclick: () => toggleHostMute("chat", p.id)
+          }, [document.createTextNode(chatMuted ? "⛔" : "💬")]));
+          rows.appendChild(row);
+        });
+        inner.appendChild(rows);
+        admin.appendChild(inner);
+        setSlot(slot, admin);
+      } else {
+        setSlot(slot, null);
       }
-      inputRow.appendChild(input);
-      inputRow.appendChild(el("button", {onclick: () => sendChat(input.value)}, [document.createTextNode("Send ➤")]));
-      box.appendChild(inputRow);
     }
 
-    box.appendChild(el("div", {class:"chat-notice"}, [
+    // Input row — hidden/replaced when chat is paused or I am blocked by the host.
+    // The <input> itself is created once and only re-attached, never recreated, so the
+    // mobile IME keeps its state across message sends.
+    {
+      const slot = box.querySelector(".ch-input-slot");
+      const chatPaused = gameState.chatEnabled === false;
+      const chatBlockedMe = gameState.hostMuteChat && gameState.hostMuteChat[myPlayerId];
+      if (chatPaused){
+        setSlot(slot, el("div", {class:"chat-notice warn"}, [
+          document.createTextNode("💬 Chat is paused by the host.")
+        ]));
+      } else if (chatBlockedMe){
+        setSlot(slot, el("div", {class:"chat-notice warn"}, [
+          document.createTextNode("💬 You were muted from chat by the host.")
+        ]));
+      } else {
+        const inputRow = el("div", {class:"chat-input-row"});
+        if (!chatInputEl){
+          chatInputEl = el("input", {
+            type:"text",
+            placeholder:"Type a message…",
+            maxlength:"300",
+            oninput: (e) => { chatDraft = e.target.value; },
+            // NOTE: never call render() from focus handlers — the panel is DOM-persistent
+            // now, but rebuilding mid-focus still disturbs the mobile keyboard.
+            onfocus: () => { chatHasFocus = true; setTimeout(refreshChatDock, 150); },
+            onblur: () => { chatHasFocus = false; setTimeout(refreshChatDock, 250); },
+            onkeydown: (e) => { if (e.key === "Enter"){ sendChat(chatInputEl.value); } }
+          });
+          // Kill the on-screen suggestion / quick-type bar so it can't sit over the text
+          chatInputEl.setAttribute("autocomplete", "off");
+          chatInputEl.setAttribute("autocorrect", "off");
+          chatInputEl.setAttribute("autocapitalize", "off");
+          chatInputEl.setAttribute("spellcheck", "false");
+          chatInputEl.setAttribute("inputmode", "text");
+          chatInputEl.setAttribute("enterkeyhint", "send");
+        }
+        chatInputEl.value = chatDraft;
+        inputRow.appendChild(chatInputEl);
+        inputRow.appendChild(el("button", {onclick: () => sendChat(chatInputEl.value)}, [document.createTextNode("Send ➤")]));
+        setSlot(slot, inputRow);
+        if (chatHasFocus){
+          try { chatInputEl.focus(); chatInputEl.setSelectionRange(chatDraft.length, chatDraft.length); } catch(e){}
+        }
+      }
+    }
+
+    setSlot(box.querySelector(".ch-note-slot"), el("div", {class:"chat-notice"}, [
       document.createTextNode("Chat is seen by everyone · mics start OFF to avoid echo 🔊")
     ]));
 
     // Keep scroll pinned to bottom unless the user scrolled up
-    requestAnimationFrame(() => {
-      if (chatScrollSticky) msgs.scrollTop = msgs.scrollHeight;
-      else msgs.scrollTop = chatScrollTop || 0;
-    });
+    {
+      const slot = box.querySelector(".ch-msgs-slot");
+      requestAnimationFrame(() => {
+        const list = slot.firstChild;
+        if (list){
+          if (chatScrollSticky) list.scrollTop = list.scrollHeight;
+          else list.scrollTop = chatScrollTop || 0;
+        }
+      });
+    }
 
     return box;
   }
@@ -3403,6 +3503,10 @@
   // ==========================================
   function render(){
     const app = document.getElementById("app");
+    // Detach the live chat panel (if any) BEFORE clearing the app. Its DOM — including
+    // the focused chat <input> — is re-attached in place by renderChatPanel(), so the
+    // mobile IME never sees the input destroyed/recreated and stays put.
+    if (chatPanelEl && chatPanelEl.parentNode === app) app.removeChild(chatPanelEl);
     app.innerHTML = "";
 
     // App Header
