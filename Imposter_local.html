@@ -998,6 +998,96 @@
     border-radius:12px;
     margin-top:8px;
   }
+  /* Chat docked above the on-screen keyboard while its input is focused */
+  .chat-box.docked{
+    position:fixed;
+    left:50%;
+    transform:translateX(-50%);
+    width:100%;
+    max-width:440px;
+    z-index:60;
+    background:rgba(8,8,8,.97);
+    box-shadow:0 -8px 30px rgba(0,0,0,.65);
+  }
+  .chat-box.docked .chat-msgs{
+    max-height:30vh;
+    min-height:70px;
+  }
+  .chat-box.docked .voice-chips{ max-height:12vh; overflow-y:auto; }
+  .chat-voice-toggle.muted{
+    background:var(--danger);
+    border-color:var(--danger);
+    color:#fff;
+  }
+  .chat-voice-toggle.off{
+    background:rgba(255,255,255,.06);
+    border-color:rgba(255,255,255,.25);
+    color:var(--cream);
+  }
+  /* Host (admin) moderation strip */
+  .chat-admin{
+    padding:8px 12px 10px;
+    border-top:1px solid rgba(255,255,255,.1);
+    background:rgba(9,132,227,.08);
+  }
+  .chat-admin-title{
+    font-size:.72rem;
+    opacity:.75;
+    margin-bottom:6px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--cyan);
+  }
+  .chat-admin-actions{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-bottom:6px;
+  }
+  .chat-admin-actions button{
+    padding:5px 10px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.06);
+    color:var(--cream);
+    font-size:.74rem;
+    cursor:pointer;
+  }
+  .chat-admin-actions button:active{ transform:scale(.96); background:rgba(255,255,255,.14); }
+  .chat-admin-actions button.red{ border-color:var(--danger); color:var(--danger); }
+  .chat-admin-players{
+    max-height:118px;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+  }
+  .chat-admin-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:.8rem;
+  }
+  .chat-admin-row .nm{
+    flex:1;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    opacity:.95;
+  }
+  .chat-admin-row button{
+    border:none;
+    background:rgba(255,255,255,.08);
+    color:var(--cream);
+    border-radius:10px;
+    font-size:.9rem;
+    padding:4px 7px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .chat-admin-row button.on{ background:var(--danger); }
+  .chat-admin-row button.offok{ background:var(--success); }
+  .chat-admin-row button:active{ transform:scale(.92); }
 </style>
 </head>
 <body>
@@ -1419,7 +1509,11 @@
     timerRunning: false,
     voteOutcome: null,
     gameOverReason: null,
-    winner: null
+    winner: null,
+    // Host admin controls (authoritative, broadcast with every state sync)
+    hostMuteMic: {},     // { [playerId]: true }  player's mic force-muted by host
+    hostMuteChat: {},    // { [playerId]: true }  player blocked from sending chat
+    chatEnabled: true    // host can pause all chat text
   };
 
   // Local client's private card data (sent securely from host)
@@ -1442,6 +1536,8 @@
   let chatHasFocus = false;
   let chatScrollSticky = true;
   let chatScrollTop = 0;
+  let kbPx = 0;               // height covered by the on-screen keyboard (visual viewport)
+  let chatWasDocked = false;  // whether the chat box was last rendered docked over the keyboard
   let voiceStates = {};       // { [playerId]: mic-on }
   let voiceUiOn = false;      // local user's mic preference
   let voiceStream = null;     // local getUserMedia stream (kept once armed)
@@ -2200,6 +2296,8 @@
     } else if (data.type === "CAST_VOTE"){
       handlePlayerVote(data.voterId, data.targetId);
     } else if (data.type === "CHAT"){
+      if (gameState.chatEnabled === false) return;
+      if (gameState.hostMuteChat && gameState.hostMuteChat[data.id]) return;
       const sender = gameState.players.find(x => x.id === data.id);
       const msg = data.msg || {};
       appendChat({
@@ -2242,6 +2340,10 @@
       } else {
         myVotedId = null;
       }
+      // Host force-mute is authoritative: who currently on mic must go quiet
+      if (gameState.hostMuteMic && gameState.hostMuteMic[myPlayerId]){
+        forceMicOffLocal();
+      }
       render();
     } else if (data.type === "PRIVATE_CARD"){
       myPrivateCard = data.card;
@@ -2276,6 +2378,13 @@
         reconcileVoiceMesh();
         render();
       }
+    } else if (data.type === "FORCE_MUTE_MIC"){
+      voiceStates[myPlayerId] = false;
+      forceMicOffLocal();
+      render();
+    } else if (data.type === "CHAT_CLEAR"){
+      chatMessages = [];
+      render();
     }
   }
 
@@ -2324,7 +2433,18 @@
 
   function sendChat(raw){
     const text = (raw || "").trim().slice(0, 300);
-    if (!text || appMode !== "multiplayer") return;
+    if (!text) return;
+    if (appMode !== "multiplayer") return;
+    if (gameState.chatEnabled === false){
+      playBeep(200, 'square', 0.1);
+      render(); // shows "chat paused" notice
+      return;
+    }
+    if (gameState.hostMuteChat && gameState.hostMuteChat[myPlayerId]){
+      playBeep(200, 'square', 0.1);
+      render(); // shows "you are muted from chat" notice
+      return;
+    }
     const me = gameState.players.find(p => p.id === myPlayerId);
     const msg = {
       playerId: myPlayerId,
@@ -2378,6 +2498,11 @@
 
   function armMic(on){
     if (appMode !== "multiplayer") return;
+    if (on && gameState.hostMuteMic && gameState.hostMuteMic[myPlayerId]){
+      playBeep(200, 'square', 0.12);
+      render(); // shows the "muted by host" notice
+      return;
+    }
     if (on){
       if (!voiceStream){
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
@@ -2579,6 +2704,105 @@
     if (voiceCtx){ try { voiceCtx.close(); } catch(e){} voiceCtx = null; }
   }
 
+  // ---------- Host Admin (moderation) ----------
+  function toggleHostMute(kind, id){
+    if (!isHost) return;
+    const map = kind === "mic" ? "hostMuteMic" : "hostMuteChat";
+    gameState[map] = gameState[map] || {};
+    gameState[map][id] = !gameState[map][id];
+    // Actively silence the target the moment they are mic-muted
+    if (kind === "mic" && gameState[map][id]){
+      const target = gameState.players.find(p => p.id === id);
+      if (target && !target.isHost && target.connId && clientConns.has(target.connId)){
+        const conn = clientConns.get(target.connId);
+        if (conn && conn.open){
+          try { conn.send({ type: "FORCE_MUTE_MIC" }); } catch(e){}
+        }
+      }
+    }
+    broadcastGameState();
+    render();
+  }
+
+  function hostSetAll(kind, on){
+    if (!isHost) return;
+    const map = kind === "mic" ? "hostMuteMic" : "hostMuteChat";
+    gameState[map] = gameState[map] || {};
+    gameState.players.forEach(p => {
+      if (!p.isHost) gameState[map][p.id] = on;
+    });
+    if (kind === "mic" && on){
+      clientConns.forEach(conn => {
+        if (conn && conn.open){
+          try { conn.send({ type: "FORCE_MUTE_MIC" }); } catch(e){}
+        }
+      });
+    }
+    broadcastGameState();
+    render();
+  }
+
+  function hostClearChat(){
+    if (!isHost) return;
+    chatMessages = [];
+    const payload = { type: "CHAT_CLEAR" };
+    clientConns.forEach(conn => {
+      if (conn && conn.open){
+        try { conn.send(payload); } catch(e){}
+      }
+    });
+    render();
+  }
+
+  function hostToggleChatEnabled(){
+    if (!isHost) return;
+    gameState.chatEnabled = !(gameState.chatEnabled !== false);
+    broadcastGameState();
+    render();
+  }
+
+  // Force my mic off when the host mutes me (keeps stream so I can still hear)
+  function forceMicOffLocal(){
+    if (voiceUiOn){
+      voiceUiOn = false;
+      voiceStates[myPlayerId] = false;
+      applyVoiceMute();
+      notifyVoiceState(false);
+    }
+  }
+
+  // ---------- Mobile keyboard handling (Visual Viewport API) ----------
+  function isTouchDevice(){
+    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  }
+
+  function kbBarrierHeight(){
+    const vv = window.visualViewport;
+    if (vv){
+      // Layout height hidden at the bottom of the screen (keyboard + browser chrome)
+      return Math.max(0, (window.innerHeight) - (vv.offsetTop + vv.height));
+    }
+    return 0;
+  }
+
+  function updateKbBarrier(){
+    const pvv = window.visualViewport;
+    if (pvv){
+      const next = kbBarrierHeight();
+      if (Math.abs(next - kbPx) > 2 && (chatHasFocus || chatWasDocked)){
+        kbPx = next;
+        render();
+      }
+    }
+  }
+
+  // Watch the visual viewport so the chat box floats above the on-screen keyboard
+  if (window.visualViewport){
+    window.visualViewport.addEventListener("resize", updateKbBarrier);
+    window.visualViewport.addEventListener("scroll", updateKbBarrier);
+  }
+  window.addEventListener("resize", updateKbBarrier);
+
   // ---------- Chat Panel UI ----------
   function renderChatPanel(){
     if (appMode !== "multiplayer") return null;
@@ -2594,7 +2818,13 @@
     };
     const title = titles[gameState.screen] || "Game";
 
-    const box = el("div", {class:"chat-box"});
+    // Dock the whole chat panel above the on-screen keyboard while its input is focused (mobile only)
+    const docked = chatHasFocus && isTouchDevice();
+    chatWasDocked = docked;
+    const box = el("div", {
+      class:"chat-box" + (docked ? " docked" : ""),
+      style: docked ? ("position:fixed; bottom:" + kbPx + "px; left:50%; transform:translateX(-50%); width:100%; max-width:440px;") : ""
+    });
 
     // Header row: title + voice controls
     const head = el("div", {class:"chat-head"});
@@ -2612,11 +2842,12 @@
         render();
       }
     }, [document.createTextNode(speakerOn ? "🔊" : "🔇")]));
+    const hostMicMuted = gameState.hostMuteMic && gameState.hostMuteMic[myPlayerId];
     vbar.appendChild(el("button", {
-      class:"chat-voice-toggle" + (voiceUiOn ? " on" : ""),
-      title: voiceUiOn ? "Mic is live — tap to mute" : "Mic is off — tap to unmute",
+      class:"chat-voice-toggle" + (hostMicMuted ? " muted" : (voiceUiOn ? " on" : "")),
+      title: hostMicMuted ? "Your mic is muted by the host" : (voiceUiOn ? "Mic is live — tap to mute" : "Mic is off — tap to unmute"),
       onclick: () => armMic(!voiceUiOn)
-    }, [document.createTextNode("🎤 " + (voiceUiOn ? "On" : "Off"))]));
+    }, [document.createTextNode("🎤 " + (hostMicMuted ? "Host" : (voiceUiOn ? "On" : "Off")))]));
     head.appendChild(vbar);
     box.appendChild(head);
 
@@ -2670,25 +2901,79 @@
     }
     box.appendChild(msgs);
 
-    // Input row
-    const inputRow = el("div", {class:"chat-input-row"});
-    const input = el("input", {
-      type:"text",
-      placeholder:"Type a message…",
-      maxlength:"300",
-      autocomplete:"off",
-      oninput: (e) => { chatDraft = e.target.value; },
-      onfocus: () => { chatHasFocus = true; },
-      onblur: () => { chatHasFocus = false; },
-      onkeydown: (e) => { if (e.key === "Enter"){ sendChat(input.value); } }
-    });
-    input.value = chatDraft;
-    if (chatHasFocus){
-      try { input.focus(); input.setSelectionRange(chatDraft.length, chatDraft.length); } catch(e){}
+    // Host admin strip — mute mics, block chat, clear/pause everything
+    if (isHost){
+      const admin = el("div", {class:"chat-admin"});
+      admin.appendChild(el("div", {class:"chat-admin-title"}, [document.createTextNode("🛠 Host Controls")]));
+
+      const actions = el("div", {class:"chat-admin-actions"});
+      actions.appendChild(el("button", {onclick: () => hostSetAll("mic", true)}, [document.createTextNode("🔇 Mute All Mics")]));
+      actions.appendChild(el("button", {onclick: () => hostSetAll("mic", false)}, [document.createTextNode("🔊 Unmute Mics")]));
+      actions.appendChild(el("button", {onclick: () => hostSetAll("chat", true)}, [document.createTextNode("⛔ Block All Chat")]));
+      actions.appendChild(el("button", {onclick: () => hostSetAll("chat", false)}, [document.createTextNode("💬 Unblock Chat")]));
+      actions.appendChild(el("button", {class:"red", onclick: hostClearChat}, [document.createTextNode("🗑 Clear Chat")]));
+      actions.appendChild(el("button", {
+        style:"border-color:var(--gold); color:var(--gold);",
+        onclick: hostToggleChatEnabled
+      }, [document.createTextNode(gameState.chatEnabled === false ? "▶ Resume Chat" : "⏸ Pause Chat")]));
+      admin.appendChild(actions);
+
+      const rows = el("div", {class:"chat-admin-players"});
+      gameState.players.forEach(p => {
+        if (p.isHost || p.online === false) return;
+        const micMuted = gameState.hostMuteMic && gameState.hostMuteMic[p.id];
+        const chatMuted = gameState.hostMuteChat && gameState.hostMuteChat[p.id];
+        const row = el("div", {class:"chat-admin-row"});
+        row.appendChild(el("span", {class:"nm"}, [
+          document.createTextNode((p.avatar || "👤") + " " + (p.name || "Player"))
+        ]));
+        row.appendChild(el("button", {
+          class: micMuted ? "on" : "offok",
+          title: "Toggle mic for " + p.name,
+          onclick: () => toggleHostMute("mic", p.id)
+        }, [document.createTextNode(micMuted ? "🔇" : "🎤")]));
+        row.appendChild(el("button", {
+          class: chatMuted ? "on" : "offok",
+          title: "Toggle chat for " + p.name,
+          onclick: () => toggleHostMute("chat", p.id)
+        }, [document.createTextNode(chatMuted ? "⛔" : "💬")]));
+        rows.appendChild(row);
+      });
+      admin.appendChild(rows);
+      box.appendChild(admin);
     }
-    inputRow.appendChild(input);
-    inputRow.appendChild(el("button", {onclick: () => sendChat(input.value)}, [document.createTextNode("Send ➤")]));
-    box.appendChild(inputRow);
+
+    // Input row — hidden/replaced when chat is paused or I am blocked by the host
+    const chatPaused = gameState.chatEnabled === false;
+    const chatBlockedMe = gameState.hostMuteChat && gameState.hostMuteChat[myPlayerId];
+    if (chatPaused){
+      box.appendChild(el("div", {class:"chat-notice warn"}, [
+        document.createTextNode("💬 Chat is paused by the host.")
+      ]));
+    } else if (chatBlockedMe){
+      box.appendChild(el("div", {class:"chat-notice warn"}, [
+        document.createTextNode("💬 You were muted from chat by the host.")
+      ]));
+    } else {
+      const inputRow = el("div", {class:"chat-input-row"});
+      const input = el("input", {
+        type:"text",
+        placeholder:"Type a message…",
+        maxlength:"300",
+        autocomplete:"off",
+        oninput: (e) => { chatDraft = e.target.value; },
+        onfocus: () => { chatHasFocus = true; if (!chatWasDocked) render(); },
+        onblur: () => { chatHasFocus = false; },
+        onkeydown: (e) => { if (e.key === "Enter"){ sendChat(input.value); } }
+      });
+      input.value = chatDraft;
+      if (chatHasFocus){
+        try { input.focus(); input.setSelectionRange(chatDraft.length, chatDraft.length); } catch(e){}
+      }
+      inputRow.appendChild(input);
+      inputRow.appendChild(el("button", {onclick: () => sendChat(input.value)}, [document.createTextNode("Send ➤")]));
+      box.appendChild(inputRow);
+    }
 
     box.appendChild(el("div", {class:"chat-notice"}, [
       document.createTextNode("Chat is seen by everyone · mics start OFF to avoid echo 🔊")
