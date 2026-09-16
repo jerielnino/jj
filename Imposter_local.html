@@ -2562,8 +2562,12 @@
 
       // ---------- Host (internet mode) ----------
       function initInternetHost(){
+        roomCode = generateRoomCode();
+        myPlayerId = getOrCreatePersistentPlayerId();
+        isHost = true;
         netStatus = "connecting";
         netStatusMsg = "Connecting to relay (" + RELAY_URL.replace(/^wss?:\/\//, "") + ")…";
+        pushInGameState();
         render();
 
         const hostPlayerId = myPlayerId;
@@ -2653,8 +2657,13 @@
 
       // ---------- Client (internet mode) ----------
       function initInternetClient(joinCode){
+        roomCode = joinCode.toUpperCase().trim();
+        myPlayerId = getOrCreatePersistentPlayerId();
+        isHost = false;
+        isInternetMode = true;
         netStatus = "connecting";
         netStatusMsg = "Connecting to relay (" + RELAY_URL.replace(/^wss?:\/\//, "") + ")…";
+        pushInGameState();
         render();
 
         const guestId = myPlayerId;
