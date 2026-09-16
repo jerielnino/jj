@@ -176,6 +176,12 @@
     border-color:var(--gold);
     font-weight:600;
   }
+  .mode-seg{
+    cursor:pointer;
+    transition:all 0.2s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .mode-seg:active{ transform:scale(.98); }
   button.primary{
     width:100%;
     padding:14px;
@@ -2031,6 +2037,7 @@
   // PEERJS NETWORKING & RECONNECTION LOGIC
   // ==========================================
   let isInternetMode = false; // true when room created via "Internet Play (Testing)"
+  let joinUiMode = "lan"; // toggle state on the Join screen ("lan" | "internet")
 
   function getPeerOpts(mode){
     const base = { debug: 1 };
@@ -2304,9 +2311,16 @@
 
     reconnectAttempts++;
     if (reconnectAttempts > 5 && !hostMigrationInProgress){
-      // Too many reconnection failures — host is likely dead, trigger migration
       if (heartbeatInterval){ clearInterval(heartbeatInterval); heartbeatInterval = null; }
-      triggerHostMigrationElection();
+      if (gameState.players.length > 0){
+        // Too many reconnection failures — host is likely dead, trigger migration
+        triggerHostMigrationElection();
+      } else {
+        // We never successfully joined — host unreachable (usually mode mismatch on NAT)
+        netStatus = "error";
+        netStatusMsg = "Can't reach the host. Make sure LAN/Internet mode matches the room, then try again.";
+        render();
+      }
       return;
     }
     if (reconnectAttempts > 25){
@@ -4120,7 +4134,24 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("room")) codeInput.value = urlParams.get("room");
-    const urlMode = urlParams.get("mode") === "internet" ? "internet" : "lan";
+
+    // Mode toggle — LAN vs Internet. Defaults from the invite URL, but the user can
+    // switch before joining (important: an internet room needs TURN on your side too,
+    // otherwise the data connection can't cross networks).
+    if (!joinUiMode){
+      joinUiMode = urlParams.get("mode") === "internet" ? "internet" : "lan";
+    }
+    const modeToggle = el("div", {style:"display:flex; gap:0; margin-top:6px; border:1px solid rgba(255,255,255,.25); border-radius:10px; overflow:hidden;"});
+    const mkModeBtn = (label, mode) => el("button", {
+      class: joinUiMode === mode ? "mode-seg active" : "mode-seg",
+      style: "flex:1; padding:8px 6px; background:none; border:none; color:var(--gold); font-size:.85rem; " + (joinUiMode === mode ? "font-weight:700; background:rgba(212,175,55,.18);" : "opacity:.75;"),
+      onclick: () => {
+        joinUiMode = mode;
+        render();
+      }
+    }, [document.createTextNode(label)]);
+    modeToggle.appendChild(mkModeBtn("📶 LAN", "lan"));
+    modeToggle.appendChild(mkModeBtn("🌐 Internet", "internet"));
 
     const joinBtn = el("button", {
       class:"primary",
@@ -4129,13 +4160,14 @@
         if (!codeInput.value.trim()){ alert("Please enter a Room Code!"); return; }
         if (!myPlayerName.trim()) myPlayerName = "Player " + Math.floor(Math.random()*100);
         appMode = "multiplayer";
-        initClientJoin(codeInput.value.trim(), { mode: urlMode });
+        initClientJoin(codeInput.value.trim(), { mode: joinUiMode });
       }
     }, [document.createTextNode("Join ▶")]);
 
     joinRow.appendChild(codeInput);
     joinRow.appendChild(joinBtn);
     actionPanel.appendChild(joinRow);
+    actionPanel.appendChild(modeToggle);
 
     screen.appendChild(actionPanel);
 
