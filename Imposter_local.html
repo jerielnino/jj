@@ -2080,6 +2080,47 @@
     return false;
   }
 
+  // Direct reachability probe of signaling + relay hosts (HTTPS/TCP 443). Tells us
+  // whether your network can reach these servers at all, independent of WebRTC.
+  function testRelayReachability(){
+    netDiag("Probing server reachability…");
+    [
+      "https://0.peerjs.com",
+      "https://openrelay.metered.ca",
+      "https://numb.viagenie.ca",
+      "https://stun.l.google.com"
+    ].forEach(h => {
+      const t0 = Date.now();
+      try {
+        fetch(h, { mode: "no-cors", cache: "no-store" })
+          .then(() => netDiag("Reach " + h + " → OK (" + (Date.now() - t0) + "ms)"))
+          .catch(() => netDiag("Reach " + h + " → FAIL/blocked (" + (Date.now() - t0) + "ms)"));
+      } catch(e){
+        netDiag("Reach " + h + " → error (" + (e && e.message) + ")");
+      }
+    });
+  }
+
+  // Definitive ICE diagnosis: count host / srflx / relay candidates via getStats().
+  // If relay count is 0 on your side, your network cannot reach any TURN server.
+  function dumpIceStats(rtc, label){
+    try {
+      rtc.getStats().then(stats => {
+        const local = {}, remote = {};
+        let pairs = 0, failedPairs = 0;
+        stats.forEach(s => {
+          if (s.type === "local-candidate" && s.candidateType){ local[s.candidateType] = (local[s.candidateType] || 0) + 1; }
+          if (s.type === "remote-candidate" && s.candidateType){ remote[s.candidateType] = (remote[s.candidateType] || 0) + 1; }
+          if (s.type === "candidate-pair" && s.state){
+            pairs++;
+            if (s.state === "failed") failedPairs++;
+          }
+        });
+        netDiag("ICE stats " + label + " → local(" + (local.host||0) + " host, " + (local.srflx||0) + " srflx, " + (local.relay||0) + " relay) / remote(" + (remote.host||0) + " host, " + (remote.srflx||0) + " srflx, " + (remote.relay||0) + " relay) / " + failedPairs + " of " + pairs + " pairs failed");
+      }).catch(()=>{});
+    } catch(e){}
+  }
+
   function getPeerOpts(mode){
     const base = { debug: 1 };
     if (mode === "internet"){
@@ -2231,7 +2272,9 @@
       if (conn.peerConnection){
         const rtc = conn.peerConnection;
         rtc.oniceconnectionstatechange = () => {
-          netDiag("Host ICE state (" + conn.peer + "): " + (rtc ? rtc.iceConnectionState : "disposed"));
+          const st = rtc ? rtc.iceConnectionState : "disposed";
+          netDiag("Host ICE state (" + conn.peer + "): " + st);
+          if (st === "disconnected" || st === "failed") dumpIceStats(rtc, "host→" + conn.peer);
         };
         rtc.onicecandidate = (ev) => {
           if (ev.candidate && ev.candidate.candidate){
@@ -2359,7 +2402,9 @@
     if (hostConn.peerConnection){
       const rtc = hostConn.peerConnection;
       rtc.oniceconnectionstatechange = () => {
-        netDiag("Client ICE state: " + (rtc ? rtc.iceConnectionState : "disposed"));
+        const st = rtc ? rtc.iceConnectionState : "disposed";
+        netDiag("Client ICE state: " + st);
+        if (st === "disconnected" || st === "failed") dumpIceStats(rtc, "client");
       };
       rtc.onicecandidate = (ev) => {
         if (ev.candidate && ev.candidate.candidate){
@@ -4083,13 +4128,20 @@
       }
 
       // Diagnostics toggle (shows the net log so we can see where a join fails)
-      screen.appendChild(el("button", {
+      const diagToggle = el("button", {
         class:"link-btn",
         style:"color:var(--cyan); font-size:.72rem; margin-top:6px; align-self:flex-start;",
         onclick: () => { showNetDiag = !showNetDiag; render(); }
-      }, [document.createTextNode(showNetDiag ? "🔽 Hide connection log" : "🔍 Connection log (" + netLog.length + ")" )]));
+      }, [document.createTextNode(showNetDiag ? "🔽 Hide connection log" : "🔍 Connection log (" + netLog.length + ")" )]);
+      screen.appendChild(diagToggle);
       if (showNetDiag){
         const diagBox = el("div", {style:"width:100%; margin-top:4px; padding:8px; border-radius:10px; background:var(--black-soft); font-size:.68rem; font-family:monospace; color:var(--cream); line-height:1.5; max-height:40vh; overflow:auto;"});
+        const btnRow = el("div", {style:"display:flex; gap:8px; margin-bottom:6px;"});
+        btnRow.appendChild(el("button", {class:"link-btn", style:"color:var(--gold); border:1px solid var(--gold); border-radius:6px; padding:3px 8px;", onclick: () => { testRelayReachability(); }}, [document.createTextNode("🧪 Test relays")]));
+        btnRow.appendChild(el("button", {class:"link-btn", style:"color:var(--cyan); border:1px solid var(--cyan); border-radius:6px; padding:3px 8px;", onclick: () => {
+          try { navigator.clipboard.writeText(netLog.join("\n")); alert("Connection log copied!"); } catch(e){ alert("Copy failed — long-press the log text."); }
+        }}, [document.createTextNode("📋 Copy log")]));
+        diagBox.appendChild(btnRow);
         netLog.forEach(l => {
           diagBox.appendChild(el("div", {}, [document.createTextNode(l)]));
         });
