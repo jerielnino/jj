@@ -2441,7 +2441,7 @@
 
       // 📍 Deploy server/relay.js (npm install ws && node relay.js) on Render/Railway/Fly/Glitch
       // and paste the wss:// URL here — or override per-session with  ?relay=wss://...
-      const RELAY_URL = new URLSearchParams(window.location.search).get("relay") || "ws://localhost:8765";
+      const RELAY_URL = new URLSearchParams(window.location.search).get("relay") || "wss://imposter-relay.onrender.com";
 
       let relayWs = null;            // my single WebSocket to the relay
       let relayHostId = null;        // playerId of the current host (guests route "to" here)
