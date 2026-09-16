@@ -7,7 +7,33 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
 <meta name="theme-color" content="#e8b93a">
 <!-- PeerJS for zero-server WebRTC Multiplayer on GitHub Pages -->
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<!-- Loaded with CDN fallbacks (unpkg → jsdelivr → cloudflare) so a blocked CDN can't break the game -->
+<script>
+  window.PEER_CDNS = [
+    "https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js",
+    "https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"
+  ];
+  window.peerJsFailed = false;
+  window.peerJsLoaded = (typeof Peer !== "undefined");
+  function __loadPeerJS(i){
+    if (i >= window.PEER_CDNS.length){
+      window.peerJsFailed = true;
+      return;
+    }
+    var s = document.createElement("script");
+    s.src = window.PEER_CDNS[i];
+    s.async = false;
+    s.onload = function(){
+      window.peerJsLoaded = (typeof Peer !== "undefined");
+      if (!window.peerJsLoaded) __loadPeerJS(i + 1);
+    };
+    s.onerror = function(){ __loadPeerJS(i + 1); };
+    document.head.appendChild(s);
+  }
+  // Kick off immediately; the game guards on window.peerJsLoaded before creating peers.
+  __loadPeerJS(0);
+</script>
 <!-- QRCode.js for instant LAN join -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
@@ -2039,19 +2065,37 @@
   let isInternetMode = false; // true when room created via "Internet Play (Testing)"
   let joinUiMode = "lan"; // toggle state on the Join screen ("lan" | "internet")
 
+  // ---- Networking diagnostics (visible on screen so we can see where a join fails) ----
+  let netLog = [];
+  let showNetDiag = false;
+  function netDiag(msg){
+    try { console.log("[net]", msg); } catch(e){}
+    netLog.push(new Date().toLocaleTimeString() + " — " + msg);
+    if (netLog.length > 40) netLog.splice(0, netLog.length - 40);
+    if (appMode === "multiplayer") { try { render(); } catch(e){} }
+  }
+  function peerReady(){
+    if (typeof Peer !== "undefined") return true;
+    if (window.peerJsFailed){ netDiag("PeerJS library failed to load (all CDNs unreachable). Check internet/network."); }
+    return false;
+  }
+
   function getPeerOpts(mode){
     const base = { debug: 1 };
     if (mode === "internet"){
-      // STUN + TURN for Internet play (traverses symmetric NATs, firewalls)
+      // STUN + multiple free TURN relays for Internet play (traverses symmetric NATs, firewalls).
+      // Trying several relays improves odds if one is blocked or down from your region.
       base.config = {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
-          // Free public TURN (openrelay.metered.ca) — rate limited, fine for casual play
+          // Free public TURN — openrelay.metered.ca (rate limited, fine for casual play)
           { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
           { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-          { urls: 'turn:openrelay.metered.ca:3478', username: 'openrelayproject', credential: 'openrelayproject' }
+          { urls: 'turn:openrelay.metered.ca:3478', username: 'openrelayproject', credential: 'openrelayproject' },
+          // Free public TURN — numb.viagenie.ca (long-running public relay)
+          { urls: 'turn:numb.viagenie.ca:3478', username: 'muazkh', credential: 'muazkh' }
         ]
       };
     } else {
@@ -2118,10 +2162,18 @@
 
     const peerId = "imposter-p2p-" + roomCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
 
+    netDiag("Creating host peer (" + (isInternetMode ? "internet/TURN" : "lan/STUN") + ") id=" + peerId);
+    if (!peerReady()){
+      netStatus = "error";
+      netStatusMsg = "PeerJS not loaded (" + (window.peerJsFailed ? "all CDNs failed" : "still loading...") + "). Reload after a few seconds.";
+      render();
+      return;
+    }
     if (peer) { try { peer.destroy(); } catch(e){} }
     peer = new Peer(peerId, getPeerOpts(isInternetMode ? "internet" : "lan"));
 
-    peer.on('open', () => {
+    peer.on('open', (id) => {
+      netDiag("Host peer OPENED — connected to signaling broker, id=" + id);
       netStatus = "connected";
       netStatusMsg = "Room Live!";
       gameState.players = [{
@@ -2146,16 +2198,19 @@
 
     peer.on('connection', (conn) => {
       clientConns.set(conn.peer, conn);
+      netDiag("Incoming connection from " + conn.peer + " (ICE: " + (conn.peerConnection ? conn.peerConnection.iceConnectionState : "?") + ")");
 
       conn.on('data', (data) => {
         handleHostReceivedData(conn.peer, data, conn);
       });
 
       conn.on('open', () => {
+        netDiag("DataConnection OPENED from " + conn.peer);
         clientConns.set(conn.peer, conn);
       });
 
       conn.on('close', () => {
+        netDiag("DataConnection closed: " + conn.peer);
         clientConns.delete(conn.peer);
         // Mark player as offline, but preserve their score, role, alive status & voting history
         const p = gameState.players.find(x => x.connId === conn.peer);
@@ -2168,8 +2223,14 @@
       });
 
       conn.on('error', (err) => {
+        netDiag("Conn error from " + conn.peer + ": " + (err && (err.type || err.message || err)));
         console.warn("Host connection error with peer:", conn.peer, err);
       });
+      if (conn.peerConnection){
+        conn.peerConnection.oniceconnectionstatechange = () => {
+          netDiag("ICE state (" + conn.peer + "): " + (conn.peerConnection ? conn.peerConnection.iceConnectionState : "disposed"));
+        };
+      }
     });
 
     peer.on('call', (call) => {
@@ -2182,6 +2243,7 @@
 
     peer.on('disconnected', () => {
       // Host: try reconnecting a few times, then end game
+      netDiag("Host peer DISCONNECTED from broker — attempting reconnect");
       if (peer && !peer.destroyed){
         netStatus = "connecting";
         netStatusMsg = "Host connection lost — reconnecting...";
@@ -2203,6 +2265,7 @@
     });
 
     peer.on('error', (err) => {
+      netDiag("Host peer ERROR: " + (err.type || "") + " " + (err.message || ""));
       // If another peer took our host ID (host migration happened while we were offline),
       // gracefully downgrade to a client and rejoin the same room.
       if (err.type === "unavailable-id"){
@@ -2238,10 +2301,18 @@
     pushInGameState();
     render();
 
+    netDiag("Joining room " + roomCode + " as " + (isInternetMode ? "internet/TURN" : "lan/STUN"));
+    if (!peerReady()){
+      netStatus = "error";
+      netStatusMsg = "PeerJS not loaded (" + (window.peerJsFailed ? "all CDNs failed" : "still loading...") + "). Reload after a few seconds.";
+      render();
+      return;
+    }
     if (peer) { try { peer.destroy(); } catch(e){} }
     peer = new Peer(null, getPeerOpts(isInternetMode ? "internet" : "lan"));
 
-    peer.on('open', () => {
+    peer.on('open', (id) => {
+      netDiag("Client peer OPENED (signaling ok), connecting to host...");
       connectToHost();
     });
 
@@ -2254,12 +2325,14 @@
     });
 
     peer.on('disconnected', () => {
+      netDiag("Client peer DISCONNECTED from broker — reconnecting");
       if (peer && !peer.destroyed){
         try { peer.reconnect(); } catch(e){}
       }
     });
 
     peer.on('error', (err) => {
+      netDiag("Client peer ERROR: " + (err.type || "") + " " + (err.message || ""));
       netStatus = "error";
       netStatusMsg = "Connection error: " + (err.message || err.type);
       render();
@@ -2270,10 +2343,17 @@
   function connectToHost(){
     const targetPeerId = "imposter-p2p-" + roomCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
     if (hostConn) { try { hostConn.close(); } catch(e){} }
-    
+    netDiag("Dialing host " + targetPeerId);
+
     hostConn = peer.connect(targetPeerId, { reliable: true });
+    if (hostConn.peerConnection){
+      hostConn.peerConnection.oniceconnectionstatechange = () => {
+        netDiag("Client ICE state: " + (hostConn.peerConnection ? hostConn.peerConnection.iceConnectionState : "disposed"));
+      };
+    }
 
     hostConn.on('open', () => {
+      netDiag("DataConnection OPENED to host — sending JOIN");
       netStatus = "connected";
       netStatusMsg = "Connected!";
       reconnectAttempts = 0;
@@ -2294,13 +2374,15 @@
     });
 
     hostConn.on('close', () => {
+      netDiag("DataConnection to host closed");
       netStatus = "connecting";
       netStatusMsg = "Connection lost. Reconnecting...";
       render();
       triggerClientAutoReconnect();
     });
 
-    hostConn.on('error', () => {
+    hostConn.on('error', (err) => {
+      netDiag("DataConnection to host ERROR: " + (err && (err.type || err.message || err)));
       triggerClientAutoReconnect();
     });
   }
@@ -3973,6 +4055,31 @@
       topBar.appendChild(rightControls);
 
       screen.appendChild(topBar);
+
+      // Live status message (why things are connecting / failing)
+      if (netStatusMsg && (netStatus === "connecting" || netStatus === "error")){
+        const statusStrip = el("div", {
+          style:"width:100%; padding:8px 10px; margin-top:6px; border-radius:10px; font-size:.78rem; text-align:center; background:" + (netStatus === "error" ? "rgba(231,76,60,0.15);" : "rgba(232,185,58,0.12);") + "color:var(--cream);"
+        }, [document.createTextNode((isInternetMode ? "🌐 " : "📶 ") + netStatusMsg)]);
+        screen.appendChild(statusStrip);
+      }
+
+      // Diagnostics toggle (shows the net log so we can see where a join fails)
+      screen.appendChild(el("button", {
+        class:"link-btn",
+        style:"color:var(--cyan); font-size:.72rem; margin-top:6px; align-self:flex-start;",
+        onclick: () => { showNetDiag = !showNetDiag; render(); }
+      }, [document.createTextNode(showNetDiag ? "🔽 Hide connection log" : "🔍 Connection log (" + netLog.length + ")" )]));
+      if (showNetDiag){
+        const diagBox = el("div", {style:"width:100%; margin-top:4px; padding:8px; border-radius:10px; background:var(--black-soft); font-size:.68rem; font-family:monospace; color:var(--cream); line-height:1.5; max-height:40vh; overflow:auto;"});
+        netLog.forEach(l => {
+          diagBox.appendChild(el("div", {}, [document.createTextNode(l)]));
+        });
+        if (!window.peerJsLoaded && !window.peerJsFailed) diagBox.appendChild(el("div", {style:"color:var(--gold)"}, [document.createTextNode("⏳ PeerJS library still loading…")]));
+        if (window.peerJsFailed) diagBox.appendChild(el("div", {style:"color:var(--danger)"}, [document.createTextNode("⛔ PeerJS library failed to load from all CDNs.")]));
+        diagBox.appendChild(el("div", {style:"opacity:.6; margin-top:4px"}, [document.createTextNode(navigator.userAgent)]));
+        screen.appendChild(diagBox);
+      }
     }
 
     if (appMode === "menu") renderMenu(screen);
@@ -4839,12 +4946,27 @@
     const modeParam = params.get("mode"); // "internet" or null/undefined
     if (roomParam){
       appMode = "menu";
-      // Auto-join if room code in URL (for shared invite links)
-      if (modeParam === "internet"){
-        initClientJoin(roomParam, { mode: "internet" });
-      } else {
-        initClientJoin(roomParam, { mode: "lan" });
-      }
+      // Auto-join if room code in URL (for shared invite links).
+      // Wait for PeerJS to finish loading from one of the CDNs first.
+      let waited = 0;
+      const tryJoin = () => {
+        if (typeof Peer !== "undefined"){
+          if (modeParam === "internet"){
+            initClientJoin(roomParam, { mode: "internet" });
+          } else {
+            initClientJoin(roomParam, { mode: "lan" });
+          }
+          return;
+        }
+        if (window.peerJsFailed || waited > 12000){
+          netDiag("PeerJS failed to load — cannot auto-join " + roomParam + ".");
+          render();
+          return;
+        }
+        waited += 500;
+        setTimeout(tryJoin, 500);
+      };
+      tryJoin();
     }
     render();
   });
