@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Imposter · Multiplayer Party Game</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
 <meta name="theme-color" content="#e8b93a">
@@ -34,37 +34,14 @@
       linear-gradient(160deg,#000000,var(--black-soft) 60%,var(--black-softer));
     color:var(--cream);
     overflow-x:hidden;
-    overscroll-behavior-y:contain;
   }
-  /* Guarantee the dark theme fills every overscroll / safe-area letterbox zone
-     (white bars at the bottom usually come from iOS safe-area or overscroll) */
-  html{
-    background-color:#050505;
-  }
-  html, body{
-    scrollbar-width:none;
-    -ms-overflow-style:none;
-  }
-  html::-webkit-scrollbar, body::-webkit-scrollbar{ display:none; width:0; height:0; }
   #app{
     min-height:100vh;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:flex-start;
-    padding-top:calc(16px + env(safe-area-inset-top));
-    padding-right:14px;
-    padding-bottom:calc(40px + env(safe-area-inset-bottom));
-    padding-left:14px;
-  }
-  /* Games/menus render into this sub-container, which render() clears each time.
-     The chat panel sits NEXT to it (direct child of #app) and is never cleared,
-     so a focused input survives every re-render. */
-  #screen{
-    width:100%;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
+    padding:16px 14px 40px;
   }
   h1{
     font-size:1.6rem;
@@ -856,303 +833,10 @@
     font-size:.72rem;
     text-align:center;
   }
-
-  /* ===== CHAT & VOICE ===== */
-  .chat-box{
-    width:100%;
-    max-width:440px;
-    margin-top:14px;
-    background:rgba(0,0,0,.35);
-    border:1px solid rgba(255,255,255,.15);
-    border-radius:16px;
-    overflow:hidden;
-  }
-  .chat-head{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:8px;
-    padding:8px 12px;
-    background:rgba(255,255,255,.05);
-    border-bottom:1px solid rgba(255,255,255,.1);
-  }
-  .chat-head .chat-title{
-    font-weight:700;
-    font-size:.85rem;
-    color:var(--gold);
-    display:flex;
-    align-items:center;
-    gap:6px;
-    white-space:nowrap;
-    overflow:hidden;
-  }
-  .chat-voice-toggle{
-    display:inline-flex;
-    align-items:center;
-    gap:5px;
-    padding:5px 10px;
-    border-radius:20px;
-    border:1px solid rgba(255,255,255,.25);
-    background:rgba(255,255,255,.06);
-    color:var(--cream);
-    font-size:.78rem;
-    cursor:pointer;
-    transition:background .2s, border-color .2s;
-    white-space:nowrap;
-  }
-  .chat-voice-toggle.on{
-    background:linear-gradient(135deg,var(--cyan),#0984e3);
-    color:#fff;
-    border-color:var(--cyan);
-  }
-  .chat-voice-toggle:active{ transform:scale(.96); }
-  .chat-voice-toggle.speaker{
-    background:none;
-    border:none;
-    font-size:1.05rem;
-    opacity:.85;
-    padding:4px 6px;
-    min-width:34px;
-  }
-  .voice-chips{
-    display:flex;
-    flex-wrap:wrap;
-    gap:6px;
-    padding:8px 12px 4px;
-  }
-  .voice-chip{
-    display:inline-flex;
-    align-items:center;
-    gap:5px;
-    padding:4px 9px;
-    border-radius:16px;
-    font-size:.76rem;
-    background:rgba(255,255,255,.06);
-    border:1px solid rgba(255,255,255,.14);
-    color:var(--cream);
-  }
-  .voice-chip.mic-on{ border-color:var(--success); color:var(--success); }
-  .voice-chip.speaking{
-    border-color:var(--danger);
-    color:var(--danger);
-    box-shadow:0 0 8px rgba(231,76,60,.4);
-  }
-  .voice-chip .speak-dot{
-    width:7px; height:7px; border-radius:50%; background:var(--danger);
-    animation:pulse .7s infinite;
-  }
-  .chat-msgs{
-    max-height:190px;
-    overflow-y:auto;
-    overflow-x:hidden;
-    padding:10px 12px 4px;
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-  }
-  .chat-msgs, .chat-admin-players, .voice-chips{
-    scrollbar-width:none;
-    -ms-overflow-style:none;
-  }
-  .chat-msgs::-webkit-scrollbar,
-  .chat-admin-players::-webkit-scrollbar,
-  .voice-chips::-webkit-scrollbar{ display:none; width:0; height:0; }
-  .chat-msg{
-    display:flex;
-    align-items:flex-start;
-    gap:7px;
-    font-size:.84rem;
-    line-height:1.35;
-    animation:fadeIn .18s ease-out;
-  }
-  .chat-msg .chat-avatar{
-    flex:0 0 26px;
-    width:26px; height:26px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:rgba(255,255,255,.08);
-    border-radius:50%;
-    font-size:1rem;
-  }
-  .chat-msg .chat-body{ flex:1; min-width:0; }
-  .chat-msg .chat-name{ font-weight:700; font-size:.76rem; opacity:.85; }
-  .chat-msg .chat-name.me{ color:var(--gold); }
-  .chat-msg .chat-text{ word-wrap:break-word; overflow-wrap:break-word; }
-  .chat-msg.sys .chat-text{ opacity:.75; font-style:italic; }
-  .chat-empty{
-    text-align:center;
-    opacity:.6;
-    font-size:.78rem;
-    padding:8px 0;
-  }
-  .chat-input-row{
-    display:flex;
-    gap:8px;
-    padding:10px 12px;
-    border-top:1px solid rgba(255,255,255,.1);
-  }
-  .chat-input-row input{
-    flex:1;
-    min-width:0;
-    padding:10px 12px;
-    border-radius:12px;
-    border:1px solid rgba(255,255,255,.2);
-    background:var(--black-softer);
-    color:var(--cream);
-    font-size:.9rem;
-    outline:none;
-  }
-  .chat-input-row input:focus{ border-color:var(--gold); }
-  .chat-input-row button{
-    padding:0 16px;
-    border:none;
-    border-radius:12px;
-    background:linear-gradient(135deg,var(--gold),var(--gold-dark));
-    color:var(--ink);
-    font-weight:700;
-    font-size:.9rem;
-    cursor:pointer;
-  }
-  .chat-input-row button:active{ transform:scale(.96); }
-  .chat-notice{
-    padding:8px 12px;
-    font-size:.76rem;
-    opacity:.85;
-    text-align:center;
-    border-top:1px solid rgba(255,255,255,.08);
-  }
-  .chat-notice.warn{
-    color:var(--gold);
-    opacity:1;
-    border:1px solid rgba(232,185,58,.3);
-    border-radius:12px;
-    margin-top:8px;
-  }
-  /* Chat docked above the on-screen keyboard while its input is focused */
-  .chat-box.docked{
-    position:fixed;
-    left:50%;
-    transform:translateX(-50%);
-    width:100%;
-    max-width:440px;
-    z-index:60;
-    background:rgba(8,8,8,.97);
-    box-shadow:0 -8px 30px rgba(0,0,0,.65);
-    padding-bottom:env(safe-area-inset-bottom);
-  }
-  .chat-box.docked .chat-msgs{
-    max-height:30vh;
-    min-height:70px;
-  }
-  .chat-box.docked .voice-chips{ max-height:12vh; overflow-y:auto; }
-  .chat-voice-toggle.muted{
-    background:var(--danger);
-    border-color:var(--danger);
-    color:#fff;
-  }
-  .chat-voice-toggle.off{
-    background:rgba(255,255,255,.06);
-    border-color:rgba(255,255,255,.25);
-    color:var(--cream);
-  }
-  /* Host (admin) moderation strip — compact, collapsible */
-  .chat-admin{
-    padding:6px 10px 8px;
-    border-top:1px solid rgba(255,255,255,.1);
-    background:rgba(9,132,227,.08);
-  }
-  .chat-admin-header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:8px;
-    margin-bottom:4px;
-  }
-  .chat-admin-title{
-    font-size:.68rem;
-    opacity:.7;
-    text-transform:uppercase;
-    letter-spacing:1px;
-    color:var(--cyan);
-    margin:0;
-  }
-  .chat-admin-toggle{
-    font-size:.9rem;
-    background:none;
-    border:none;
-    color:var(--cyan);
-    opacity:.8;
-    cursor:pointer;
-    padding:0 4px;
-  }
-  .chat-admin-toggle:active{ transform:scale(.9); }
-  .chat-admin-inner{
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-  }
-  .chat-admin-inner.closed{ display:none; }
-  .chat-admin-actions{
-    display:flex;
-    gap:4px;
-    flex-wrap:wrap;
-  }
-  .chat-admin-actions button{
-    padding:4px 8px;
-    border-radius:12px;
-    border:1px solid rgba(255,255,255,.2);
-    background:rgba(255,255,255,.05);
-    color:var(--cream);
-    font-size:.7rem;
-    cursor:pointer;
-  }
-  .chat-admin-actions button:active{ transform:scale(.94); background:rgba(255,255,255,.12); }
-  .chat-admin-actions button.red{ border-color:var(--danger); color:var(--danger); }
-  .chat-admin-players{
-    max-height:90px;
-    overflow-y:auto;
-    overflow-x:hidden;
-    display:flex;
-    flex-direction:column;
-    gap:3px;
-  }
-  .chat-admin-row{
-    display:flex;
-    align-items:center;
-    gap:5px;
-    font-size:.76rem;
-  }
-  .chat-admin-row .nm{
-    flex:1;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-    opacity:.9;
-  }
-  .chat-admin-row button{
-    border:none;
-    background:rgba(255,255,255,.07);
-    color:var(--cream);
-    border-radius:8px;
-    font-size:.85rem;
-    padding:3px 6px;
-    cursor:pointer;
-    line-height:1;
-  }
-  .chat-admin-row button.on{ background:var(--danger); }
-  .chat-admin-row button.offok{ background:var(--success); }
-  .chat-admin-row button:active{ transform:scale(.9); }
-  /* Keep the focused input visually stable when the IME suggestion bar appears */
-  .chat-input-row input{
-    -webkit-text-security:none !important;
-  }
 </style>
 </head>
 <body>
-<div id="app">
-  <div id="screen"></div>
-</div>
+<div id="app"></div>
 
 <script>
 (function(){
@@ -1546,9 +1230,6 @@
   let reconnectTimer = null;
   let reconnectAttempts = 0;
   let heartbeatInterval = null;
-  let missedPongs = 0;
-  let hostMigrationInProgress = false;
-  let migrationReconnectElected = null; // elected host info during migration reconnect
 
   // Synchronized Game State (Controlled by Host in Multiplayer)
   let gameState = {
@@ -1573,11 +1254,7 @@
     timerRunning: false,
     voteOutcome: null,
     gameOverReason: null,
-    winner: null,
-    // Host admin controls (authoritative, broadcast with every state sync)
-    hostMuteMic: {},     // { [playerId]: true }  player's mic force-muted by host
-    hostMuteChat: {},    // { [playerId]: true }  player blocked from sending chat
-    chatEnabled: true    // host can pause all chat text
+    winner: null
   };
 
   // Local client's private card data (sent securely from host)
@@ -1592,34 +1269,6 @@
 
   let myVotedId = null;
   let timerInterval = null;
-
-  // ===== Chat + Voice (host-relayed text chat · WebRTC mesh audio) =====
-  const MAX_CHAT = 200;
-  let chatMessages = [];      // [{ playerId, playerName, avatar, text, ts, sys? }]
-  let chatDraft = "";         // preserves in-progress text across re-renders
-  let chatHasFocus = false;
-  let chatWantsFocus = false; // user mid-composition — restore focus+keyboard after a send
-  let chatBlurTimer = null;
-  let chatScrollSticky = true;
-  let chatScrollTop = 0;
-  let kbPx = 0;               // cached height covered by the on-screen keyboard (visual viewport)
-  let chatBoxEl = null;       // live reference to the chat panel so it can be repositioned without a re-render
-  let chatPanelEl = null;     // persistent chat panel — direct child of #app, never cleared by render()
-  let chatInputEl = null;     // persistent input element (never destroyed across renders)
-  let appFooterEl = null;     // persistent footer (appended after the chat panel each render)
-  let adminOpen = true;       // host admin section open/closed
-  let voiceStates = {};       // { [playerId]: mic-on }
-  let voiceUiOn = false;      // local user's mic preference
-  let voiceStream = null;     // local getUserMedia stream (kept once armed)
-  let speakerOn = true;
-  let voiceCalls = {};        // { [peerId]: PeerJS call }
-  let voiceCallMine = {};     // { [peerId]: true if I initiated the call }
-  let voiceCallAnsweredLive = {}; // { [peerId]: true if I answered with a live mic stream }
-  let remoteAudioEls = {};    // { [peerId]: <audio> element }
-  let voiceSpeaking = {};     // { [peerId]: bool } live speaking indicator
-  let voiceAnalysers = {};    // { [peerId]: { src, an } }
-  let voiceCtx = null;        // dedicated AudioContext for speaking detection
-  let voiceSpeakTimer = null;
 
   // Sound Synth (Web Audio API)
   const audioCtx = (window.AudioContext || window.webkitAudioContext) ? new (window.AudioContext || window.webkitAudioContext)() : null;
@@ -2030,35 +1679,16 @@
   // ==========================================
   // PEERJS NETWORKING & RECONNECTION LOGIC
   // ==========================================
-  let isInternetMode = false; // true when room created via "Internet Play (Testing)"
-
-  function getPeerOpts(mode){
-    const base = { debug: 1 };
-    if (mode === "internet"){
-      // STUN + TURN for Internet play (traverses symmetric NATs, firewalls)
-      base.config = {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' },
-          // Free public TURN (openrelay.metered.ca) — rate limited, fine for casual play
-          { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-          { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-          { urls: 'turn:openrelay.metered.ca:3478', username: 'openrelayproject', credential: 'openrelayproject' }
-        ]
-      };
-    } else {
-      // LAN only — STUN only, no TURN overhead
-      base.config = {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' }
-        ]
-      };
+  const PEER_OPTS = {
+    debug: 1,
+    config: {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' }
+      ]
     }
-    return base;
-  }
+  };
 
   function pushInGameState(){
     try {
@@ -2081,38 +1711,19 @@
     }, 3500);
   }
 
-  // Client-side: check if host is still alive (missedPongs resets on each PONG from host)
-  function startClientHeartbeat(){
-    if (heartbeatInterval) clearInterval(heartbeatInterval);
-    missedPongs = 0;
-    heartbeatInterval = setInterval(() => {
-      if (!isHost && appMode === "multiplayer" && !hostMigrationInProgress){
-        missedPongs++;
-        if (missedPongs >= 3){
-          // Host appears dead — trigger migration election
-          clearInterval(heartbeatInterval);
-          heartbeatInterval = null;
-          triggerHostMigrationElection();
-        }
-      }
-    }, 3500);
-  }
-
-  function initHostRoom(opts){
-    opts = opts || {};
+  function initHostRoom(){
     isHost = true;
-    isInternetMode = (opts.mode === "internet");
     roomCode = generateRoomCode();
     myPlayerId = getOrCreatePersistentPlayerId();
     netStatus = "connecting";
-    netStatusMsg = isInternetMode ? "Setting up Internet room..." : "Setting up LAN room...";
+    netStatusMsg = "Setting up room...";
     pushInGameState();
     render();
 
     const peerId = "imposter-p2p-" + roomCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-
+    
     if (peer) { try { peer.destroy(); } catch(e){} }
-    peer = new Peer(peerId, getPeerOpts(isInternetMode ? "internet" : "lan"));
+    peer = new Peer(peerId, PEER_OPTS);
 
     peer.on('open', () => {
       netStatus = "connected";
@@ -2129,11 +1740,9 @@
         votesReceived: 0,
         score: 0,
         roundsSurvived: 0,
-        gamesWon: 0,
-        joinedAt: Date.now()
+        gamesWon: 0
       }];
       startHeartbeat();
-      addSystemChat("Room " + roomCode + " is live! Invite friends with the room code or QR.");
       render();
     });
 
@@ -2165,85 +1774,33 @@
       });
     });
 
-    peer.on('call', (call) => {
-      // Inbound WebRTC audio: answer, then play the caller's stream
-      voiceCallMine[call.peer] = false;
-      voiceCallAnsweredLive[call.peer] = !!voiceStream;
-      registerVoiceCall(call.peer, call);
-      try { call.answer(voiceStream || new MediaStream()); } catch(e){}
-    });
-
     peer.on('disconnected', () => {
-      // Host: try reconnecting a few times, then end game
       if (peer && !peer.destroyed){
-        netStatus = "connecting";
-        netStatusMsg = "Host connection lost — reconnecting...";
-        render();
-        let attempts = 0;
-        const tryReconnect = () => {
-          attempts++;
-          if (attempts > 5 || !peer || peer.destroyed){
-            netStatus = "error";
-            netStatusMsg = "Host connection lost — game over.";
-            render();
-            return;
-          }
-          try { peer.reconnect(); } catch(e){}
-          setTimeout(tryReconnect, 2000);
-        };
-        tryReconnect();
+        try { peer.reconnect(); } catch(e){}
       }
     });
 
     peer.on('error', (err) => {
-      // If another peer took our host ID (host migration happened while we were offline),
-      // gracefully downgrade to a client and rejoin the same room.
-      if (err.type === "unavailable-id"){
-        netStatus = "connecting";
-        netStatusMsg = "Host role moved — rejoining as player...";
-        render();
-        becomeClientAndRejoin();
-        return;
-      }
       netStatus = "error";
       netStatusMsg = "Room error: " + (err.message || err.type);
       render();
     });
   }
 
-  // Old host lost its canonical peer ID — rejoin the room as a normal client
-  function becomeClientAndRejoin(){
+  function initClientJoin(targetCode){
     isHost = false;
-    hostMigrationInProgress = true;
-    migrationReconnectElected = electNewHost() || { id: "host", connId: "host" };
-    if (peer){ try { peer.destroy(); } catch(e){} }
-    connectToNewHost(migrationReconnectElected);
-  }
-
-  function initClientJoin(targetCode, opts){
-    opts = opts || {};
-    isHost = false;
-    isInternetMode = (opts.mode === "internet");
     roomCode = targetCode.toUpperCase().trim();
     myPlayerId = getOrCreatePersistentPlayerId();
     netStatus = "connecting";
-    netStatusMsg = isInternetMode ? "Connecting to Internet room " + roomCode + "..." : "Connecting to LAN room " + roomCode + "...";
+    netStatusMsg = "Connecting to room " + roomCode + "...";
     pushInGameState();
     render();
 
     if (peer) { try { peer.destroy(); } catch(e){} }
-    peer = new Peer(null, getPeerOpts(isInternetMode ? "internet" : "lan"));
+    peer = new Peer(null, PEER_OPTS);
 
     peer.on('open', () => {
       connectToHost();
-    });
-
-    peer.on('call', (call) => {
-      // Inbound WebRTC audio: answer, then play the caller's stream
-      voiceCallMine[call.peer] = false;
-      voiceCallAnsweredLive[call.peer] = !!voiceStream;
-      registerVoiceCall(call.peer, call);
-      try { call.answer(voiceStream || new MediaStream()); } catch(e){}
     });
 
     peer.on('disconnected', () => {
@@ -2303,12 +1860,6 @@
     if (reconnectTimer) return;
 
     reconnectAttempts++;
-    if (reconnectAttempts > 5 && !hostMigrationInProgress){
-      // Too many reconnection failures — host is likely dead, trigger migration
-      if (heartbeatInterval){ clearInterval(heartbeatInterval); heartbeatInterval = null; }
-      triggerHostMigrationElection();
-      return;
-    }
     if (reconnectAttempts > 25){
       netStatus = "error";
       netStatusMsg = "Disconnected from room " + roomCode;
@@ -2317,249 +1868,19 @@
     }
 
     netStatus = "connecting";
-    netStatusMsg = hostMigrationInProgress
-      ? "Connecting to new host (attempt " + reconnectAttempts + ")..."
-      : "Reconnecting to Host (attempt " + reconnectAttempts + ")...";
+    netStatusMsg = "Reconnecting to Host (attempt " + reconnectAttempts + ")...";
     render();
 
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null;
       if (appMode === "multiplayer" && !isHost && roomCode){
-        if (hostMigrationInProgress && migrationReconnectElected){
-          // During migration: keep trying the new host
-          connectToNewHost(migrationReconnectElected);
-        } else if (peer && !peer.destroyed && peer.open){
+        if (peer && !peer.destroyed && peer.open){
           connectToHost();
         } else {
           initClientJoin(roomCode);
         }
       }
     }, Math.min(2500, 1000 + reconnectAttempts * 200));
-  }
-
-  // ==========================================
-  // HOST MIGRATION — when host drops, surviving clients elect a new one
-  // ==========================================
-
-  // Deterministic election: earliest joinedAt wins (then lowest playerId as tiebreak)
-  function electNewHost(){
-    const candidates = gameState.players.filter(p => p.online !== false && p.id !== myPlayerId);
-    if (candidates.length === 0) return null;
-    candidates.sort((a, b) => {
-      const ja = a.joinedAt || 0, jb = b.joinedAt || 0;
-      if (ja !== jb) return ja - jb;
-      return (a.id || "").localeCompare(b.id || "");
-    });
-    return candidates[0];
-  }
-
-  // Client detects host is likely dead — run election and either become host or reconnect
-  function triggerHostMigrationElection(){
-    if (hostMigrationInProgress) return;
-    hostMigrationInProgress = true;
-    const elected = electNewHost();
-    if (!elected){
-      netStatus = "error";
-      netStatusMsg = "No host available — returning to menu.";
-      render();
-      setTimeout(() => exitToMenu(false), 2000);
-      return;
-    }
-    if (elected.id === myPlayerId){
-      migrationReconnectElected = null;
-      becomeHost();
-    } else {
-      migrationReconnectElected = elected;
-      netStatus = "connecting";
-      netStatusMsg = "Host lost — reconnecting to new host...";
-      render();
-      connectToNewHost(elected);
-    }
-  }
-
-  // I was elected host: destroy current peer, create canonical host peer, take over
-  function becomeHost(attempt){
-    attempt = attempt || 0;
-    netStatus = "connecting";
-    netStatusMsg = attempt > 0 ? "Becoming host (retry " + attempt + ")..." : "Becoming new host...";
-    render();
-
-    const peerId = hostPeerId();
-
-    // Destroy old peer
-    if (peer){ try { peer.destroy(); } catch(e){} peer = null; }
-
-    // Clear client connection state (but keep identity & room)
-    hostConn = null;
-    clientConns = new Map();
-    reconnectAttempts = 0;
-    if (reconnectTimer){ clearTimeout(reconnectTimer); reconnectTimer = null; }
-    if (heartbeatInterval){ clearInterval(heartbeatInterval); heartbeatInterval = null; }
-
-    peer = new Peer(peerId, getPeerOpts(isInternetMode ? "internet" : "lan"));
-
-    peer.on('open', () => {
-      isHost = true;
-      hostMigrationInProgress = false;
-      netStatus = "connected";
-      netStatusMsg = "You are now the host!";
-
-      // Mark myself as host in game state (and de-crown everyone else)
-      gameState.players.forEach(p => {
-        p.isHost = (p.id === myPlayerId);
-        if (p.isHost) p.connId = "host";
-      });
-      if (!gameState.players.find(p => p.id === myPlayerId)){
-        gameState.players.push({
-          id: myPlayerId,
-          connId: "host",
-          name: (myPlayerName || "Host").trim(),
-          avatar: myAvatar,
-          isHost: true,
-          online: true,
-          ready: false,
-          alive: true,
-          votesReceived: 0,
-          score: 0,
-          roundsSurvived: 0,
-          gamesWon: 0,
-          joinedAt: Date.now()
-        });
-      }
-
-      // Notify all surviving clients
-      clientConns.forEach((conn) => {
-        if (conn && conn.open){
-          try {
-            conn.send({
-              type: "HOST_MIGRATION",
-              newHostId: myPlayerId,
-              gameState: gameState
-            });
-          } catch(e){}
-        }
-      });
-
-      startHeartbeat();
-      reconcileVoiceMesh();
-      addSystemChat("Host migrated! The game continues.");
-      render();
-    });
-
-    peer.on('connection', (conn) => {
-      clientConns.set(conn.peer, conn);
-      conn.on('data', (data) => {
-        handleHostReceivedData(conn.peer, data, conn);
-      });
-      conn.on('close', () => {
-        clientConns.delete(conn.peer);
-        // Mark player offline
-        const p = gameState.players.find(x => x.connId === conn.peer);
-        if (p) p.online = false;
-        broadcastGameState();
-        render();
-      });
-    });
-
-    peer.on('disconnected', () => {
-      // Try to reconnect to PeerJS server
-      if (peer && !peer.destroyed){
-        try { peer.reconnect(); } catch(e){}
-      }
-    });
-
-    peer.on('error', (err) => {
-      if (err.type === "unavailable-id" && attempt < 10){
-        // Old host's peer ID still on PeerJS server — retry after delay
-        setTimeout(() => becomeHost(attempt + 1), 3000);
-        return;
-      }
-      netStatus = "error";
-      netStatusMsg = "Host migration error: " + (err.message || err.type);
-      render();
-    });
-  }
-
-  // Client: reconnect to the newly elected host (their canonical peerId)
-  function connectToNewHost(elected){
-    // Preserve my identity through reconnection
-    const savedId = myPlayerId;
-    const savedName = myPlayerName;
-    const savedAvatar = myAvatar;
-
-    const doConnect = () => {
-      const newHostPeerId = "imposter-p2p-" + roomCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-      hostConn = peer.connect(newHostPeerId, { reliable: true });
-
-      hostConn.on('open', () => {
-        netStatus = "connected";
-        netStatusMsg = "Connected to new host!";
-        hostMigrationInProgress = false;
-        migrationReconnectElected = null;
-        reconnectAttempts = 0;
-        // Restore identity
-        myPlayerId = savedId;
-        myPlayerName = savedName;
-        myAvatar = savedAvatar;
-        hostConn.send({
-          type: "JOIN",
-          id: myPlayerId,
-          name: (myPlayerName || "Player").trim(),
-          avatar: myAvatar
-        });
-        render();
-      });
-
-      hostConn.on('data', (data) => {
-        handleClientReceivedData(data);
-      });
-
-      hostConn.on('close', () => {
-        netStatus = "connecting";
-        netStatusMsg = "Lost connection to new host...";
-        render();
-        triggerClientAutoReconnect();
-      });
-
-      hostConn.on('error', () => {
-        triggerClientAutoReconnect();
-      });
-    };
-
-    // Reuse existing peer if open, otherwise create new one
-    if (peer && !peer.destroyed && peer.open){
-      doConnect();
-    } else {
-      if (peer && !peer.destroyed) { try { peer.destroy(); } catch(e){} }
-      peer = new Peer(null, getPeerOpts(isInternetMode ? "internet" : "lan"));
-
-      peer.on('open', () => {
-        doConnect();
-      });
-
-      peer.on('call', (call) => {
-        voiceCallMine[call.peer] = false;
-        voiceCallAnsweredLive[call.peer] = !!voiceStream;
-        registerVoiceCall(call.peer, call);
-        try { call.answer(voiceStream || new MediaStream()); } catch(e){}
-      });
-
-      peer.on('error', (err) => {
-        netStatus = "error";
-        netStatusMsg = "Reconnection error: " + (err.message || err.type);
-        render();
-        triggerClientAutoReconnect();
-      });
-    }
-  }
-
-  // Handle HOST_MIGRATION message from old host or new host
-  function handleHostMigration(data){
-    hostMigrationInProgress = false;
-    gameState = data.gameState || gameState;
-    netStatus = "connected";
-    netStatusMsg = "Host migrated — game continues!";
-    render();
   }
 
   // Host: Process incoming messages from clients
@@ -2605,9 +1926,6 @@
         // Send state sync
         conn.send({ type: "STATE_SYNC", state: gameState });
 
-        // Restore chat history so rejoining players don't miss the conversation
-        conn.send({ type: "CHAT_HISTORY", messages: chatMessages });
-
         // If game is in progress, re-send their private role card so their screen recovers immediately!
         if (gameState.screen !== "lobby"){
           const isImp = (gameState.imposterIds || []).includes(existing.id);
@@ -2651,15 +1969,12 @@
         votesReceived: 0,
         score: 0,
         roundsSurvived: 0,
-        gamesWon: 0,
-        joinedAt: Date.now()
+        gamesWon: 0
       });
 
       clientConns.set(peerId, conn);
       conn.send({ type: "STATE_SYNC", state: gameState });
-      conn.send({ type: "CHAT_HISTORY", messages: chatMessages });
       playBeep(600, 'sine', 0.1);
-      addSystemChat((incomingName || "A player") + " joined the lobby.");
       broadcastGameState();
       render();
 
@@ -2677,26 +1992,6 @@
       render();
     } else if (data.type === "CAST_VOTE"){
       handlePlayerVote(data.voterId, data.targetId);
-    } else if (data.type === "CHAT"){
-      if (gameState.chatEnabled === false) return;
-      if (gameState.hostMuteChat && gameState.hostMuteChat[data.id]) return;
-      const sender = gameState.players.find(x => x.id === data.id);
-      const msg = data.msg || {};
-      appendChat({
-        playerId: data.id,
-        playerName: sender ? sender.name : (msg.playerName || "Player"),
-        avatar: sender ? sender.avatar : (msg.avatar || "👤"),
-        text: (data.text || msg.text || "").toString().slice(0, 300),
-        ts: Date.now()
-      });
-      sendChatBroadcast(chatMessages[chatMessages.length - 1]);
-      playBeep(520, 'sine', 0.05);
-      render();
-    } else if (data.type === "VOICE_STATE"){
-      voiceStates[data.id] = data.on;
-      broadcastVoiceState(data.id, data.on);
-      reconcileVoiceMesh();
-      render();
     } else if (data.type === "PING"){
       try { conn.send({ type: "PONG" }); } catch(e){}
     }
@@ -2706,7 +2001,6 @@
   function handleClientReceivedData(data){
     if (data.type === "STATE_SYNC"){
       gameState = data.state;
-      startClientHeartbeat();
       if (gameState.screen === "lobby"){
         myPrivateCard = {
           role: "crew",
@@ -2722,10 +2016,6 @@
         myVotedId = (gameState.votes && gameState.votes[myPlayerId]) ? gameState.votes[myPlayerId] : null;
       } else {
         myVotedId = null;
-      }
-      // Host force-mute is authoritative: who currently on mic must go quiet
-      if (gameState.hostMuteMic && gameState.hostMuteMic[myPlayerId]){
-        forceMicOffLocal();
       }
       render();
     } else if (data.type === "PRIVATE_CARD"){
@@ -2747,32 +2037,6 @@
       if (hostConn && hostConn.open){
         try { hostConn.send({ type: "PONG" }); } catch(e){}
       }
-    } else if (data.type === "PONG"){
-      missedPongs = 0;
-    } else if (data.type === "HOST_MIGRATION"){
-      // Host has migrated — reconnect to the new host
-      handleHostMigration(data);
-    } else if (data.type === "CHAT_BROADCAST"){
-      appendChat(data.msg);
-      if (data.msg && !data.msg.sys && !chatHasFocus) playBeep(560, 'sine', 0.05);
-      render();
-    } else if (data.type === "CHAT_HISTORY"){
-      chatMessages = (data.messages || []).slice(-MAX_CHAT);
-      render();
-    } else if (data.type === "VOICE_STATE"){
-      const changed = voiceStates[data.id] !== data.on;
-      voiceStates[data.id] = data.on;
-      if (changed){
-        reconcileVoiceMesh();
-        render();
-      }
-    } else if (data.type === "FORCE_MUTE_MIC"){
-      voiceStates[myPlayerId] = false;
-      forceMicOffLocal();
-      render();
-    } else if (data.type === "CHAT_CLEAR"){
-      chatMessages = [];
-      render();
     }
   }
 
@@ -2797,740 +2061,6 @@
         try { conn.send(payload); } catch(e){}
       }
     }
-  }
-
-  // ==========================================
-  // TEXT CHAT & VOICE (PeerJS)
-  // ==========================================
-
-  // ---------- Text Chat (host-relayed) ----------
-  function appendChat(msg){
-    if (!msg) return;
-    chatMessages.push(msg);
-    if (chatMessages.length > MAX_CHAT) chatMessages = chatMessages.slice(-MAX_CHAT);
-  }
-
-  function sendChatBroadcast(msg){
-    const payload = { type: "CHAT_BROADCAST", msg: msg };
-    clientConns.forEach(conn => {
-      if (conn && conn.open){
-        try { conn.send(payload); } catch(e){}
-      }
-    });
-  }
-
-  function sendChat(raw){
-    const text = (raw || "").trim().slice(0, 300);
-    if (!text) return;
-    if (appMode !== "multiplayer") return;
-    if (gameState.chatEnabled === false){
-      playBeep(200, 'square', 0.1);
-      render(); // shows "chat paused" notice
-      return;
-    }
-    if (gameState.hostMuteChat && gameState.hostMuteChat[myPlayerId]){
-      playBeep(200, 'square', 0.1);
-      render(); // shows "you are muted from chat" notice
-      return;
-    }
-    const me = gameState.players.find(p => p.id === myPlayerId);
-    const msg = {
-      playerId: myPlayerId,
-      playerName: me ? me.name : (myPlayerName || "You"),
-      avatar: me ? me.avatar : myAvatar,
-      text: text,
-      ts: Date.now()
-    };
-    chatDraft = "";
-    playBeep(660, 'sine', 0.05);
-    if (isHost){
-      appendChat(msg);
-      sendChatBroadcast(msg);
-      render();
-    } else if (hostConn && hostConn.open){
-      try { hostConn.send({ type: "CHAT", msg: msg }); } catch(e){}
-      // Guest send doesn't re-render immediately, so recover the keyboard on our own.
-      if (isTouchDevice()) reopenChatKeyboard();
-    } else {
-      playBeep(300, 'square', 0.1);
-    }
-  }
-
-  function addSystemChat(text){
-    const sys = {
-      sys: true,
-      playerId: null,
-      playerName: "System",
-      avatar: "🛎️",
-      text: text,
-      ts: Date.now()
-    };
-    appendChat(sys);
-    sendChatBroadcast(sys);
-  }
-
-  // ---------- Voice (WebRTC mesh over the existing peers) ----------
-  function hostPeerId(){
-    return "imposter-p2p-" + roomCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-  }
-
-  function playerPeerId(p){
-    if (!p) return null;
-    return p.isHost ? hostPeerId() : (p.connId || null);
-  }
-
-  function applyVoiceMute(){
-    if (!voiceStream) return;
-    const suspended = appMode === "multiplayer" && gameState.screen === "card";
-    const want = voiceUiOn && !suspended;
-    voiceStream.getAudioTracks().forEach(t => { t.enabled = want; });
-  }
-
-  function armMic(on){
-    if (appMode !== "multiplayer") return;
-    if (on && gameState.hostMuteMic && gameState.hostMuteMic[myPlayerId]){
-      playBeep(200, 'square', 0.12);
-      render(); // shows the "muted by host" notice
-      return;
-    }
-    if (on){
-      if (!voiceStream){
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-          alert("Microphone not supported in this browser.");
-          return;
-        }
-        navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
-          .then(s => {
-            voiceStream = s;
-            voiceUiOn = true;
-            voiceStates[myPlayerId] = true;
-            setupVoiceAnalysis();
-            applyVoiceMute();
-            notifyVoiceState(true);
-            reconcileVoiceMesh();
-            if (isHost) broadcastVoiceState(myPlayerId, true);
-            render();
-          })
-          .catch(err => {
-            alert("Microphone access denied: " + ((err && err.message) || "unknown error"));
-          });
-      } else {
-        voiceUiOn = true;
-        voiceStates[myPlayerId] = true;
-        applyVoiceMute();
-        setupVoiceAnalysis();
-        notifyVoiceState(true);
-        reconcileVoiceMesh();
-        if (isHost) broadcastVoiceState(myPlayerId, true);
-        render();
-      }
-    } else {
-      voiceUiOn = false;
-      voiceStates[myPlayerId] = false;
-      applyVoiceMute();
-      notifyVoiceState(false);
-      if (isHost) broadcastVoiceState(myPlayerId, false);
-      render();
-    }
-  }
-
-  function notifyVoiceState(on){
-    if (appMode !== "multiplayer" || isHost) return;
-    if (hostConn && hostConn.open){
-      try { hostConn.send({ type: "VOICE_STATE", id: myPlayerId, on: !!on }); } catch(e){}
-    }
-  }
-
-  function broadcastVoiceState(id, on){
-    const payload = { type: "VOICE_STATE", id: id, on: !!on };
-    clientConns.forEach(conn => {
-      if (conn && conn.open){
-        try { conn.send(payload); } catch(e){}
-      }
-    });
-  }
-
-  // Call ownership rules:
-  //  * The *designated initiator* for a pair is the lower player id when both parties
-  //    are on mic, otherwise the only party with mic on. Only that side opens a call,
-  //    so each pair has exactly one WebRTC call (no double audio).
-  //  * Calls are never rebuilt on mute/unmute (muted tracks = silence). But if I
-  //    answered an inbound call while my mic was off (dark direction), tearing it
-  //    down forces the designated initiator to re-establish a call I can answer live.
-  //  * Closing a call re-runs reconcile on both ends so they re-negotiate promptly.
-  function reconcileVoiceMesh(){
-    if (appMode !== "multiplayer") return;
-    if (!peer || peer.destroyed || !peer.open) return;
-    if (!voiceUiOn || !voiceStream) return; // muted players never initiate
-    const me = gameState.players.find(p => p.id === myPlayerId);
-    if (!me) return;
-    gameState.players.forEach(p => {
-      if (p.id === myPlayerId) return;
-      if (p.online === false) return;
-      const pid = playerPeerId(p);
-      if (!pid) return;
-      const theirVoiceOn = voiceStates[p.id] === true;
-      const iAmDesignated = !theirVoiceOn || myPlayerId < p.id;
-      const existing = voiceCalls[pid];
-      let canOpen = !existing;
-      if (existing){
-        if (voiceCallMine[pid] === true) return;                 // I initiated: keep
-        if (voiceCallAnsweredLive[pid] === true) return;         // duplex passive call: keep
-        // Dark passive call (I answered while muted, now I can speak) — force re-negotiation
-        teardownVoice(pid);
-        canOpen = true;
-      }
-      if (!canOpen) return;
-      if (!iAmDesignated) return;   // designated initiator is them: they will call us
-      try {
-        const call = peer.call(pid, voiceStream);
-        voiceCallMine[pid] = true;
-        registerVoiceCall(pid, call);
-      } catch(e){}
-    });
-  }
-
-  function registerVoiceCall(pid, call){
-    voiceCalls[pid] = call;
-    call.on("stream", (stream) => {
-      bindRemoteAudio(pid, stream);
-    });
-    call.on("close", () => { teardownVoice(pid); reconcileVoiceMesh(); });
-    call.on("error", () => { teardownVoice(pid); reconcileVoiceMesh(); });
-  }
-
-  function bindRemoteAudio(pid, stream){
-    let el = remoteAudioEls[pid];
-    if (!el){
-      el = document.createElement("audio");
-      el.autoplay = true;
-      el.style.display = "none";
-      document.body.appendChild(el);
-      remoteAudioEls[pid] = el;
-    }
-    try { el.srcObject = stream; } catch(e){}
-    el.volume = speakerOn ? 1 : 0;
-    attachVoiceAnalyser(pid, stream);
-  }
-
-  // Lightweight live "speaking" detection per remote stream
-  function setupVoiceAnalysis(){
-    if (!voiceCtx){
-      try { voiceCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
-    }
-    if (!voiceSpeakTimer && voiceCtx){
-      voiceSpeakTimer = setInterval(() => {
-        let voiceDirty = false;
-        for (const pid in voiceAnalysers){
-          const a = voiceAnalysers[pid];
-          if (!a) continue;
-          try {
-            const d = new Uint8Array(a.frequencyBinCount);
-            a.getByteFrequencyData(d);
-            let sum = 0;
-            for (let i = 0; i < d.length; i++) sum += d[i];
-            const speaking = sum > 3000;
-            if (voiceSpeaking[pid] !== speaking){ voiceSpeaking[pid] = speaking; voiceDirty = true; }
-          } catch(e){}
-        }
-        if (voiceDirty) render();
-      }, 250);
-    }
-    if (voiceCtx && voiceCtx.state === "suspended"){ try { voiceCtx.resume(); } catch(e){} }
-  }
-
-  function attachVoiceAnalyser(pid, stream){
-    if (!voiceCtx) return;
-    try {
-      const src = voiceCtx.createMediaStreamSource(stream);
-      const an = voiceCtx.createAnalyser();
-      an.fftSize = 512;
-      src.connect(an);
-      // analyser is not connected to a destination; the hidden <audio> element drives playback
-      voiceAnalysers[pid] = { src: src, an: an };
-    } catch(e){}
-  }
-
-  function teardownVoice(pid){
-    if (voiceCalls[pid]){
-      try { voiceCalls[pid].close(); } catch(e){}
-    }
-    delete voiceCalls[pid];
-    delete voiceCallMine[pid];
-    delete voiceCallAnsweredLive[pid];
-    const el = remoteAudioEls[pid];
-    if (el){ try { el.srcObject = null; } catch(e){} el.remove(); }
-    delete remoteAudioEls[pid];
-    delete voiceSpeaking[pid];
-    delete voiceAnalysers[pid];
-  }
-
-  function closeAllVoiceCalls(){
-    for (const pid in voiceCalls){
-      teardownVoice(pid);
-    }
-    voiceCalls = {};
-    voiceCallMine = {};
-    voiceCallAnsweredLive = {};
-  }
-
-  function teardownComms(){
-    chatMessages = [];
-    chatDraft = "";
-    chatHasFocus = false;
-    chatScrollSticky = true;
-    chatScrollTop = 0;
-    chatBoxEl = null;
-    voiceStates = {};
-    closeAllVoiceCalls();
-    if (voiceStream){
-      try { voiceStream.getAudioTracks().forEach(t => t.stop()); } catch(e){}
-      voiceStream = null;
-    }
-    voiceUiOn = false;
-    speakerOn = true;
-    voiceSpeaking = {};
-    voiceAnalysers = {};
-    if (voiceSpeakTimer){ clearInterval(voiceSpeakTimer); voiceSpeakTimer = null; }
-    if (voiceCtx){ try { voiceCtx.close(); } catch(e){} voiceCtx = null; }
-  }
-
-  // ---------- Host Admin (moderation) ----------
-  function toggleHostMute(kind, id){
-    if (!isHost) return;
-    const map = kind === "mic" ? "hostMuteMic" : "hostMuteChat";
-    gameState[map] = gameState[map] || {};
-    gameState[map][id] = !gameState[map][id];
-    // Actively silence the target the moment they are mic-muted
-    if (kind === "mic" && gameState[map][id]){
-      const target = gameState.players.find(p => p.id === id);
-      if (target && !target.isHost && target.connId && clientConns.has(target.connId)){
-        const conn = clientConns.get(target.connId);
-        if (conn && conn.open){
-          try { conn.send({ type: "FORCE_MUTE_MIC" }); } catch(e){}
-        }
-      }
-    }
-    broadcastGameState();
-    render();
-  }
-
-  function hostSetAll(kind, on){
-    if (!isHost) return;
-    const map = kind === "mic" ? "hostMuteMic" : "hostMuteChat";
-    gameState[map] = gameState[map] || {};
-    gameState.players.forEach(p => {
-      if (!p.isHost) gameState[map][p.id] = on;
-    });
-    if (kind === "mic" && on){
-      clientConns.forEach(conn => {
-        if (conn && conn.open){
-          try { conn.send({ type: "FORCE_MUTE_MIC" }); } catch(e){}
-        }
-      });
-    }
-    broadcastGameState();
-    render();
-  }
-
-  function hostClearChat(){
-    if (!isHost) return;
-    chatMessages = [];
-    const payload = { type: "CHAT_CLEAR" };
-    clientConns.forEach(conn => {
-      if (conn && conn.open){
-        try { conn.send(payload); } catch(e){}
-      }
-    });
-    render();
-  }
-
-  function hostToggleChatEnabled(){
-    if (!isHost) return;
-    gameState.chatEnabled = !(gameState.chatEnabled !== false);
-    broadcastGameState();
-    render();
-  }
-
-  // Force my mic off when the host mutes me (keeps stream so I can still hear)
-  function forceMicOffLocal(){
-    if (voiceUiOn){
-      voiceUiOn = false;
-      voiceStates[myPlayerId] = false;
-      applyVoiceMute();
-      notifyVoiceState(false);
-    }
-  }
-
-  // ---------- Mobile keyboard handling (Visual Viewport API) ----------
-  function isTouchDevice(){
-    return ('ontouchstart' in window) ||
-      (navigator.maxTouchPoints > 0) ||
-      /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
-  }
-
-  function kbBarrierHeight(){
-    const vv = window.visualViewport;
-    if (vv){
-      // Layout height hidden at the bottom of the screen (keyboard + browser chrome)
-      return Math.max(0, (window.innerHeight) - (vv.offsetTop + vv.height));
-    }
-    return 0;
-  }
-
-  // Keep the chat input visible above the on-screen keyboard while it's focused.
-  // NOTE: we deliberately avoid position:fixed + visualViewport math — on several Android
-  // builds it reports ~0 offset, so a fixed chat box ends up UNDER the keyboard's
-  // suggestion/toolbar bar and the input disappears. Focusing the input instead lets the
-  // browser scroll it into view natively (accounting for the IME and its suggestion bar).
-  function applyDock(el, docked){
-    if (!el) return;
-    if (docked) keepChatInputVisible();
-  }
-
-  function keepChatInputVisible(){
-    if (!chatInputEl || !chatInputEl.isConnected) return;
-    if (chatInputEl.style.display === "none") return;
-    // Re-focusing both re-opens the mobile keyboard after an IME hide-on-send and scrolls
-    // the input above the keyboard natively — no manual scroll math to get wrong.
-    try { chatInputEl.focus(); }
-    catch(e){ try { chatInputEl.scrollIntoView(false); } catch(_){} }
-  }
-
-  // Android IMEs often hide the keyboard on send while KEEPING focus on the input, so we
-  // can't detect it via activeElement. Retry the focus over ~400ms so the keyboard reliably
-  // returns even if the IME hides a beat after the send. Stops if the user moves away.
-  function reopenChatKeyboard(){
-    let tries = 0;
-    const attempt = () => {
-      if (!chatWantsFocus || !chatInputEl || !chatInputEl.isConnected) return;
-      if (chatInputEl.style.display === "none") return;
-      try { chatInputEl.focus(); } catch(_){}
-      if (++tries < 4) setTimeout(attempt, 90 + tries * 60);
-    };
-    attempt();
-  }
-
-  function refreshChatDock(){
-    applyDock(chatBoxEl, !!(chatHasFocus && isTouchDevice()));
-  }
-
-  function updateKbBarrier(){
-    const next = kbBarrierHeight();
-    if (Math.abs(next - kbPx) > 2){
-      kbPx = next;
-      refreshChatDock();
-    }
-  }
-
-  // Watch the visual viewport so the chat box floats above the on-screen keyboard
-  if (window.visualViewport){
-    window.visualViewport.addEventListener("resize", updateKbBarrier);
-    window.visualViewport.addEventListener("scroll", updateKbBarrier);
-  }
-  window.addEventListener("resize", updateKbBarrier);
-
-  // ---------- Chat Panel UI ----------
-  // Swap the *content* of a persistent panel section without remaking the container,
-  // so the focused <input> (in the input slot) keeps its identity across renders.
-  function setSlot(slot, content){
-    slot.innerHTML = "";
-    if (content) slot.appendChild(content);
-  }
-
-  function renderChatPanel(){
-    if (appMode !== "multiplayer" || gameState.screen === "card"){
-      // anti-leak: no chat while viewing your secret card. The panel is a persistent child
-      // of #app, so when chat isn't shown we MUST detach it explicitly (the focused input
-      // being removed is fine here — the user left the chat context anyway).
-      if (chatPanelEl && chatPanelEl.parentNode) chatPanelEl.parentNode.removeChild(chatPanelEl);
-      chatPanelEl = null;
-      return null;
-    }
-
-    const titles = {
-      lobby: "Lobby",
-      discuss: "Discussion",
-      vote: "Voting",
-      voteTie: "Tie Break",
-      roundResult: "Round Result",
-      results: "Results"
-    };
-    const title = titles[gameState.screen] || "Game";
-
-    // DOM-persistent panel: the skeleton is built ONCE; later renders only swap the
-    // (unfocused) inner sections. The <input> in the input slot survives every render,
-    // so on mobile the IME never re-initializes and its suggestion bar stays out of the
-    // way of the text you're typing.
-    let box = chatPanelEl;
-    if (!box){
-      box = el("div", {class:"chat-box"});
-      chatPanelEl = box;
-      box.appendChild(el("div", {class:"ch-head-slot"}));
-      box.appendChild(el("div", {class:"ch-chip-slot"}));
-      box.appendChild(el("div", {class:"ch-msgs-slot"}));
-      box.appendChild(el("div", {class:"ch-admin-slot"}));
-      box.appendChild(el("div", {class:"ch-pause-slot"}));
-      // Persistent input row: built ONCE here and never removed from the DOM afterwards.
-      // Renders only toggle its visibility and value, so a focused <input> is never
-      // detached — no blur, no IME re-initialization — and the keyboard's suggestion bar
-      // stays out of the way of the text you're typing.
-      const inputRow = el("div", {class:"chat-input-row"});
-      if (!chatInputEl){
-        chatInputEl = el("input", {
-          type:"text",
-          placeholder:"Type a message…",
-          maxlength:"300",
-          oninput: (e) => { chatDraft = e.target.value; },
-          // NOTE: never call render() from focus handlers — the panel is DOM-persistent
-          // now, but rebuilding mid-focus still disturbs the mobile keyboard.
-          onfocus: () => {
-            chatHasFocus = true;
-            chatWantsFocus = true;               // user is composing — keep keyboard after sends
-            if (chatBlurTimer){ clearTimeout(chatBlurTimer); chatBlurTimer = null; }
-            setTimeout(refreshChatDock, 150);
-          },
-          onblur: () => {
-            chatHasFocus = false;
-            // Give the send/render path a short grace to restore focus before deciding the
-            // user really moved away. If focus isn't back within ~400ms, stop auto-restoring.
-            if (chatBlurTimer) clearTimeout(chatBlurTimer);
-            chatBlurTimer = setTimeout(() => { chatWantsFocus = false; }, 400);
-            setTimeout(refreshChatDock, 250);
-          },
-          onkeydown: (e) => { if (e.key === "Enter"){ sendChat(chatInputEl.value); } }
-        });
-        // Kill the on-screen suggestion / quick-type bar so it can't sit over the text
-        chatInputEl.setAttribute("autocomplete", "off");
-        chatInputEl.setAttribute("autocorrect", "off");
-        chatInputEl.setAttribute("autocapitalize", "off");
-        chatInputEl.setAttribute("spellcheck", "false");
-        chatInputEl.setAttribute("inputmode", "text");
-        chatInputEl.setAttribute("enterkeyhint", "send");
-      }
-      chatInputEl.value = chatDraft;
-      inputRow.appendChild(chatInputEl);
-      inputRow.appendChild(el("button", {onclick: () => sendChat(chatInputEl.value)}, [document.createTextNode("Send ➤")]));
-      box.appendChild(inputRow);
-      box.appendChild(el("div", {class:"ch-note-slot"}));
-    }
-    chatBoxEl = box;
-
-    // On mobile, keep the focused chat input visible above the on-screen keyboard (native
-    // scroll-into-view, no fixed positioning — see keepChatInputVisible above).
-    applyDock(box, !!(chatHasFocus && isTouchDevice()));
-
-    // Header row: title + voice controls
-    {
-      const slot = box.querySelector(".ch-head-slot");
-      const head = el("div", {class:"chat-head"});
-      head.appendChild(el("div", {class:"chat-title"}, [document.createTextNode("💬 " + title + " Chat")]));
-
-      const vbar = el("div", {style:"display:flex; align-items:center; gap:6px;"});
-      // Voice controls only in internet mode (irrelevant over LAN)
-      if (isInternetMode){
-        vbar.appendChild(el("button", {
-          class:"chat-voice-toggle speaker",
-          title: speakerOn ? "Speakers on — tap to mute" : "Speakers muted — tap to unmute",
-          onclick: () => {
-            speakerOn = !speakerOn;
-            for (const pid in remoteAudioEls){
-              try { remoteAudioEls[pid].volume = speakerOn ? 1 : 0; } catch(e){}
-            }
-            render();
-          }
-        }, [document.createTextNode(speakerOn ? "🔊" : "🔇")]));
-        const hostMicMuted = gameState.hostMuteMic && gameState.hostMuteMic[myPlayerId];
-        vbar.appendChild(el("button", {
-          class:"chat-voice-toggle" + (hostMicMuted ? " muted" : (voiceUiOn ? " on" : "")),
-          title: hostMicMuted ? "Your mic is muted by the host" : (voiceUiOn ? "Mic is live — tap to mute" : "Mic is off — tap to unmute"),
-          onclick: () => armMic(!voiceUiOn)
-        }, [document.createTextNode("🎤 " + (hostMicMuted ? "Host" : (voiceUiOn ? "On" : "Off")))]));
-      }
-      head.appendChild(vbar);
-      setSlot(slot, head);
-    }
-
-    // Live mic chips (who is talking) — internet mode only
-    {
-      const slot = box.querySelector(".ch-chip-slot");
-      if (isInternetMode){
-        const chips = el("div", {class:"voice-chips"});
-        let anyVoice = false;
-        gameState.players.forEach(p => {
-          if (p.online === false) return;
-          const on = voiceStates[p.id] === true;
-          const iAm = p.id === myPlayerId;
-          if (!on && !voiceUiOn) return;
-          anyVoice = true;
-          const speaking = voiceSpeaking[playerPeerId(p)] === true;
-          const chip = el("div", {class:"voice-chip" + (speaking ? " speaking" : "") + (iAm || on ? " mic-on" : "")}, [
-            document.createTextNode(p.avatar + " " + (p.name || "?") + (iAm ? " (You)" : ""))
-          ]);
-          if (speaking) chip.appendChild(el("span", {class:"speak-dot"}));
-          chips.appendChild(chip);
-        });
-        if (!anyVoice){
-          chips.appendChild(el("div", {class:"chat-empty"}, [
-            document.createTextNode("No one on mic yet. Tap 🎤 Off to start talking.")
-          ]));
-        }
-        setSlot(slot, chips);
-      } else {
-        setSlot(slot, null);
-      }
-    }
-
-    // Messages
-    {
-      const slot = box.querySelector(".ch-msgs-slot");
-      const list = el("div", {class:"chat-msgs"});
-      list.addEventListener("scroll", () => {
-        const nearBottom = list.scrollTop + list.clientHeight >= list.scrollHeight - 16;
-        chatScrollSticky = nearBottom;
-        if (!nearBottom) chatScrollTop = list.scrollTop;
-      });
-      if (chatMessages.length === 0){
-        list.appendChild(el("div", {class:"chat-empty"}, [document.createTextNode("No messages yet. Say hi! 👋")]));
-      } else {
-        chatMessages.forEach(m => {
-          const row = el("div", {class:"chat-msg" + (m.sys ? " sys" : "")});
-          row.appendChild(el("span", {class:"chat-avatar"}, [document.createTextNode(m.avatar || "👤")]));
-          const body = el("div", {class:"chat-body"});
-          body.appendChild(el("div", {class:"chat-name" + (m.playerId === myPlayerId ? " me" : "")}, [
-            document.createTextNode(m.playerName || "Player")
-          ]));
-          body.appendChild(el("div", {class:"chat-text"}, [document.createTextNode(m.text)]));
-          row.appendChild(body);
-          list.appendChild(row);
-        });
-      }
-      setSlot(slot, list);
-    }
-
-    // Host admin strip — compact icon chips, collapsible
-    {
-      const slot = box.querySelector(".ch-admin-slot");
-      if (isHost){
-        const admin = el("div", {class:"chat-admin"});
-
-        const header = el("div", {class:"chat-admin-header"});
-        header.appendChild(el("span", {class:"chat-admin-title"}, [document.createTextNode("🛠 Host Controls")]));
-        const toggle = el("button", {
-          class:"chat-admin-toggle",
-          title: adminOpen ? "Collapse host controls" : "Expand host controls",
-          onclick: () => {
-            adminOpen = !adminOpen;
-            const inner = admin.querySelector(".chat-admin-inner");
-            if (inner) inner.classList.toggle("closed", !adminOpen);
-            toggle.textContent = adminOpen ? "▾" : "▸";
-            toggle.title = adminOpen ? "Collapse host controls" : "Expand host controls";
-          }
-        }, [document.createTextNode(adminOpen ? "▾" : "▸")]);
-        header.appendChild(toggle);
-        admin.appendChild(header);
-
-        const inner = el("div", {class:"chat-admin-inner" + (adminOpen ? "" : " closed")});
-
-        const actions = el("div", {class:"chat-admin-actions"});
-        // Mic controls only in internet mode
-        if (isInternetMode){
-          actions.appendChild(el("button", {title:"Mute all mics", onclick: () => hostSetAll("mic", true)}, [document.createTextNode("🔇")]));
-          actions.appendChild(el("button", {title:"Unmute all mics", onclick: () => hostSetAll("mic", false)}, [document.createTextNode("🔊")]));
-        }
-        actions.appendChild(el("button", {title:"Block all chat", onclick: () => hostSetAll("chat", true)}, [document.createTextNode("⛔")]));
-        actions.appendChild(el("button", {title:"Unblock all chat", onclick: () => hostSetAll("chat", false)}, [document.createTextNode("💬")]));
-        actions.appendChild(el("button", {class:"red", title:"Clear chat", onclick: hostClearChat}, [document.createTextNode("🗑")]));
-        actions.appendChild(el("button", {
-          style:"border-color:var(--gold); color:var(--gold);",
-          title: gameState.chatEnabled === false ? "Resume chat" : "Pause chat",
-          onclick: hostToggleChatEnabled
-        }, [document.createTextNode(gameState.chatEnabled === false ? "▶" : "⏸")]));
-        inner.appendChild(actions);
-
-        const rows = el("div", {class:"chat-admin-players"});
-        gameState.players.forEach(p => {
-          if (p.isHost || p.online === false) return;
-          const micMuted = gameState.hostMuteMic && gameState.hostMuteMic[p.id];
-          const chatMuted = gameState.hostMuteChat && gameState.hostMuteChat[p.id];
-          const row = el("div", {class:"chat-admin-row"});
-          row.appendChild(el("span", {class:"nm"}, [
-            document.createTextNode((p.avatar || "👤") + " " + (p.name || "Player"))
-          ]));
-          // Mic toggle only in internet mode
-          if (isInternetMode){
-            row.appendChild(el("button", {
-              class: micMuted ? "on" : "offok",
-              title: "Toggle mic for " + p.name,
-              onclick: () => toggleHostMute("mic", p.id)
-            }, [document.createTextNode(micMuted ? "🔇" : "🎤")]));
-          }
-          row.appendChild(el("button", {
-            class: chatMuted ? "on" : "offok",
-            title: "Toggle chat for " + p.name,
-            onclick: () => toggleHostMute("chat", p.id)
-          }, [document.createTextNode(chatMuted ? "⛔" : "💬")]));
-          rows.appendChild(row);
-        });
-        inner.appendChild(rows);
-        admin.appendChild(inner);
-        setSlot(slot, admin);
-      } else {
-        setSlot(slot, null);
-      }
-    }
-
-    // Input row — the SAME row persists across renders; we only toggle its visibility when
-    // chat is paused or I am blocked. Never re-parent the <input> while the user is typing:
-    // detaching it fires blur, which makes the mobile keyboard's suggestion bar jump over
-    // the text being composed.
-    {
-      const chatPaused = gameState.chatEnabled === false;
-      const chatBlockedMe = gameState.hostMuteChat && gameState.hostMuteChat[myPlayerId];
-      const inputRow = box.querySelector(".chat-input-row");
-      if (inputRow && chatInputEl){
-        chatInputEl.value = chatDraft;
-        inputRow.style.display = (chatPaused || chatBlockedMe) ? "none" : "";
-      }
-      const pauseSlot = box.querySelector(".ch-pause-slot");
-      if (chatPaused){
-        setSlot(pauseSlot, el("div", {class:"chat-notice warn"}, [
-          document.createTextNode("💬 Chat is paused by the host.")
-        ]));
-      } else if (chatBlockedMe){
-        setSlot(pauseSlot, el("div", {class:"chat-notice warn"}, [
-          document.createTextNode("💬 You were muted from chat by the host.")
-        ]));
-      } else {
-        setSlot(pauseSlot, null);
-      }
-    }
-
-    setSlot(box.querySelector(".ch-note-slot"), el("div", {class:"chat-notice"}, [
-      document.createTextNode("Chat is seen by everyone · mics start OFF to avoid echo 🔊")
-    ]));
-
-    // Keep scroll pinned to bottom unless the user scrolled up
-    {
-      const slot = box.querySelector(".ch-msgs-slot");
-      requestAnimationFrame(() => {
-        const list = slot.firstChild;
-        if (list){
-          if (chatScrollSticky) list.scrollTop = list.scrollHeight;
-          else list.scrollTop = chatScrollTop || 0;
-        }
-      });
-    }
-
-    // If the user was mid-composition, keep the input focused and the keyboard up after the
-    // send — even though the IME often hides itself a beat later while keeping focus.
-    if (chatWantsFocus && chatInputEl &&
-        gameState.chatEnabled !== false &&
-        !(gameState.hostMuteChat && gameState.hostMuteChat[myPlayerId])){
-      reopenChatKeyboard();
-    }
-
-    return box;
   }
 
   // ==========================================
@@ -3907,24 +2437,20 @@
   // ==========================================
   function render(){
     const app = document.getElementById("app");
-    const screen = document.getElementById("screen");
-    // The chat panel and footer live directly under #app and are NEVER cleared here, so a
-    // focused chat <input> keeps its DOM identity (and the mobile IME keeps its state)
-    // across every render. Only the game/menu content inside #screen is rebuilt.
-    screen.innerHTML = "";
+    app.innerHTML = "";
 
     // App Header
     const h1 = el("h1", {}, [
       el("img", {class:"header-icon", src:MASCOT_IMG, alt:"Icon"}),
       document.createTextNode("Imposter")
     ]);
-    screen.appendChild(h1);
-    screen.appendChild(el("div", {class:"subtitle"}, [document.createTextNode("Multiplayer LAN / Web Party Game")]));
+    app.appendChild(h1);
+    app.appendChild(el("div", {class:"subtitle"}, [document.createTextNode("Multiplayer LAN / Web Party Game")]));
 
     // Top Bar if in room
     if (appMode === "multiplayer" && roomCode){
       const topBar = el("div", {class:"top-bar"});
-
+      
       const netBadge = el("div", {class:"net-badge " + (netStatus === "connected" ? "online" : netStatus === "connecting" ? "connecting" : "error")}, [
         el("div", {class:"dot"}),
         document.createTextNode(roomCode + " · " + (isHost ? "Host" : "Player"))
@@ -3958,44 +2484,28 @@
       rightControls.appendChild(el("button", {onclick: () => exitToMenu(true)}, [document.createTextNode("✕ Leave")]));
       topBar.appendChild(rightControls);
 
-      screen.appendChild(topBar);
+      app.appendChild(topBar);
     }
 
-    if (appMode === "menu") renderMenu(screen);
+    if (appMode === "menu") renderMenu(app);
     else if (appMode === "multiplayer"){
-      if (gameState.screen === "lobby") renderLobby(screen);
-      else if (gameState.screen === "card") renderMultiplayerCard(screen);
-      else if (gameState.screen === "discuss") renderMultiplayerDiscuss(screen);
-      else if (gameState.screen === "vote") renderMultiplayerVote(screen);
-      else if (gameState.screen === "voteTie") renderMultiplayerVoteTie(screen);
-      else if (gameState.screen === "roundResult") renderMultiplayerRoundResult(screen);
-      else if (gameState.screen === "results") renderMultiplayerResults(screen);
+      if (gameState.screen === "lobby") renderLobby(app);
+      else if (gameState.screen === "card") renderMultiplayerCard(app);
+      else if (gameState.screen === "discuss") renderMultiplayerDiscuss(app);
+      else if (gameState.screen === "vote") renderMultiplayerVote(app);
+      else if (gameState.screen === "voteTie") renderMultiplayerVoteTie(app);
+      else if (gameState.screen === "roundResult") renderMultiplayerRoundResult(app);
+      else if (gameState.screen === "results") renderMultiplayerResults(app);
     }
-
-    // Keep voice state in sync (auto-mute during private card reveal) and show chat.
-    // renderChatPanel() returns null (and detaches any stale panel) whenever chat
-    // shouldn't be shown — menu, or the secret-card reveal — so calling it on every
-    // render keeps the persistent panel from lingering after leaving a room.
-    if (appMode === "multiplayer"){
-      applyVoiceMute();
-      reconcileVoiceMesh();
-    }
-    const chatPanel = renderChatPanel();
-    // Persistent child of #app (never cleared), so the focused input survives renders
-    if (chatPanel) app.appendChild(chatPanel);
 
     // Render modals
     const emojiModal = renderEmojiModal();
-    if (emojiModal) screen.appendChild(emojiModal);
+    if (emojiModal) app.appendChild(emojiModal);
 
     const scoreModal = renderScoreModal();
-    if (scoreModal) screen.appendChild(scoreModal);
+    if (scoreModal) app.appendChild(scoreModal);
 
-    // Footer — persistent too, appended after the chat panel to preserve visual order
-    if (!appFooterEl){
-      appFooterEl = el("footer", {}, [document.createTextNode("Imposter · Kerala Themed Multiplayer & Offline Game")]);
-    }
-    app.appendChild(appFooterEl);
+    app.appendChild(el("footer", {}, [document.createTextNode("Imposter · Kerala Themed Multiplayer & Offline Game")]));
   }
 
   function exitToMenu(confirmFirst){
@@ -4007,13 +2517,9 @@
     if (timerInterval) clearInterval(timerInterval);
     if (peer) { try { peer.destroy(); } catch(e){} }
     clientConns.clear();
-    teardownComms();
     appMode = "menu";
     roomCode = "";
     isHost = false;
-    hostMigrationInProgress = false;
-    migrationReconnectElected = null;
-    missedPongs = 0;
     showScoreModal = false;
     showEmojiModal = false;
     myPrivateCard = {
@@ -4084,52 +2590,35 @@
     // Host or Join options
     const actionPanel = el("div", {class:"panel", style:"width:100%; display:flex; flex-direction:column; gap:10px"});
     
-    // Create Room (LAN) button
+    // Create Room button
     actionPanel.appendChild(el("button", {
       class:"primary",
       onclick: () => {
         if (!myPlayerName.trim()) myPlayerName = "Host";
         appMode = "multiplayer";
-        initHostRoom({ mode: "lan" });
+        initHostRoom();
       }
-    }, [document.createTextNode("👑 Create Room (LAN)")]));
-    actionPanel.appendChild(el("div", {class:"hint", style:"text-align:left; margin-top:-6px; opacity:.7; font-size:.75rem"}, [
-      document.createTextNode("Same Wi-Fi network. Fastest connection.")
-    ]));
-
-    // Internet Play (Testing) button
-    actionPanel.appendChild(el("button", {
-      class:"primary accent-btn",
-      onclick: () => {
-        if (!myPlayerName.trim()) myPlayerName = "Host";
-        appMode = "multiplayer";
-        initHostRoom({ mode: "internet" });
-      }
-    }, [document.createTextNode("🌐 Internet Play (Testing)")]));
-    actionPanel.appendChild(el("div", {class:"hint", style:"text-align:left; margin-top:-6px; opacity:.7; font-size:.75rem"}, [
-      document.createTextNode("Play across different networks via invite link. Uses free TURN relay — may be slower.")
-    ]));
+    }, [document.createTextNode("👑 Create Room (Host Game)")]));
 
     // Join with Code
-    const joinRow = el("div", {style:"display:flex; gap:8px; margin-top:8px"});
+    const joinRow = el("div", {style:"display:flex; gap:8px; margin-top:4px"});
     const codeInput = el("input", {
       type:"text",
       placeholder:"Room Code (e.g. IMP-49)",
       style:"text-transform:uppercase; font-weight:bold; letter-spacing:2px;"
     });
-
+    
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("room")) codeInput.value = urlParams.get("room");
-    const urlMode = urlParams.get("mode") === "internet" ? "internet" : "lan";
 
     const joinBtn = el("button", {
-      class:"primary",
+      class:"primary accent-btn",
       style:"width:120px",
       onclick: () => {
         if (!codeInput.value.trim()){ alert("Please enter a Room Code!"); return; }
         if (!myPlayerName.trim()) myPlayerName = "Player " + Math.floor(Math.random()*100);
         appMode = "multiplayer";
-        initClientJoin(codeInput.value.trim(), { mode: urlMode });
+        initClientJoin(codeInput.value.trim());
       }
     }, [document.createTextNode("Join ▶")]);
 
@@ -4159,19 +2648,12 @@
     roomBox.appendChild(el("div", {style:"font-size:.8rem; text-transform:uppercase; opacity:.8"}, [document.createTextNode("Room Code")]));
     roomBox.appendChild(el("div", {class:"room-code-text"}, [document.createTextNode(roomCode)]));
     
-    // Mode badge
-    const modeBadge = el("div", {style:"font-size:.72rem; margin-top:4px; opacity:.8;"}, [
-      document.createTextNode(isInternetMode ? "🌐 Internet Play" : "📶 LAN Only")
-    ]);
-    roomBox.appendChild(modeBadge);
-
     // QR Code Container
     const qrDiv = el("div", {id:"qrcodeContainer"});
     roomBox.appendChild(qrDiv);
     setTimeout(() => {
       qrDiv.innerHTML = "";
-      const modeParam = isInternetMode ? "&mode=internet" : "";
-      const joinUrl = window.location.origin + window.location.pathname + "?room=" + encodeURIComponent(roomCode) + modeParam;
+      const joinUrl = window.location.origin + window.location.pathname + "?room=" + encodeURIComponent(roomCode);
       if (window.QRCode) {
         new QRCode(qrDiv, { text: joinUrl, width: 140, height: 140 });
       }
@@ -4182,8 +2664,7 @@
       class:"link-btn",
       style:"margin-top:6px; color:var(--gold); font-size:.85rem;",
       onclick: () => {
-        const modeParam = isInternetMode ? "&mode=internet" : "";
-        const joinUrl = window.location.origin + window.location.pathname + "?room=" + encodeURIComponent(roomCode) + modeParam;
+        const joinUrl = window.location.origin + window.location.pathname + "?room=" + encodeURIComponent(roomCode);
         navigator.clipboard.writeText(joinUrl).then(() => alert("Invite link copied to clipboard!"));
       }
     }, [document.createTextNode("📋 Copy Invite Link")]));
@@ -4364,12 +2845,6 @@
         document.createTextNode("✓ You are ready! Waiting for other players...")
       ]);
       screen.appendChild(readyBanner);
-    }
-
-    if (voiceUiOn){
-      screen.appendChild(el("div", {class:"chat-notice warn"}, [
-        document.createTextNode("🎙 Voice is auto-muted while you view your secret card. It resumes when discussion starts.")
-      ]));
     }
 
     // Ready progress among active alive players
@@ -4804,15 +3279,8 @@
   window.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
     const roomParam = params.get("room");
-    const modeParam = params.get("mode"); // "internet" or null/undefined
     if (roomParam){
       appMode = "menu";
-      // Auto-join if room code in URL (for shared invite links)
-      if (modeParam === "internet"){
-        initClientJoin(roomParam, { mode: "internet" });
-      } else {
-        initClientJoin(roomParam, { mode: "lan" });
-      }
     }
     render();
   });
