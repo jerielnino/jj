@@ -2618,7 +2618,10 @@
             onPeers: (peers) => {},
             onBinary: (buf) => {
               const parsed = parseRelayAudio(buf);
-              if (parsed) queueRelayAudio(parsed.playerId, parsed.pcm);
+              if (parsed) {
+                netDiag("Audio frame from " + parsed.playerId + " (" + parsed.pcm.length + " samples)");
+                queueRelayAudio(parsed.playerId, parsed.pcm);
+              }
             },
             onError: (e) => { netDiag("Host relay error: " + e); }
           });
@@ -2710,7 +2713,10 @@
             onPeer: handleRelayPeerGuest,
             onBinary: (buf) => {
               const parsed = parseRelayAudio(buf);
-              if (parsed) queueRelayAudio(parsed.playerId, parsed.pcm);
+              if (parsed) {
+                netDiag("Audio frame from " + parsed.playerId + " (" + parsed.pcm.length + " samples)");
+                queueRelayAudio(parsed.playerId, parsed.pcm);
+              }
             },
             onError: (e) => {
               netStatus = "error";
@@ -3439,8 +3445,10 @@
           render();
         } else if (data.type === "VOICE_STATE") {
           voiceStates[data.id] = data.on;
-          broadcastVoiceState(data.id, data.on);
-          reconcileVoiceMesh();
+          if (!isInternetMode){
+            broadcastVoiceState(data.id, data.on);
+            reconcileVoiceMesh();
+          }
           render();
         } else if (data.type === "PING") {
           try { conn.send({ type: "PONG" }); } catch (e) { }
@@ -3507,7 +3515,7 @@
         } else if (data.type === "VOICE_STATE") {
           const changed = voiceStates[data.id] !== data.on;
           voiceStates[data.id] = data.on;
-          if (changed) {
+          if (changed && !isInternetMode){
             reconcileVoiceMesh();
             render();
           }
@@ -3957,8 +3965,8 @@
       }
 
       function stopRelayVoicePlayer(playerId){
-        if (relayVoiceBuffers[pid]){
-          try { relayVoiceBuffers[pid].stop(); } catch(e){}
+        if (relayVoiceBuffers[playerId]){  // fixed: was pid
+          try { relayVoiceBuffers[playerId].stop(); } catch(e){}
         }
         relayVoiceChunks[playerId] = [];
         relayVoiceSchedules[playerId] = 0;

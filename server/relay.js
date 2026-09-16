@@ -37,6 +37,7 @@ function ctxOf(ws){ // convenience — what does the relay know about this socke
 function forward(room, senderId, obj){
   const set = rooms.get(room);
   if (!set) return;
+  console.log(`[relay] forward text from ${senderId} to ${set.size - 1} others: ${obj.p && obj.p.type || "?"}`);
   set.forEach((sock, id) => {
     if (id === senderId) return;
     sendJson(sock, { p: obj.p, from: senderId });
@@ -54,7 +55,7 @@ wss.on("connection", (ws) => {
   sendJson(ws, { type: "relay_hello", ok: true });
 
   ws.on("message", (raw, isBinary) => {
-    // ---- Binary audio: fan out to everyone else, tagged with the sender ----
+    // ---- Binary audio: fan out to everyone else in the room ----
     if (isBinary){
       const { room, playerId } = ctxOf(ws);
       if (!room || !playerId) return;
@@ -64,6 +65,7 @@ wss.on("connection", (ws) => {
       const head = Buffer.alloc(2);
       head.writeUInt16BE(Buffer.byteLength(playerId), 0);
       const frame = Buffer.concat([head, Buffer.from(playerId, "utf8"), buf]);
+      console.log(`[relay] binary from ${playerId} (${buf.length} bytes) -> fanning to ${set.size - 1} others`);
       set.forEach((sock, id) => {
         if (id === playerId) return;
         if (sock.readyState === 1){
@@ -101,6 +103,7 @@ wss.on("connection", (ws) => {
         set.delete(playerId);
       }
       set.set(playerId, ws);
+      console.log(`[relay] JOIN ${room} player=${playerId} role=${ws.__role} (room now ${set.size})`);
 
       sendJson(ws, { type: "relay_ok", room: room, playerId: playerId, role: ws.__role, count: set.size });
       // send the new socket the current roster so it can find the host
