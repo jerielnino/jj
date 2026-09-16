@@ -2084,18 +2084,20 @@
     const base = { debug: 1 };
     if (mode === "internet"){
       // STUN + multiple free TURN relays for Internet play (traverses symmetric NATs, firewalls).
-      // Trying several relays improves odds if one is blocked or down from your region.
+      // tries: (TURN over TLS, port 443) is the most firewall-friendly — added alongside UDP variants.
       base.config = {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
-          // Free public TURN — openrelay.metered.ca (rate limited, fine for casual play)
-          { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+          // Free public TURN — openrelay.metered.ca
+          { urls: 'turns:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
           { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+          { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
           { urls: 'turn:openrelay.metered.ca:3478', username: 'openrelayproject', credential: 'openrelayproject' },
-          // Free public TURN — numb.viagenie.ca (long-running public relay)
-          { urls: 'turn:numb.viagenie.ca:3478', username: 'muazkh', credential: 'muazkh' }
+          // Free public TURN — numb.viagenie.ca (legacy public relay)
+          { urls: 'turn:numb.viagenie.ca:3478', username: 'muazkh', credential: 'muazkh' },
+          { urls: 'turns:numb.viagenie.ca:443', username: 'muazkh', credential: 'muazkh' }
         ]
       };
     } else {
@@ -2227,8 +2229,16 @@
         console.warn("Host connection error with peer:", conn.peer, err);
       });
       if (conn.peerConnection){
-        conn.peerConnection.oniceconnectionstatechange = () => {
-          netDiag("ICE state (" + conn.peer + "): " + (conn.peerConnection ? conn.peerConnection.iceConnectionState : "disposed"));
+        const rtc = conn.peerConnection;
+        rtc.oniceconnectionstatechange = () => {
+          netDiag("Host ICE state (" + conn.peer + "): " + (rtc ? rtc.iceConnectionState : "disposed"));
+        };
+        rtc.onicecandidate = (ev) => {
+          if (ev.candidate && ev.candidate.candidate){
+            const c = ev.candidate;
+            const src = (c.url && c.url.includes("turn")) ? c.url.split("/")[2] || "turn" : (c.url && c.url.includes("stun")) ? "stun" : "host";
+            netDiag("Candidate (" + conn.peer + "): type=" + (c.type||"?") + " src=" + src + " proto=" + (c.protocol||"?"));
+          }
         };
       }
     });
@@ -2347,8 +2357,16 @@
 
     hostConn = peer.connect(targetPeerId, { reliable: true });
     if (hostConn.peerConnection){
-      hostConn.peerConnection.oniceconnectionstatechange = () => {
-        netDiag("Client ICE state: " + (hostConn.peerConnection ? hostConn.peerConnection.iceConnectionState : "disposed"));
+      const rtc = hostConn.peerConnection;
+      rtc.oniceconnectionstatechange = () => {
+        netDiag("Client ICE state: " + (rtc ? rtc.iceConnectionState : "disposed"));
+      };
+      rtc.onicecandidate = (ev) => {
+        if (ev.candidate && ev.candidate.candidate){
+          const c = ev.candidate;
+          const src = (c.url && c.url.includes("turn")) ? c.url.split("/")[2] || "turn" : (c.url && c.url.includes("stun")) ? "stun" : "host";
+          netDiag("Candidate: type=" + (c.type||"?") + " src=" + src + " proto=" + (c.protocol||"?"));
+        }
       };
     }
 
