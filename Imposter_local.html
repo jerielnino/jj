@@ -3429,6 +3429,7 @@
         } else if (data.type === "CAST_VOTE") {
           handlePlayerVote(data.voterId, data.targetId);
         } else if (data.type === "CHAT") {
+          netDiag("Host received CHAT from " + data.id);
           if (gameState.chatEnabled === false) return;
           if (gameState.hostMuteChat && gameState.hostMuteChat[data.id]) return;
           const sender = gameState.players.find(x => x.id === data.id);
@@ -3506,6 +3507,7 @@
           // Host has migrated — reconnect to the new host
           handleHostMigration(data);
         } else if (data.type === "CHAT_BROADCAST") {
+          netDiag("Client received CHAT_BROADCAST");
           appendChat(data.msg);
           if (data.msg && !data.msg.sys && !chatHasFocus) playBeep(560, 'sine', 0.05);
           render();
@@ -3564,6 +3566,7 @@
       }
 
       function sendChatBroadcast(msg) {
+        netDiag("sendChatBroadcast to " + clientConns.size + " conns");
         const payload = { type: "CHAT_BROADCAST", msg: msg };
         clientConns.forEach(conn => {
           if (conn && conn.open) {

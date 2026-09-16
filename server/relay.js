@@ -121,6 +121,7 @@ wss.on("connection", (ws) => {
     const { room, playerId } = ctxOf(ws);
     if (!room || !playerId) return;
     const payload = (m && typeof m === "object" && "p" in m) ? m.p : m;
+    console.log(`[relay] text from ${playerId} type=${payload?.type || "?"} to=${m.to || "broadcast"}`);
     if (m && m.to){
       // targeted delivery to one player
       const set = rooms.get(room);
