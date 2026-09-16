@@ -1,0 +1,12 @@
+{
+    "name": "imposter-relay",
+    "version": "1.0.0",
+    "description": "WebSocket relay for Imposter Internet Play",
+    "main": "relay.js",
+    "scripts": {
+        "start": "node relay.js"
+    },
+    "dependencies": {
+        "ws": "^8.16.0"
+    }
+}

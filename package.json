@@ -1,0 +1,10 @@
+{
+  "name": "imposter-game",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:relay": "cd server && npm install",
+    "start:relay": "node server/relay.js"
+  },
+  "devDependencies": {}
+}
