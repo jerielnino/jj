@@ -3,6 +3,9 @@
 #EXTINF:-1 tvg-logo="https://yt3.googleusercontent.com/IPAJG3uz5dV6iTGqirEPueuZD8czPINVBwjtNuh0T17DJKEVlqD5GlApEQQbHjWJORY13-KpYg=s160-c-k-c0x00ffffff-no-rj"  group-title="Malayalam",Kasaragod Vision
 https://live.skystream.in/live/kasaragodvsn/index.m3u8
 
+#EXTINF:-1 tvg-logo="https://play-lh.googleusercontent.com/sfxGAj8et5iKbygQ7Plp6gSvsvLodM4b7HU0K_1dx_etJMo3FUEIkf0z7KdWTEb-Gwhx5Vz9bQjpB8g_oz6jry0=w240-h480-rw"  group-title="Malayalam",KCN Kasaragod
+https://live.skystream.in/live/kcnksrgod/index.m3u8
+
 #EXTINF:-1 tvg-logo="https://assetsv2.nyra.com/filer_public_thumbnails/filer_public/15/bc/15bc193e-022b-49d8-8a84-15766f2f9d91/filer_publicuploadswysiwygfs1_810x430.jpg__1600x1600_q85_ALIAS-lg_subsampling-2.jpg"  group-title="Sports",Hub Premier 1
 #EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36
 http://superp4.xyz:80/live/GTD412371CVUFYU/MiC43BG8P3/324806.ts
