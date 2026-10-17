@@ -9,13 +9,17 @@ https://live.skystream.in/live/kcnksrgod/index.m3u8
 #EXTINF:-1 tvg-logo="https://play-lh.googleusercontent.com/U11okGjVgkdk9GkYNnqoiLrES36ayRBUnP83lUDuPaPVsOVkOUdiuWZtdLRZ0NJgee3Dz_Aa0kgI5NP3ioNhSw=w240-h480-rw"  group-title="Malayalam",ONE Tv
 http://103.99.205.223:1935/live/onetv/playlist.m3u8
 
-#EXTINF:-1 tvg-logo="https://assetsv2.nyra.com/filer_public_thumbnails/filer_public/15/bc/15bc193e-022b-49d8-8a84-15766f2f9d91/filer_publicuploadswysiwygfs1_810x430.jpg__1600x1600_q85_ALIAS-lg_subsampling-2.jpg"  group-title="Sports",Hub Premier 1
+#EXTINF:-1 tvg-logo="https://thumb.wikimedia.org/wikipedia/en/thumb/7/7a/StarHub_%282021%29.svg/500px-StarHub_%282021%29.svg.png?utm_source=en.wikipedia.org&utm_campaign=parser&utm_content=thumbnail"  group-title="Sports",Hub Premier 1
 #EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36
 http://superp4.xyz:80/live/GTD412371CVUFYU/MiC43BG8P3/324806.ts
 
-#EXTINF:-1 tvg-logo="https://assetsv2.nyra.com/filer_public_thumbnails/filer_public/15/bc/15bc193e-022b-49d8-8a84-15766f2f9d91/filer_publicuploadswysiwygfs1_810x430.jpg__1600x1600_q85_ALIAS-lg_subsampling-2.jpg"  group-title="Sports",Sky Cricket
+#EXTINF:-1 tvg-logo="https://thumb.wikimedia.org/wikipedia/en/thumb/7/7a/StarHub_%282021%29.svg/500px-StarHub_%282021%29.svg.png?utm_source=en.wikipedia.org&utm_campaign=parser&utm_content=thumbnail"  group-title="Sports",Hub Premier 1
 #EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36
-http://superp4.xyz:80/live/GTD412371CVUFYU/MiC43BG8P3/17290.ts
+http://quebecfasttv.vg:80/live/TFK2EXW/9LKRHNS/324806.ts
+
+#EXTINF:-1 tvg-logo="https://thumb.wikimedia.org/wikipedia/en/thumb/7/7a/StarHub_%282021%29.svg/500px-StarHub_%282021%29.svg.png?utm_source=en.wikipedia.org&utm_campaign=parser&utm_content=thumbnail"  group-title="Sports",Hub Premier 1
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36
+http://line.cloud-ott.net:80/live/8GHP4J/U7PDNW/1314077.ts
 
 #EXTINF:-1 tvg-logo="https://assetsv2.nyra.com/filer_public_thumbnails/filer_public/15/bc/15bc193e-022b-49d8-8a84-15766f2f9d91/filer_publicuploadswysiwygfs1_810x430.jpg__1600x1600_q85_ALIAS-lg_subsampling-2.jpg"  group-title="Sports",Liv vs Atm
 #EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36
