@@ -11,8 +11,8 @@
   --table-bg: #2874ba;
   --ivory: linear-gradient(145deg, #fdfbf7 0%, #e8dec8 100%);
   --ivory-border: #bdae93;
-  --p1: #06b6d4; --p2: #22c55e; --p3: #ef4444; 
-  --p4: #78350f; --p5: #1e40af; --p6: #eab308;
+  --p1: #0284c7; --p2: #16a34a; --p3: #dc2626; 
+  --p4: #78350f; --p5: #1d4ed8; --p6: #ca8a04;
 }
 
 * { box-sizing: border-box; }
@@ -124,13 +124,12 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 }
 .side-boneyard::-webkit-scrollbar { display: none; }
 .side-boneyard .boneyard-tile {
-  width: 32px; height: 16px; background: var(--ivory); border-radius: 4px;
-  border: 1px solid rgba(0,0,0,0.6); position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  width: 32px; height: 16px; background: #fdfbf7; border-radius: 4px;
+  border: 1px solid rgba(0,0,0,0.3); position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   flex-shrink: 0;
 }
 .side-boneyard .boneyard-tile::after {
-  content: ''; position: absolute; left: 50%; top: 2px; bottom: 2px; width: 1px;
-  background: rgba(0,0,0,0.3); margin-left: -0.5px;
+  display: none;
 }
 
 /* Playable Tiles & Pips */
@@ -141,6 +140,10 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 /* Unified divider and layout for all tiles */
 .tile::after { content: ''; position: absolute; left: 50%; top: 4px; bottom: 4px; width: 2px; background: #a89f91; margin-left: -1px; box-shadow: 1px 0 0 #fff; }
 .tile .half { width: 50%; height: 100%; display: grid; place-items: center; padding: 4px; box-sizing: border-box; overflow: hidden; }
+
+/* Hand tiles: vertical layout */
+.hand .tile::after { left: 4px; right: 4px; top: 50%; bottom: auto; width: auto; height: 2px; margin-top: -1px; margin-left: 0; }
+.hand .tile .half { width: 100%; height: 50%; }
 
 /* Hand Area */
 .hand-area {
@@ -153,14 +156,14 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 .hand { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 6px; }
 .hand .tile {
   position: relative;
-  width: 84px;
-  height: 42px;
+  width: 42px;
+  height: 84px;
   left: auto;
   top: auto;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -176,7 +179,11 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
     gap: 6px;
     margin-top: 4px;
   }
-  .hand .tile, .tile {
+  .hand .tile {
+    width: 28px;
+    height: 56px;
+  }
+  .tile {
     width: 56px;
     height: 28px;
   }
@@ -187,11 +194,11 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
     padding: 0px;
     gap: 0px;
   }
-  .pip {
-    width: 5px !important;
-    height: 5px !important;
-    box-shadow: none !important;
-    border: 1px solid rgba(0,0,0,0.3) !important;
+  .hand .pip {
+    width: 6px !important;
+    height: 6px !important;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.4), inset 0 1px 1px rgba(0,0,0,0.6) !important;
+    border: 1.2px solid #111 !important;
   }
   .mini-hand {
     gap: 1px;
@@ -208,11 +215,76 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
     bottom: 2px;
     width: 1px;
   }
+  .hand .tile::after {
+    left: 2px;
+    right: 2px;
+    top: 50%;
+    bottom: auto;
+    width: auto;
+    height: 1px;
+    margin-top: 0;
+    margin-left: 0;
+  }
+  .hand .tile .half {
+    width: 100%;
+    height: 50%;
+    padding: 1px;
+  }
+  /* Ensure board tiles on mobile remain bold and properly sized */
+  .board-tile .pip,
+  #boardCanvas .pip {
+    width: 10px !important;
+    height: 10px !important;
+    border: 1.5px solid #111 !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.6), inset 0 1px 2px rgba(0,0,0,0.85) !important;
+  }
+  .board-tile .half,
+  #boardCanvas .tile .half {
+    padding: 3px !important;
+  }
+}
+
+/* Placed Board Tiles & Pips - Bold on Desktop & Mobile */
+.board-tile,
+#boardCanvas .tile {
+  background: var(--ivory) !important;
+  border: 1.5px solid #7c6f5d !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 1px 2px #fff !important;
+}
+.board-tile::after,
+#boardCanvas .tile::after {
+  content: '' !important;
+  position: absolute !important;
+  left: 50% !important;
+  top: 3px !important;
+  bottom: 3px !important;
+  width: 2px !important;
+  background: #6e6456 !important;
+  margin-left: -1px !important;
+  box-shadow: 1px 0 0 rgba(255,255,255,0.7) !important;
+}
+.board-tile .half,
+#boardCanvas .tile .half {
+  width: 50% !important;
+  height: 100% !important;
+  padding: 3px !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: hidden !important;
+}
+.board-tile .pip,
+#boardCanvas .pip {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 50% !important;
+  border: 1.5px solid #111 !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.6), inset 0 1px 2px rgba(0,0,0,0.85) !important;
 }
 
 /* Pip Logic */
 .pips { display: grid; width: 100%; height: 100%; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 2px; gap: 1px; box-sizing: border-box; overflow: hidden; }
-.pip { width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 2px 3px rgba(0,0,0,0.6); align-self: center; justify-self: center; }
+.pip { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: inset 0 1px 2px rgba(0,0,0,0.8); border: 1.5px solid #111; align-self: center; justify-self: center; }
 
 .half[data-val="0"] .pip { display: none; }
 .half[data-val="1"] .pip { background: var(--p1); }
@@ -229,10 +301,95 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 .p4 .pip:nth-child(1){grid-area: 1/1;} .p4 .pip:nth-child(2){grid-area: 1/3;} .p4 .pip:nth-child(3){grid-area: 3/1;} .p4 .pip:nth-child(4){grid-area: 3/3;}
 .p5 .pip:nth-child(1){grid-area: 1/1;} .p5 .pip:nth-child(2){grid-area: 1/3;} .p5 .pip:nth-child(3){grid-area: 2/2;} .p5 .pip:nth-child(4){grid-area: 3/1;} .p5 .pip:nth-child(5){grid-area: 3/3;}
 
-/* 6 Pips Horizontal 3x2 */
-.half[data-val="6"] .pips { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); align-content: center; }
-.p6 .pip:nth-child(1) { grid-area: 1/1; } .p6 .pip:nth-child(2) { grid-area: 1/2; } .p6 .pip:nth-child(3) { grid-area: 1/3; }
-.p6 .pip:nth-child(4) { grid-area: 2/1; } .p6 .pip:nth-child(5) { grid-area: 2/2; } .p6 .pip:nth-child(6) { grid-area: 2/3; }
+/* 6 Pips: 2 columns × 3 rows (2*3 grid) for vertical hand tiles and logo */
+.half[data-val="6"] .pips {
+  grid-template-columns: repeat(2, 1fr) !important;
+  grid-template-rows: repeat(3, 1fr) !important;
+  align-content: center;
+  justify-content: center;
+}
+.p6 .pip:nth-child(1) { grid-area: 1/1; }
+.p6 .pip:nth-child(2) { grid-area: 1/2; }
+.p6 .pip:nth-child(3) { grid-area: 2/1; }
+.p6 .pip:nth-child(4) { grid-area: 2/2; }
+.p6 .pip:nth-child(5) { grid-area: 3/1; }
+.p6 .pip:nth-child(6) { grid-area: 3/2; }
+
+/* Board Tiles: In horizontal base orientation, 6 uses 3 columns × 2 rows
+   so when doubles (like 6-6) are placed vertically on the board (rot: 90deg),
+   the 90deg rotation aligns them into the exact same 2*3 vertical layout as in the hand */
+.board-tile .half[data-val="6"] .pips,
+#boardCanvas .half[data-val="6"] .pips {
+  grid-template-columns: repeat(3, 1fr) !important;
+  grid-template-rows: repeat(2, 1fr) !important;
+  align-content: center;
+  justify-content: center;
+}
+.board-tile .p6 .pip:nth-child(1),
+#boardCanvas .p6 .pip:nth-child(1) { grid-area: 1/1 !important; }
+.board-tile .p6 .pip:nth-child(2),
+#boardCanvas .p6 .pip:nth-child(2) { grid-area: 1/2 !important; }
+.board-tile .p6 .pip:nth-child(3),
+#boardCanvas .p6 .pip:nth-child(3) { grid-area: 1/3 !important; }
+.board-tile .p6 .pip:nth-child(4),
+#boardCanvas .p6 .pip:nth-child(4) { grid-area: 2/1 !important; }
+.board-tile .p6 .pip:nth-child(5),
+#boardCanvas .p6 .pip:nth-child(5) { grid-area: 2/2 !important; }
+.board-tile .p6 .pip:nth-child(6),
+#boardCanvas .p6 .pip:nth-child(6) { grid-area: 2/3 !important; }
+
+/* Diminishing Pulse Animation & Dual Placement UI */
+@keyframes diminishingPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 214, 111, 0.95), inset 0 0 8px rgba(255, 214, 111, 0.4);
+    border-color: #ffd66f;
+  }
+  65% {
+    box-shadow: 0 0 0 12px rgba(255, 214, 111, 0), inset 0 0 2px rgba(255, 214, 111, 0.1);
+    border-color: rgba(255, 214, 111, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 214, 111, 0), inset 0 0 8px rgba(255, 214, 111, 0.4);
+    border-color: #ffd66f;
+  }
+}
+
+
+.board-choice-target {
+  position: absolute;
+  width: 84px;
+  height: 42px;
+  border-radius: 8px;
+  background: rgba(255, 214, 111, 0.25);
+  border: 2.5px dashed #ffd66f;
+  cursor: pointer;
+  z-index: 100;
+  animation: diminishingPulse 1.2s infinite ease-in-out;
+  backdrop-filter: blur(3px);
+  user-select: none;
+  box-sizing: border-box;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.board-choice-target::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 50%;
+  width: 1.5px;
+  transform: translateX(-50%);
+  background: rgba(255, 214, 111, 0.6);
+}
+.board-choice-target:active {
+  background: rgba(255, 214, 111, 0.5) !important;
+}
+
+.hand .tile.selected {
+  outline: 3px solid #ffd66f !important;
+  transform: translateY(-10px) !important;
+  box-shadow: 0 16px 24px rgba(0,0,0,0.7), 0 0 14px rgba(255,214,111,0.7) !important;
+}
 
 /* Modals */
 .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
@@ -306,7 +463,7 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
     </div>
     <div id="hostControls" class="controls-grid hidden">
       <div><label>Player Limit</label><select id="playerLimit"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
-      <div><label>Winning Score</label><select id="winningScore"><option value="50">50 Points</option><option value="100" selected>100 Points</option><option value="150">150 Points</option><option value="200">200 Points</option></select></div>
+      <div><label>Match Loss Target (Max Points)</label><select id="winningScore"><option value="50">50 Points</option><option value="100" selected>100 Points</option><option value="150">150 Points</option><option value="200">200 Points</option></select></div>
     </div>
     <div class="row">
       <button id="startBtn" class="hidden" style="font-size:1.1rem; padding: 14px 40px;">Start Game</button>
@@ -582,8 +739,8 @@ function startSolo() {
 // === ENGINE LOGIC ===
 function startGame() {
   if(!host || players.length < 2) return;
-  const prevScores = state?.scores ? {...state.scores} : {};
-  const nextRound = state?.round ? state.round + 1 : 1;
+  const prevScores = (state?.matchWinner) ? {} : (state?.scores ? {...state.scores} : {});
+  const nextRound = (state?.matchWinner) ? 1 : (state?.round ? state.round + 1 : 1);
   participantLimit = Number($('playerLimit').value)||participantLimit;
   winningScore = Number($('winningScore').value)||100;
   
@@ -598,6 +755,7 @@ function startGame() {
   state = {
     started:true, players:players.map(p=>p.id), hands, stock:tiles, board:[], 
     leftEnd:null, rightEnd:null, current:players[0].id, passCount:0, winner:null, 
+    matchWinner:null, matchLoser:null,
     scores:Object.fromEntries(players.map(p=>[p.id, prevScores[p.id]||0])), 
     winningScore, round:nextRound, mustPlayTile:null
   };
@@ -612,7 +770,7 @@ function clientState(id) {
     started:state.started, players:state.players, hand:id?state.hands[id]:null,
     handCounts:Object.fromEntries(state.players.map(pid=>[pid, (state.hands[pid]||[]).length])),
     stockCount:state.stock.length, board:state.board, current:state.current, winner:state.winner,
-    matchWinner:state.matchWinner, blockedWinner:state.blockedWinner, scores:state.scores||{},
+    matchWinner:state.matchWinner, matchLoser:state.matchLoser, blockedWinner:state.blockedWinner, scores:state.scores||{},
     winningScore:state.winningScore, round:state.round, mustPlayTile:state.mustPlayTile||null, leftEnd:state.leftEnd, rightEnd:state.rightEnd
   };
 }
@@ -638,7 +796,7 @@ function handleAction(id, d) {
     const idx = hand.findIndex(t=>t.id===d.tileId); if(idx<0) return;
     const tile = hand[idx]; if(!isPlayable(tile)) return;
     if(state.mustPlayTile && tile.id !== state.mustPlayTile) return;
-    hand.splice(idx, 1); state.mustPlayTile = null; placeTileOnBoard(tile);
+    hand.splice(idx, 1); state.mustPlayTile = null; placeTileOnBoard(tile, d.side);
     if(!hand.length) finishRound(id); else state.passCount = 0;
     if(!state.winner) nextTurn();
     broadcastState('PLAY'); return;
@@ -683,7 +841,7 @@ function checkAndApplyTurn(e, isNextDouble) {
   }
 }
 
-function placeTileOnBoard(t) {
+function placeTileOnBoard(t, preferredSide=null) {
   let isDouble = (t.a === t.b);
   if(!state.board.length) {
     let rot = isDouble ? 90 : 0;
@@ -693,8 +851,14 @@ function placeTileOnBoard(t) {
     return;
   }
 
-  let rightMatch = (t.a === state.rightEnd.val || t.b === state.rightEnd.val);
-  let side = rightMatch ? 'rightEnd' : 'leftEnd';
+  let canRight = (t.a === state.rightEnd.val || t.b === state.rightEnd.val);
+  let canLeft = (t.a === state.leftEnd.val || t.b === state.leftEnd.val);
+  let side;
+  if(preferredSide === 'left' && canLeft) side = 'leftEnd';
+  else if(preferredSide === 'right' && canRight) side = 'rightEnd';
+  else if(canRight) side = 'rightEnd';
+  else side = 'leftEnd';
+
   let end = state[side];
   let matchVal = end.val;
 
@@ -728,6 +892,20 @@ function nextTurn() {
   state.mustPlayTile = null; autoActionRevision = -1;
 }
 
+function checkMatchOutcome() {
+  const maxScore = Math.max(...state.players.map(pid => state.scores[pid] || 0));
+  if (maxScore >= state.winningScore) {
+    // Player with minimum points wins match!
+    // Player with maximum points loses!
+    const sorted = [...state.players].sort((a,b) => (state.scores[a]||0) - (state.scores[b]||0));
+    state.matchWinner = sorted[0];
+    state.matchLoser = state.players.find(pid => (state.scores[pid]||0) === maxScore);
+  } else {
+    state.matchWinner = null;
+    state.matchLoser = null;
+  }
+}
+
 function finishRound(wId) {
   // Add each opponent's remaining pips as penalty points
   state.players.forEach(pid => {
@@ -736,33 +914,31 @@ function finishRound(wId) {
       state.scores[pid] = (state.scores[pid] || 0) + oppPts;
     }
   });
-  // Winner receives no points this round
+  // Winner receives no penalty points this round
   state.winner = wId;
   state.roundPoints = 0;
-  state.matchWinner = state.scores[wId] >= state.winningScore ? wId : null;
+  checkMatchOutcome();
 }
+
 function finishBlockedRound() {
   // Calculate pip totals for each player
   const sums = state.players.map(pid => ({
     id: pid,
     pts: (state.hands[pid] || []).reduce((n, t) => n + t.a + t.b, 0)
   }));
-  // Player with the lowest pip total loses points (wId)
+  // Player with lowest pip total wins blocked round (gets 0 penalty points)
   const wId = sums.reduce((min, p) => (p.pts < min.pts ? p : min), sums[0]).id;
   if (wId) {
-    const pts = sums.filter(x => x.id !== wId).reduce((n, x) => n + x.pts, 0);
-    // Add points to all other players
     state.players.forEach(pid => {
       if (pid !== wId) {
-        state.scores[pid] = (state.scores[pid] || 0) + pts;
+        const oppPts = (state.hands[pid] || []).reduce((n, t) => n + t.a + t.b, 0);
+        state.scores[pid] = (state.scores[pid] || 0) + oppPts;
       }
     });
-    // Subtract points from the blocked winner (lowest pip count)
-  // No points deducted from winner
     state.winner = 'blocked';
     state.blockedWinner = wId;
-    state.roundPoints = pts;
-    state.matchWinner = state.scores[wId] >= state.winningScore ? wId : null;
+    state.roundPoints = 0;
+    checkMatchOutcome();
   } else {
     state.winner = 'blocked';
   }
@@ -778,7 +954,7 @@ function sendAct(action, extra={}) {
 function pipHTML(n) { let s=''; for(let i=0; i<n; i++) s+='<i class="pip"></i>'; return `<div class="pips p${n}">${s}</div>`; }
 function renderTile(t, isBoard=false) {
   let style = isBoard ? `left:${t.x}px; top:${t.y}px; transform:translate(-50%,-50%) rotate(${t.rot}deg); width:84px; height:42px;` : '';
-  let cls = `tile ${t.isDouble?'double':''}`;
+  let cls = `tile ${t.isDouble?'double':''} ${isBoard?'board-tile':''}`;
   return `<div class="${cls}" ${isBoard ? `style="${style}"` : `data-id="${t.id}"`}>
     <div class="half" data-val="${t.a}">${pipHTML(t.a)}</div>
     <div class="half" data-val="${t.b}">${pipHTML(t.b)}</div>
@@ -836,15 +1012,21 @@ function renderGame() {
     return t.a === state.leftEnd?.val || t.b === state.leftEnd?.val || t.a === state.rightEnd?.val || t.b === state.rightEnd?.val;
   });
   
+  if(!myTurn || state.winner) {
+    hidePlacementChoices();
+  }
+
   $('hand').innerHTML = hand.map(t => {
     let playStatus = (myTurn && (!state.board.length || t.a===state.leftEnd?.val || t.b===state.leftEnd?.val || t.a===state.rightEnd?.val || t.b===state.rightEnd?.val)) ? '' : 'unplayable';
-    let cls = `tile ${playStatus} ${t.a===t.b?'double':''}`;
+    let isSel = (t.id === selectedTileForPlacement) ? 'selected' : '';
+    let cls = `tile ${playStatus} ${t.a===t.b?'double':''} ${isSel}`;
     return `<div class="${cls}" data-id="${t.id}"><div class="half" data-val="${t.a}">${pipHTML(t.a)}</div><div class="half" data-val="${t.b}">${pipHTML(t.b)}</div></div>`;
   }).join('') || '<span style="color:#aebdb4;line-height:42px;">Empty hand</span>';
   
   let msgTxt = `Waiting for ${p?.name||'player'}...`;
   if(myTurn) {
     if(state.mustPlayTile) msgTxt = "Play your drawn tile.";
+    else if(selectedTileForPlacement) msgTxt = "";
     else if(hasPlay) msgTxt = "Tap a playable tile to place it.";
     else if(stockLeft > 0) msgTxt = "Drawing automatically...";
     else msgTxt = "No matching tile and stock is empty. Passing...";
@@ -874,19 +1056,37 @@ function renderGame() {
     if(state.winner !== lastWinnerTracker) { playWin(); lastWinnerTracker = state.winner; }
     
     $('winModal').classList.remove('hidden');
-    let wName = state.winner === 'blocked' ? (playerById(state.blockedWinner)?.name || 'Lowest pip count') : (playerById(state.matchWinner)?.name || playerById(state.winner)?.name || 'Player');
-    $('winTitle').textContent = state.matchWinner ? `${wName} Wins the Match!` : `${wName} Wins the Round!`;
+    let roundWinnerId = state.winner === 'blocked' ? state.blockedWinner : state.winner;
+    let roundWinnerName = playerById(roundWinnerId)?.name || 'Player';
+
+    if (state.matchWinner) {
+      let winnerName = playerById(state.matchWinner)?.name || 'Player';
+      let loserName = playerById(state.matchLoser)?.name || 'Player';
+      let maxScore = state.scores[state.matchLoser] || 0;
+      $('winTitle').textContent = `${winnerName} Wins the Match!`;
+      $('winWaitMsg').textContent = `${loserName} reached ${maxScore} points and lost the match!`;
+      $('winWaitMsg').classList.remove('hidden');
+    } else {
+      let titleTxt = (state.winner === 'blocked') ? `${roundWinnerName} Wins (Blocked Round)` : `${roundWinnerName} Wins the Round!`;
+      $('winTitle').textContent = titleTxt;
+      $('winWaitMsg').textContent = `Target: Player with maximum points (>= ${state.winningScore}) loses the match.`;
+      $('winWaitMsg').classList.remove('hidden');
+    }
     
     let scHtml = '';
-    [...state.players].sort((a,b)=>(state.scores[b]||0)-(state.scores[a]||0)).forEach(pid => {
+    // Sort ascending: lowest score at the top (#1 winner), maximum score at the bottom (loser)
+    [...state.players].sort((a,b)=>(state.scores[a]||0)-(state.scores[b]||0)).forEach((pid, rank) => {
       let nm = playerById(pid)?.name || 'Player';
       let scr = state.scores[pid]||0;
-      let star = (state.matchWinner === pid) ? ' 🏆' : '';
-      scHtml += `<div class="score-row"><span>${esc(nm)}</span> <strong>${scr}${star}</strong></div>`;
+      let badge = '';
+      if (state.matchWinner === pid) badge = ' 🏆 Winner (Lowest Pts)';
+      else if (state.matchLoser === pid) badge = ' ❌ Lost (Max Pts)';
+      else if (pid === roundWinnerId && !state.matchWinner) badge = ' ⭐️ Round Win (0 pts)';
+      scHtml += `<div class="score-row"><span>#${rank+1} ${esc(nm)}${badge}</span> <strong>${scr} pts</strong></div>`;
     });
     $('winScores').innerHTML = scHtml;
+    $('nextRoundBtn').textContent = state.matchWinner ? 'Start New Match' : 'Start Next Round';
     $('nextRoundBtn').classList.toggle('hidden', !host);
-    $('winWaitMsg').classList.toggle('hidden', host);
   } else {
     $('winModal').classList.add('hidden');
   }
@@ -895,7 +1095,10 @@ function renderGame() {
 // Panning
 const wrap = $('boardViewport');
 let isDrag=false, startX, startY, startOffsetX, startOffsetY;
-wrap.addEventListener('mousedown', e => { isDrag=true; startX=e.pageX; startY=e.pageY; startOffsetX=currentOffsetX; startOffsetY=currentOffsetY; });
+wrap.addEventListener('mousedown', e => { 
+  if(e.target.closest('.board-choice-target')) return;
+  isDrag=true; startX=e.pageX; startY=e.pageY; startOffsetX=currentOffsetX; startOffsetY=currentOffsetY; 
+});
 window.addEventListener('mouseup', () => isDrag=false);
 wrap.addEventListener('mousemove', e => { 
   if(!isDrag)return; e.preventDefault(); 
@@ -903,7 +1106,10 @@ wrap.addEventListener('mousemove', e => {
   currentOffsetY = startOffsetY + (e.pageY - startY);
   calculateAutoZoom(); 
 });
-wrap.addEventListener('touchstart', e => { isDrag=true; startX=e.touches[0].pageX; startY=e.touches[0].pageY; startOffsetX=currentOffsetX; startOffsetY=currentOffsetY; });
+wrap.addEventListener('touchstart', e => { 
+  if(e.target.closest('.board-choice-target')) return;
+  isDrag=true; startX=e.touches[0].pageX; startY=e.touches[0].pageY; startOffsetX=currentOffsetX; startOffsetY=currentOffsetY; 
+});
 window.addEventListener('touchend', () => isDrag=false);
 wrap.addEventListener('touchmove', e => { 
   if(!isDrag)return; e.preventDefault();
@@ -922,15 +1128,141 @@ $('nextRoundBtn').onclick = startGame;
 $('leaveBtn').onclick = () => location.href='';
 $('copyInviteBtn').onclick = async () => { try { await navigator.clipboard.writeText(inviteUrl()); $('copyInviteBtn').textContent='Copied!'; setTimeout(()=>$('copyInviteBtn').textContent='Copy Invite',2000); }catch(e){} };
 
+// Dual-Placement Choice Handling (Tile Diminishing Border Targets Only - Pure Touch)
+let selectedTileForPlacement = null;
+let placementCooldown = false;
+
+function executeSidePlacement(side) {
+  if(!selectedTileForPlacement || placementCooldown) return;
+  placementCooldown = true;
+  setTimeout(() => { placementCooldown = false; }, 400);
+
+  const tid = selectedTileForPlacement;
+  hidePlacementChoices();
+  sendAct('PLAY', {tileId: tid, side});
+}
+
+function showPlacementChoices(tile) {
+  if(!state || !state.leftEnd || !state.rightEnd) return;
+  if($('gameMsg')) $('gameMsg').textContent = "";
+  renderBoardTargets(tile);
+}
+
+function hidePlacementChoices() {
+  selectedTileForPlacement = null;
+  removeBoardTargets();
+  updateSelectedTileUI();
+  const myTurn = state && state.current === myId && !state.winner;
+  if(myTurn && $('gameMsg')) $('gameMsg').textContent = "Tap a playable tile to place it.";
+}
+
+function updateSelectedTileUI() {
+  document.querySelectorAll('#hand .tile').forEach(tEl => {
+    tEl.classList.toggle('selected', tEl.dataset.id === selectedTileForPlacement);
+  });
+}
+
+function renderBoardTargets(tile) {
+  removeBoardTargets();
+  if(!state || !state.leftEnd || !state.rightEnd) return;
+  const isDouble = (tile && tile.a === tile.b);
+  const dx = [1, 0, -1, 0]; const dy = [0, 1, 0, -1];
+  const canvas = $('boardCanvas');
+  
+  // Left end diminishing ghost tile target
+  const leftEnd = state.leftEnd;
+  const leftDist = isDouble ? 21 : 42;
+  const leftX = leftEnd.ex + dx[leftEnd.dir] * leftDist;
+  const leftY = leftEnd.ey + dy[leftEnd.dir] * leftDist;
+  const leftRot = isDouble ? ((leftEnd.dir % 2 === 0) ? 90 : 0) : (leftEnd.dir * 90);
+  
+  const leftEl = document.createElement('div');
+  leftEl.className = 'board-choice-target';
+  leftEl.dataset.side = 'left';
+  leftEl.style.left = `${leftX}px`;
+  leftEl.style.top = `${leftY}px`;
+  leftEl.style.width = '84px';
+  leftEl.style.height = '42px';
+  leftEl.style.transform = `translate(-50%,-50%) rotate(${leftRot}deg)`;
+  
+  const onLeftTarget = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    executeSidePlacement('left');
+  };
+  leftEl.addEventListener('pointerdown', onLeftTarget);
+  leftEl.addEventListener('click', onLeftTarget);
+  
+  // Right end diminishing ghost tile target
+  const rightEnd = state.rightEnd;
+  const rightDist = isDouble ? 21 : 42;
+  const rightX = rightEnd.ex + dx[rightEnd.dir] * rightDist;
+  const rightY = rightEnd.ey + dy[rightEnd.dir] * rightDist;
+  const rightRot = isDouble ? ((rightEnd.dir % 2 === 0) ? 90 : 0) : (rightEnd.dir * 90);
+  
+  const rightEl = document.createElement('div');
+  rightEl.className = 'board-choice-target';
+  rightEl.dataset.side = 'right';
+  rightEl.style.left = `${rightX}px`;
+  rightEl.style.top = `${rightY}px`;
+  rightEl.style.width = '84px';
+  rightEl.style.height = '42px';
+  rightEl.style.transform = `translate(-50%,-50%) rotate(${rightRot}deg)`;
+  
+  const onRightTarget = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    executeSidePlacement('right');
+  };
+  rightEl.addEventListener('pointerdown', onRightTarget);
+  rightEl.addEventListener('click', onRightTarget);
+  
+  canvas.appendChild(leftEl);
+  canvas.appendChild(rightEl);
+}
+
+function removeBoardTargets() {
+  document.querySelectorAll('.board-choice-target').forEach(el => el.remove());
+}
+
+wrap.addEventListener('click', e => {
+  if(selectedTileForPlacement && !e.target.closest('.board-choice-target') && !e.target.closest('#hand')) {
+    hidePlacementChoices();
+  }
+});
+
 // Play Interaction
 $('hand').addEventListener('click', e => {
   const el = e.target.closest('[data-id]'); if(!el || !state || state.winner || state.current !== myId) return;
   const tid = el.dataset.id;
   const hand = host ? (state.hands[myId]||[]) : (state.hand||[]);
   const tile = hand.find(t=>t.id===tid);
-  if(tile && isPlayable(tile)) {
-    if(state.mustPlayTile && state.mustPlayTile !== tid) return;
+  if(!tile || !isPlayable(tile)) return;
+  if(state.mustPlayTile && state.mustPlayTile !== tid) return;
+
+  if(!state.board.length) {
+    hidePlacementChoices();
     sendAct('PLAY', {tileId: tid});
+    return;
+  }
+
+  const canLeft = (tile.a === state.leftEnd.val || tile.b === state.leftEnd.val);
+  const canRight = (tile.a === state.rightEnd.val || tile.b === state.rightEnd.val);
+
+  if(canLeft && canRight) {
+    if(selectedTileForPlacement === tid) {
+      hidePlacementChoices();
+      return;
+    }
+    selectedTileForPlacement = tid;
+    updateSelectedTileUI();
+    showPlacementChoices(tile);
+  } else if(canLeft) {
+    hidePlacementChoices();
+    sendAct('PLAY', {tileId: tid, side: 'left'});
+  } else if(canRight) {
+    hidePlacementChoices();
+    sendAct('PLAY', {tileId: tid, side: 'right'});
   }
 });
 
