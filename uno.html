@@ -73,10 +73,6 @@ h1 {
   margin: 4px 0 2px;
   color: var(--gold);
   text-shadow: 0 0 14px rgba(232,185,58,.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
 }
 
 .subtitle {
@@ -102,7 +98,7 @@ label {
   opacity: 0.9;
 }
 
-input[type=text], input[type=number] {
+input[type=text] {
   width: 100%;
   padding: 12px 14px;
   border-radius: 12px;
@@ -114,7 +110,7 @@ input[type=text], input[type=number] {
   transition: border-color 0.2s;
 }
 
-input[type=text]:focus, input[type=number]:focus {
+input[type=text]:focus {
   border-color: var(--gold);
 }
 
@@ -154,7 +150,7 @@ button.primary {
   color: var(--ink);
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(0,0,0,.3);
-  transition: transform 0.15s, filter 0.15s;
+  transition: transform 0.15s;
 }
 
 button.primary:active { transform: scale(.98); }
@@ -166,20 +162,14 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
   margin: 16px 0;
 }
 
-.join-info {
-  text-align: center;
-  font-size: 0.9rem;
-  opacity: 0.9;
-  margin: 12px 0;
-}
-
 .join-code {
   font-size: 1.8rem;
   font-weight: bold;
   color: var(--gold);
   font-family: monospace;
   letter-spacing: 2px;
-  margin: 8px 0;
+  margin: 8px 0 16px;
+  text-align: center;
 }
 
 .players-waiting {
@@ -218,6 +208,15 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .game-screen.hidden {
   display: none;
+}
+
+.status-msg {
+  text-align: center;
+  font-size: 0.9rem;
+  padding: 8px;
+  background: rgba(0,0,0,.3);
+  border-radius: 8px;
+  color: var(--gold);
 }
 
 .top-bar {
@@ -260,7 +259,6 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
   width: 90px;
   height: 130px;
   cursor: grab;
-  perspective: 1000px;
 }
 
 .card-stack:active {
@@ -272,7 +270,6 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
   opacity: 0.5;
 }
 
-/* UNO CARD STYLES - REALISTIC */
 .uno-card {
   position: absolute;
   width: 90px;
@@ -289,88 +286,19 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
   transition: all 0.2s;
 }
 
-/* Card colors - Realistic Uno */
-.uno-card.red {
-  background: linear-gradient(135deg, #e6261f 0%, #d91e0f 100%);
-  color: #fff;
-}
+.uno-card.red { background: linear-gradient(135deg, #e6261f 0%, #d91e0f 100%); color: #fff; }
+.uno-card.blue { background: linear-gradient(135deg, #3d7dd5 0%, #2d5ab5 100%); color: #fff; }
+.uno-card.green { background: linear-gradient(135deg, #2eb82e 0%, #1d9d1d 100%); color: #fff; }
+.uno-card.yellow { background: linear-gradient(135deg, #f9d423 0%, #f0b500 100%); color: #000; text-shadow: 0 1px 2px rgba(255,255,255,.3); }
+.uno-card.wild { background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 50%, #d0d0d0 100%); color: #000; }
+.uno-card.black { background: linear-gradient(135deg, #1a1a1a 0%, #000 100%); color: #fff; }
 
-.uno-card.blue {
-  background: linear-gradient(135deg, #3d7dd5 0%, #2d5ab5 100%);
-  color: #fff;
-}
+.draw-pile .uno-card:nth-child(1) { z-index: 10; top: 0; left: 0; }
+.draw-pile .uno-card:nth-child(2) { z-index: 5; top: 3px; left: 4px; transform: rotateZ(-2deg); }
+.draw-pile .uno-card:nth-child(3) { z-index: 0; top: 6px; left: 8px; transform: rotateZ(-4deg); }
+.draw-pile:hover .uno-card { transform: translateY(-10px) rotateZ(0deg); }
 
-.uno-card.green {
-  background: linear-gradient(135deg, #2eb82e 0%, #1d9d1d 100%);
-  color: #fff;
-}
-
-.uno-card.yellow {
-  background: linear-gradient(135deg, #f9d423 0%, #f0b500 100%);
-  color: #000;
-  text-shadow: 0 1px 2px rgba(255,255,255,.3);
-}
-
-.uno-card.wild {
-  background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 50%, #d0d0d0 100%);
-  color: #000;
-  position: relative;
-  overflow: hidden;
-}
-
-.uno-card.wild::before {
-  content: '';
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  right: 5px;
-  bottom: 5px;
-  border-radius: 6px;
-  background: conic-gradient(from 0deg, #e6261f, #f9d423, #2eb82e, #3d7dd5, #e6261f);
-  z-index: -1;
-}
-
-.uno-card.black {
-  background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
-  color: #fff;
-}
-
-/* Draw pile stacking effect */
-.draw-pile .uno-card:nth-child(1) {
-  z-index: 10;
-  top: 0;
-  left: 0;
-}
-
-.draw-pile .uno-card:nth-child(2) {
-  z-index: 5;
-  top: 3px;
-  left: 4px;
-  transform: rotateZ(-2deg);
-}
-
-.draw-pile .uno-card:nth-child(3) {
-  z-index: 0;
-  top: 6px;
-  left: 8px;
-  transform: rotateZ(-4deg);
-}
-
-.draw-pile:hover .uno-card {
-  transform: translateY(-10px) rotateZ(0deg);
-}
-
-.discard-pile .uno-card {
-  z-index: 1;
-  top: 0;
-  left: 0;
-}
-
-.pile-count {
-  font-size: 0.85rem;
-  margin-top: 4px;
-  opacity: 0.8;
-}
+.discard-pile .uno-card { z-index: 1; top: 0; left: 0; }
 
 .players-section {
   flex: 0.25;
@@ -516,14 +444,8 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .color-modal h2 {
@@ -558,14 +480,6 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
   border-color: var(--cream);
   box-shadow: 0 8px 16px rgba(0,0,0,.5);
 }
-
-@media (max-width: 768px) {
-  h1 { font-size: 1.3rem; }
-  .uno-card { width: 75px; height: 110px; font-size: 1.6rem; }
-  .hand-card { width: 64px; height: 92px; font-size: 1.3rem; }
-  .card-stack { width: 75px; height: 110px; }
-  .play-area { gap: 30px; padding: 12px; }
-}
 </style>
 </head>
 <body>
@@ -592,17 +506,16 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
       <div id="hostPanel" class="panel">
         <label>Players Needed</label>
         <div class="chip-row">
-          <div class="chip active" id="players2" onclick="setPlayers(2)">2</div>
-          <div class="chip" id="players3" onclick="setPlayers(3)">3</div>
-          <div class="chip" id="players4" onclick="setPlayers(4)">4</div>
-          <div class="chip" id="players5" onclick="setPlayers(5)">5</div>
-          <div class="chip" id="players6" onclick="setPlayers(6)">6</div>
-          <div class="chip" id="players7" onclick="setPlayers(7)">7</div>
-          <div class="chip" id="players8" onclick="setPlayers(8)">8</div>
+          <div class="chip active" onclick="setPlayers(2)">2</div>
+          <div class="chip" onclick="setPlayers(3)">3</div>
+          <div class="chip" onclick="setPlayers(4)">4</div>
+          <div class="chip" onclick="setPlayers(5)">5</div>
+          <div class="chip" onclick="setPlayers(6)">6</div>
+          <div class="chip" onclick="setPlayers(7)">7</div>
+          <div class="chip" onclick="setPlayers(8)">8</div>
         </div>
 
         <div id="qrCode"></div>
-        <div class="join-info">Players scan to join</div>
         <div class="join-code" id="gameCode">Loading...</div>
 
         <div class="players-waiting" id="playersList">Waiting for players...</div>
@@ -611,14 +524,16 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
       <div id="joinPanel" class="panel" style="display: none;">
         <label>Enter Game Code</label>
-        <input type="text" id="gameCodeInput" placeholder="e.g., ABC123" maxlength="6">
+        <input type="text" id="gameCodeInput" placeholder="e.g., UNO-ABCD" maxlength="8">
         <button class="primary" id="joinBtn" onclick="joinGame()" style="margin-top: 12px;">Join Game</button>
-        <div class="hint">Or ask host for QR code</div>
+        <div class="hint">Or ask host to scan QR code</div>
       </div>
     </div>
   </div>
 
   <div id="gameScreen" class="game-screen hidden">
+    <div class="status-msg" id="statusMsg">Connecting...</div>
+
     <div class="top-bar">
       <div>Current: <span id="currentPlayer">Player 1</span></div>
       <div>Deck: <span id="deckCount">0</span> | Discard: <span id="discardCount">0</span></div>
@@ -665,15 +580,29 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 </div>
 
 <script>
+const PEER_OPTS = {
+  debug: 1,
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' }
+    ]
+  }
+};
+
 let gameMode = 'host';
 let maxPlayers = 2;
 let myName = 'Player';
 let myId = null;
 let gameCode = null;
-let players = [];
-let myPlayerIndex = 0;
 let peer = null;
-let conn = null;
+let hostConn = null;
+let clientConns = new Map();
+let isHost = false;
+let game = null;
+let reconnectTimer = null;
+let reconnectAttempts = 0;
 
 const COLORS = ['red', 'blue', 'green', 'yellow'];
 const SYMBOLS = { skip: '⏭️', reverse: '↩️', draw2: '+2', wild: '🌈', wilddraw4: '+4' };
@@ -757,7 +686,6 @@ class UnoGame {
   }
 }
 
-let game = null;
 let pendingWildCard = null;
 
 function setMode(mode) {
@@ -768,7 +696,7 @@ function setMode(mode) {
   document.getElementById('joinPanel').style.display = mode === 'join' ? 'block' : 'none';
 
   if (mode === 'host' && !peer) {
-    initHost();
+    initHostRoom();
   }
 }
 
@@ -779,96 +707,189 @@ function setPlayers(n) {
   });
 }
 
-function initHost() {
-  myId = 'host-' + Math.random().toString(36).substr(2, 9);
-  peer = new Peer(myId);
-  gameCode = Math.random().toString(36).substr(2, 6).toUpperCase();
+function initHostRoom() {
+  isHost = true;
+  gameCode = generateRoomCode();
+  myId = 'uno-p2p-' + gameCode.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+  if (peer) { try { peer.destroy(); } catch(e){} }
+  peer = new Peer(myId, PEER_OPTS);
 
   const url = window.location.href.split('?')[0];
-  const qrText = `${url}?join=${myId}`;
+  const qrText = `${url}?join=${gameCode}`;
   document.getElementById('qrCode').innerHTML = '';
   new QRCode(document.getElementById('qrCode'), qrText);
   document.getElementById('gameCode').textContent = gameCode;
 
-  peer.on('connection', conn => {
-    players.push({ conn, name: 'Joining...' });
-    renderPlayersList();
-    updateStartBtn();
+  peer.on('open', () => {
+    console.log('Host ready with ID:', myId);
+  });
 
-    conn.on('data', msg => {
+  peer.on('connection', (conn) => {
+    clientConns.set(conn.peer, conn);
+    console.log('Client connected:', conn.peer);
+
+    conn.on('data', (msg) => {
       if (msg.type === 'join') {
-        players[players.length - 1].name = msg.name;
-        renderPlayersList();
+        const idx = Array.from(clientConns.values()).indexOf(conn);
+        if (idx >= 0 && idx < maxPlayers - 1) {
+          const pIndex = idx + 1;
+          if (game && game.players[pIndex]) {
+            game.players[pIndex].name = msg.name;
+          }
+          renderPlayersList();
+          updateStartBtn();
+          broadcastGameState();
+        }
       } else if (msg.type === 'play') {
-        game.play(msg.card, msg.color);
-        broadcast({ type: 'update', state: game.getState() });
-        render();
+        if (game) {
+          game.play(msg.card, msg.color);
+          broadcastGameState();
+        }
       } else if (msg.type === 'draw') {
-        game.draw(msg.playerIndex);
-        broadcast({ type: 'update', state: game.getState() });
-        render();
+        if (game) {
+          game.draw(msg.playerIndex);
+          broadcastGameState();
+        }
       }
     });
+
+    conn.on('close', () => {
+      clientConns.delete(conn.peer);
+    });
+  });
+
+  peer.on('error', (err) => {
+    console.error('Peer error:', err);
   });
 }
 
 function joinGame() {
-  const code = document.getElementById('gameCodeInput').value.toUpperCase();
-  if (code.length !== 6) return;
+  const code = document.getElementById('gameCodeInput').value.toUpperCase().trim();
+  if (code.length < 3) return;
 
-  const peerId = 'host-' + code.toLowerCase();
-  myId = 'player-' + Math.random().toString(36).substr(2, 9);
-  peer = new Peer(myId);
+  gameCode = code;
+  myId = 'uno-p2p-player-' + Math.random().toString(36).substr(2, 9);
+
+  if (peer) { try { peer.destroy(); } catch(e){} }
+  peer = new Peer(myId, PEER_OPTS);
 
   peer.on('open', () => {
-    conn = peer.connect(peerId);
-    conn.on('open', () => {
-      conn.send({ type: 'join', name: myName });
-      startGameScreen();
-    });
-    conn.on('data', msg => {
-      if (msg.type === 'gameStart') {
-        updateGameState(msg.state);
-        startGameScreen();
-      } else if (msg.type === 'update') {
-        updateGameState(msg.state);
-      }
-    });
+    connectToHost();
   });
+
+  peer.on('error', (err) => {
+    console.error('Peer error:', err);
+    triggerClientAutoReconnect();
+  });
+}
+
+function connectToHost() {
+  const targetPeerId = 'uno-p2p-' + gameCode.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  if (hostConn) { try { hostConn.close(); } catch(e){} }
+
+  hostConn = peer.connect(targetPeerId, { reliable: true });
+
+  hostConn.on('open', () => {
+    reconnectAttempts = 0;
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+
+    hostConn.send({
+      type: 'join',
+      name: myName
+    });
+
+    document.getElementById('statusMsg').textContent = 'Connected! Waiting for host to start...';
+    render();
+  });
+
+  hostConn.on('data', (msg) => {
+    if (msg.type === 'gameStart' || msg.type === 'update') {
+      updateGameState(msg.state);
+      if (msg.type === 'gameStart') {
+        startGameScreen();
+      }
+      render();
+    }
+  });
+
+  hostConn.on('close', () => {
+    document.getElementById('statusMsg').textContent = 'Connection lost. Reconnecting...';
+    triggerClientAutoReconnect();
+  });
+
+  hostConn.on('error', () => {
+    triggerClientAutoReconnect();
+  });
+}
+
+function triggerClientAutoReconnect() {
+  if (isHost || !gameCode) return;
+  if (reconnectTimer) return;
+
+  reconnectAttempts++;
+  if (reconnectAttempts > 25) {
+    alert('Could not connect to host. Please refresh and try again.');
+    return;
+  }
+
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    if (peer && !peer.destroyed && peer.open) {
+      connectToHost();
+    } else {
+      joinGame();
+    }
+  }, Math.min(3000, 1000 + reconnectAttempts * 200));
+}
+
+function generateRoomCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "UNO-";
+  for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  return code;
 }
 
 function startGame() {
   game = new UnoGame(maxPlayers);
-  players.forEach((p, i) => {
-    if (game.players[i]) game.players[i].name = p.name;
+  Array.from(clientConns.values()).forEach((conn, i) => {
+    if (game.players[i + 1]) {
+      game.players[i + 1].name = conn.peer;
+    }
   });
-  broadcast({ type: 'gameStart', state: game.getState() });
+  broadcastGameState();
   startGameScreen();
 }
 
 function startGameScreen() {
   document.getElementById('setupScreen').classList.add('hidden');
   document.getElementById('gameScreen').classList.remove('hidden');
+  document.getElementById('statusMsg').textContent = '🎴 Game Started!';
   render();
 }
 
-function broadcast(msg) {
-  players.forEach(p => p.conn && p.conn.send(msg));
+function broadcastGameState() {
+  const msg = { type: 'update', state: game.getState() };
+  clientConns.forEach((conn) => {
+    if (conn && conn.open) {
+      try { conn.send(msg); } catch(e){}
+    }
+  });
 }
 
 function playCard(card) {
-  if (!game || game.current !== myPlayerIndex) return;
+  if (!game || game.current !== 0) return;
   if (!game.canPlay(card)) return;
 
   if (card.value === 'wild' || card.value === 'wilddraw4') {
     pendingWildCard = card;
     document.getElementById('colorModal').classList.add('active');
   } else {
-    if (gameMode === 'host') {
+    if (isHost) {
       game.play(card);
-      broadcast({ type: 'update', state: game.getState() });
-    } else {
-      conn.send({ type: 'play', card, color: null });
+      broadcastGameState();
+    } else if (hostConn && hostConn.open) {
+      hostConn.send({ type: 'play', card, color: null });
     }
     render();
   }
@@ -878,32 +899,34 @@ function selectColor(color) {
   if (!pendingWildCard) return;
   document.getElementById('colorModal').classList.remove('active');
 
-  if (gameMode === 'host') {
+  if (isHost) {
     game.play(pendingWildCard, color);
-    broadcast({ type: 'update', state: game.getState() });
-  } else {
-    conn.send({ type: 'play', card: pendingWildCard, color });
+    broadcastGameState();
+  } else if (hostConn && hostConn.open) {
+    hostConn.send({ type: 'play', card: pendingWildCard, color });
   }
   pendingWildCard = null;
   render();
 }
 
 function drawCard() {
-  if (!game || game.current !== myPlayerIndex) return;
+  if (!game || game.current !== 0) return;
 
-  if (gameMode === 'host') {
-    game.draw(myPlayerIndex);
-    broadcast({ type: 'update', state: game.getState() });
-  } else {
-    conn.send({ type: 'draw', playerIndex: myPlayerIndex });
+  if (isHost) {
+    game.draw(0);
+    broadcastGameState();
+  } else if (hostConn && hostConn.open) {
+    hostConn.send({ type: 'draw', playerIndex: 0 });
   }
   render();
 }
 
 function updateGameState(state) {
-  game = { players: state.players, deck: state.deck, discard: state.discard, current: state.current };
-  game.__proto__ = UnoGame.prototype;
-  render();
+  if (!game) return;
+  game.players = state.players;
+  game.deck = state.deck;
+  game.discard = state.discard;
+  game.current = state.current;
 }
 
 function render() {
@@ -930,6 +953,7 @@ function renderDiscard() {
 function renderPlayers() {
   const list = document.getElementById('playersList');
   list.innerHTML = '';
+  if (!game) return;
   game.players.forEach((p, i) => {
     const div = document.createElement('div');
     div.className = `player-card ${i === game.current ? 'current' : ''}`;
@@ -941,14 +965,14 @@ function renderPlayers() {
 function renderHand() {
   const hand = document.getElementById('handSection');
   hand.innerHTML = '';
-  if (!game.players[myPlayerIndex]) return;
+  if (!game || !game.players[0]) return;
 
-  game.players[myPlayerIndex].hand.forEach(card => {
+  game.players[0].hand.forEach(card => {
     const div = document.createElement('div');
     const canPlay = game.canPlay(card);
     div.className = `hand-card ${card.color} ${canPlay ? '' : 'disabled'}`;
-    div.textContent = card.value.length > 1 ? SYMBOLS[card.value] : card.value;
-    if (canPlay && game.current === myPlayerIndex) {
+    div.textContent = card.value === 'wild' || card.value === 'wilddraw4' ? SYMBOLS[card.value] : (card.value.length > 1 ? SYMBOLS[card.value] : card.value);
+    if (canPlay && game.current === 0) {
       div.onclick = () => playCard(card);
     }
     hand.appendChild(div);
@@ -957,11 +981,15 @@ function renderHand() {
 
 function renderPlayersList() {
   const list = document.getElementById('playersList');
-  list.innerHTML = players.map(p => `<div class="waiting-player">${p.name}</div>`).join('');
+  if (!game) {
+    list.innerHTML = Array.from(clientConns.values()).map((_, i) =>
+      `<div class="waiting-player">Player ${i + 2} connected</div>`
+    ).join('');
+  }
 }
 
 function updateStartBtn() {
-  document.getElementById('startBtn').disabled = players.length < maxPlayers - 1;
+  document.getElementById('startBtn').disabled = clientConns.size < maxPlayers - 1;
 }
 
 document.getElementById('playerName').addEventListener('change', e => {
@@ -971,6 +999,7 @@ document.getElementById('playerName').addEventListener('change', e => {
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.has('join')) {
   document.querySelectorAll('.chip')[1].click();
+  document.getElementById('gameCodeInput').value = urlParams.get('join');
 }
 </script>
 

@@ -74,10 +74,6 @@ h1 {
   margin: 4px 0 2px;
   color: var(--gold);
   text-shadow: 0 0 14px rgba(232,185,58,.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
 }
 
 .subtitle {
@@ -103,7 +99,7 @@ label {
   opacity: 0.9;
 }
 
-input[type=text], input[type=number] {
+input[type=text] {
   width: 100%;
   padding: 12px 14px;
   border-radius: 12px;
@@ -115,7 +111,7 @@ input[type=text], input[type=number] {
   transition: border-color 0.2s;
 }
 
-input[type=text]:focus, input[type=number]:focus {
+input[type=text]:focus {
   border-color: var(--gold);
 }
 
@@ -155,7 +151,7 @@ button.primary {
   color: var(--ink);
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(0,0,0,.3);
-  transition: transform 0.15s, filter 0.15s;
+  transition: transform 0.15s;
 }
 
 button.primary:active { transform: scale(.98); }
@@ -167,20 +163,14 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
   margin: 16px 0;
 }
 
-.join-info {
-  text-align: center;
-  font-size: 0.9rem;
-  opacity: 0.9;
-  margin: 12px 0;
-}
-
 .join-code {
   font-size: 1.8rem;
   font-weight: bold;
   color: var(--gold);
   font-family: monospace;
   letter-spacing: 2px;
-  margin: 8px 0;
+  margin: 8px 0 16px;
+  text-align: center;
 }
 
 .players-waiting {
@@ -253,7 +243,6 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
   max-width: 95%;
 }
 
-/* REALISTIC DOMINO STYLES */
 .domino-played {
   width: 60px;
   height: 120px;
@@ -438,11 +427,13 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
   cursor: not-allowed;
 }
 
-@media (max-width: 768px) {
-  h1 { font-size: 1.3rem; }
-  .domino-played { width: 50px; height: 100px; }
-  .hand-domino { width: 42px; height: 84px; }
-  .top-bar { flex-direction: column; gap: 8px; font-size: 0.8rem; }
+.status-msg {
+  text-align: center;
+  font-size: 0.9rem;
+  padding: 8px;
+  background: rgba(0,0,0,.3);
+  border-radius: 8px;
+  color: var(--gold);
 }
 </style>
 </head>
@@ -470,17 +461,16 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
       <div id="hostPanel" class="panel">
         <label>Players Needed</label>
         <div class="chip-row">
-          <div class="chip active" id="players2" onclick="setPlayers(2)">2</div>
-          <div class="chip" id="players3" onclick="setPlayers(3)">3</div>
-          <div class="chip" id="players4" onclick="setPlayers(4)">4</div>
-          <div class="chip" id="players5" onclick="setPlayers(5)">5</div>
-          <div class="chip" id="players6" onclick="setPlayers(6)">6</div>
-          <div class="chip" id="players7" onclick="setPlayers(7)">7</div>
-          <div class="chip" id="players8" onclick="setPlayers(8)">8</div>
+          <div class="chip active" onclick="setPlayers(2)">2</div>
+          <div class="chip" onclick="setPlayers(3)">3</div>
+          <div class="chip" onclick="setPlayers(4)">4</div>
+          <div class="chip" onclick="setPlayers(5)">5</div>
+          <div class="chip" onclick="setPlayers(6)">6</div>
+          <div class="chip" onclick="setPlayers(7)">7</div>
+          <div class="chip" onclick="setPlayers(8)">8</div>
         </div>
 
         <div id="qrCode"></div>
-        <div class="join-info">Players scan to join</div>
         <div class="join-code" id="gameCode">Loading...</div>
 
         <div class="players-waiting" id="playersList">Waiting for players...</div>
@@ -489,14 +479,16 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
       <div id="joinPanel" class="panel" style="display: none;">
         <label>Enter Game Code</label>
-        <input type="text" id="gameCodeInput" placeholder="e.g., ABC123" maxlength="6">
+        <input type="text" id="gameCodeInput" placeholder="e.g., DOM-ABCD" maxlength="8">
         <button class="primary" id="joinBtn" onclick="joinGame()" style="margin-top: 12px;">Join Game</button>
-        <div class="hint">Or ask host for QR code</div>
+        <div class="hint">Or ask host to scan QR code</div>
       </div>
     </div>
   </div>
 
   <div id="gameScreen" class="game-screen hidden">
+    <div class="status-msg" id="statusMsg">Connecting...</div>
+
     <div class="top-bar">
       <div class="current-player-info">Current: <span id="currentPlayer">Player 1</span></div>
       <div class="stock-info">Stock: <span id="stockCount">14</span></div>
@@ -517,6 +509,17 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 </div>
 
 <script>
+const PEER_OPTS = {
+  debug: 1,
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' }
+    ]
+  }
+};
+
 let gameMode = 'host';
 let maxPlayers = 2;
 let myName = 'Player';
@@ -525,7 +528,12 @@ let gameCode = null;
 let players = [];
 let myPlayerIndex = 0;
 let peer = null;
-let conn = null;
+let hostConn = null;
+let clientConns = new Map();
+let isHost = false;
+let game = null;
+let reconnectTimer = null;
+let reconnectAttempts = 0;
 
 class DominoesGame {
   constructor(numPlayers = 2) {
@@ -548,7 +556,7 @@ class DominoesGame {
       this.players.push({
         hand: allDominoes.splice(0, 7),
         name: `Player ${i + 1}`,
-        connected: false
+        connected: true
       });
     }
 
@@ -609,8 +617,6 @@ class DominoesGame {
   }
 }
 
-let game = null;
-
 function setMode(mode) {
   gameMode = mode;
   document.querySelectorAll('.chip-row .chip').forEach(c => c.classList.remove('active'));
@@ -619,7 +625,7 @@ function setMode(mode) {
   document.getElementById('joinPanel').style.display = mode === 'join' ? 'block' : 'none';
 
   if (mode === 'host' && !peer) {
-    initHost();
+    initHostRoom();
   }
 }
 
@@ -630,107 +636,207 @@ function setPlayers(n) {
   });
 }
 
-function initHost() {
-  myId = 'host-' + Math.random().toString(36).substr(2, 9);
-  peer = new Peer(myId);
-  gameCode = Math.random().toString(36).substr(2, 6).toUpperCase();
+function initHostRoom() {
+  isHost = true;
+  gameCode = generateRoomCode();
+  myId = 'dom-p2p-' + gameCode.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+  if (peer) { try { peer.destroy(); } catch(e){} }
+  peer = new Peer(myId, PEER_OPTS);
 
   const url = window.location.href.split('?')[0];
-  const qrText = `${url}?join=${myId}`;
+  const qrText = `${url}?join=${gameCode}`;
   document.getElementById('qrCode').innerHTML = '';
   new QRCode(document.getElementById('qrCode'), qrText);
   document.getElementById('gameCode').textContent = gameCode;
 
-  peer.on('connection', conn => {
-    players.push({ conn, name: 'Joining...' });
-    renderPlayers();
-    updateStartBtn();
+  peer.on('open', () => {
+    console.log('Host ready with ID:', myId);
+  });
 
-    conn.on('data', msg => {
+  peer.on('connection', (conn) => {
+    clientConns.set(conn.peer, conn);
+    console.log('Client connected:', conn.peer);
+
+    conn.on('data', (msg) => {
       if (msg.type === 'join') {
-        players[players.length - 1].name = msg.name;
-        renderPlayers();
+        const idx = Array.from(clientConns.values()).indexOf(conn);
+        if (idx >= 0 && idx < maxPlayers - 1) {
+          const pIndex = idx + 1;
+          if (game && game.players[pIndex]) {
+            game.players[pIndex].name = msg.name;
+          } else {
+            players[idx] = { conn, name: msg.name };
+          }
+          renderPlayers();
+          updateStartBtn();
+          broadcastGameState();
+        }
       } else if (msg.type === 'play') {
-        game.play(msg.domino, msg.playerIndex);
-        broadcast({ type: 'update', state: game.getState() });
+        if (game) {
+          game.play(msg.domino, msg.playerIndex);
+          broadcastGameState();
+        }
       } else if (msg.type === 'draw') {
-        game.draw(msg.playerIndex);
-        broadcast({ type: 'update', state: game.getState() });
+        if (game) {
+          game.draw(msg.playerIndex);
+          broadcastGameState();
+        }
       }
     });
+
+    conn.on('close', () => {
+      clientConns.delete(conn.peer);
+    });
+  });
+
+  peer.on('error', (err) => {
+    console.error('Peer error:', err);
   });
 }
 
 function joinGame() {
-  const code = document.getElementById('gameCodeInput').value.toUpperCase();
-  if (code.length !== 6) return;
+  const code = document.getElementById('gameCodeInput').value.toUpperCase().trim();
+  if (code.length < 3) return;
 
-  const peerId = 'host-' + code.toLowerCase();
-  myId = 'player-' + Math.random().toString(36).substr(2, 9);
-  peer = new Peer(myId);
+  gameCode = code;
+  myId = 'dom-p2p-player-' + Math.random().toString(36).substr(2, 9);
+
+  if (peer) { try { peer.destroy(); } catch(e){} }
+  peer = new Peer(myId, PEER_OPTS);
 
   peer.on('open', () => {
-    conn = peer.connect(peerId);
-    conn.on('open', () => {
-      conn.send({ type: 'join', name: myName });
-      startGameScreen();
-    });
-    conn.on('data', msg => {
-      if (msg.type === 'update') {
-        updateGameState(msg.state);
-      }
-    });
+    connectToHost();
   });
+
+  peer.on('error', (err) => {
+    console.error('Peer error:', err);
+    triggerClientAutoReconnect();
+  });
+}
+
+function connectToHost() {
+  const targetPeerId = 'dom-p2p-' + gameCode.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  if (hostConn) { try { hostConn.close(); } catch(e){} }
+
+  hostConn = peer.connect(targetPeerId, { reliable: true });
+
+  hostConn.on('open', () => {
+    reconnectAttempts = 0;
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+
+    hostConn.send({
+      type: 'join',
+      name: myName
+    });
+
+    document.getElementById('statusMsg').textContent = 'Connected! Waiting for host to start...';
+    render();
+  });
+
+  hostConn.on('data', (msg) => {
+    if (msg.type === 'gameStart' || msg.type === 'update') {
+      updateGameState(msg.state);
+      if (msg.type === 'gameStart') {
+        startGameScreen();
+      }
+      render();
+    }
+  });
+
+  hostConn.on('close', () => {
+    document.getElementById('statusMsg').textContent = 'Connection lost. Reconnecting...';
+    triggerClientAutoReconnect();
+  });
+
+  hostConn.on('error', () => {
+    triggerClientAutoReconnect();
+  });
+}
+
+function triggerClientAutoReconnect() {
+  if (isHost || !gameCode) return;
+  if (reconnectTimer) return;
+
+  reconnectAttempts++;
+  if (reconnectAttempts > 25) {
+    alert('Could not connect to host. Please refresh and try again.');
+    return;
+  }
+
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    if (peer && !peer.destroyed && peer.open) {
+      connectToHost();
+    } else {
+      joinGame();
+    }
+  }, Math.min(3000, 1000 + reconnectAttempts * 200));
+}
+
+function generateRoomCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "DOM-";
+  for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  return code;
 }
 
 function startGame() {
   game = new DominoesGame(maxPlayers);
-  players.forEach((p, i) => {
-    if (game.players[i]) game.players[i].name = p.name;
+  Array.from(clientConns.values()).forEach((conn, i) => {
+    if (game.players[i + 1]) {
+      game.players[i + 1].name = conn.peer;
+    }
   });
-  broadcast({ type: 'gameStart', state: game.getState() });
+  broadcastGameState();
   startGameScreen();
 }
 
 function startGameScreen() {
   document.getElementById('setupScreen').classList.add('hidden');
   document.getElementById('gameScreen').classList.remove('hidden');
+  document.getElementById('statusMsg').textContent = '🎮 Game Started!';
   render();
 }
 
-function broadcast(msg) {
-  players.forEach(p => p.conn && p.conn.send(msg));
+function broadcastGameState() {
+  const msg = { type: 'update', state: game.getState() };
+  clientConns.forEach((conn) => {
+    if (conn && conn.open) {
+      try { conn.send(msg); } catch(e){}
+    }
+  });
 }
 
 function playDomino(domino) {
   if (!game) return;
   if (!game.canPlay(domino)) return;
-  if (gameMode === 'host') {
+  if (isHost) {
     game.play(domino, myPlayerIndex);
-    broadcast({ type: 'update', state: game.getState() });
-  } else {
-    conn.send({ type: 'play', domino, playerIndex: myPlayerIndex });
+    broadcastGameState();
+  } else if (hostConn && hostConn.open) {
+    hostConn.send({ type: 'play', domino, playerIndex: myPlayerIndex });
   }
   render();
 }
 
 function drawDomino() {
   if (!game) return;
-  if (gameMode === 'host') {
+  if (isHost) {
     game.draw(myPlayerIndex);
-    broadcast({ type: 'update', state: game.getState() });
-  } else {
-    conn.send({ type: 'draw', playerIndex: myPlayerIndex });
+    broadcastGameState();
+  } else if (hostConn && hostConn.open) {
+    hostConn.send({ type: 'draw', playerIndex: myPlayerIndex });
   }
   render();
 }
 
 function updateGameState(state) {
+  if (!game) return;
   game.players = state.players;
   game.played = state.played;
   game.stock = state.stock;
   game.currentPlayerIndex = state.currentPlayerIndex;
-  render();
 }
 
 function render() {
@@ -745,7 +851,7 @@ function render() {
 function renderBoard() {
   const board = document.getElementById('boardInner');
   board.innerHTML = '';
-  game.played.forEach((domino, idx) => {
+  game.played.forEach((domino) => {
     const div = document.createElement('div');
     div.className = 'domino-played';
     div.innerHTML = `
@@ -767,10 +873,11 @@ function createDots(n) {
 function renderPlayers() {
   const list = document.getElementById('playersList');
   list.innerHTML = '';
-  (game?.players || players).forEach((p, i) => {
+  if (!game) return;
+  game.players.forEach((p, i) => {
     const div = document.createElement('div');
-    div.className = `player-status ${i === game?.currentPlayerIndex ? 'current' : ''}`;
-    div.textContent = `${p.name} (${p.hand?.length || 0})`;
+    div.className = `player-status ${i === game.currentPlayerIndex ? 'current' : ''}`;
+    div.textContent = `${p.name} (${p.hand.length})`;
     list.appendChild(div);
   });
 }
@@ -778,9 +885,9 @@ function renderPlayers() {
 function renderHand() {
   const hand = document.getElementById('handArea');
   hand.innerHTML = '';
-  if (!game) return;
+  if (!game || !game.players[0]) return;
 
-  game.players[myPlayerIndex].hand.forEach(domino => {
+  game.players[0].hand.forEach(domino => {
     const div = document.createElement('div');
     div.className = 'hand-domino';
     const canPlay = game.canPlay(domino);
@@ -795,21 +902,35 @@ function renderHand() {
 }
 
 function updateStartBtn() {
-  document.getElementById('startBtn').disabled = players.length < maxPlayers - 1;
+  document.getElementById('startBtn').disabled = clientConns.size < maxPlayers - 1;
 }
 
-function generateCode() {
-  return Math.random().toString(36).substr(2, 6).toUpperCase();
-}
-
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.has('join')) {
-  document.querySelectorAll('.chip')[1].click();
+function renderPlayers() {
+  const list = document.getElementById('playersList');
+  if (!game) {
+    list.innerHTML = Array.from(clientConns.values()).map((_, i) =>
+      `<div class="waiting-player">Player ${i + 2} connected</div>`
+    ).join('');
+  } else {
+    list.innerHTML = '';
+    game.players.forEach((p, i) => {
+      const div = document.createElement('div');
+      div.className = `player-status ${i === game.currentPlayerIndex ? 'current' : ''}`;
+      div.textContent = `${p.name} (${p.hand.length})`;
+      list.appendChild(div);
+    });
+  }
 }
 
 document.getElementById('playerName').addEventListener('change', e => {
   myName = e.target.value || 'Player';
 });
+
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has('join')) {
+  document.querySelectorAll('.chip')[1].click();
+  document.getElementById('gameCodeInput').value = urlParams.get('join');
+}
 </script>
 
 </body>
