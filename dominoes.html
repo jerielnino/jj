@@ -86,14 +86,193 @@ body[data-theme="wood"] {
 .wrap { max-width: 900px; margin: 0 auto; padding: 20px; flex: 1; display: flex; flex-direction: column; width: 100%; overflow-y: auto; }
 .panel { background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; box-shadow: 0 16px 40px rgba(0,0,0,0.4); }
 .hidden { display: none !important; }
-.hero { text-align: center; margin-bottom: 30px; }
-.domino-logo {
-  width: 90px; height: 180px; margin: 0 auto 20px; background: var(--ivory); border: 2px solid var(--ivory-border);
-  border-radius: 12px; position: relative; box-shadow: 0 12px 24px rgba(0,0,0,0.5), inset 0 2px 5px #fff;
-  transform: rotate(8deg); display: flex; flex-direction: column;
+.hero { text-align: center; margin-bottom: 24px; }
+
+/* Interactive Domino Hero Stage */
+.interactive-domino-stage {
+  position: relative;
+  width: 210px;
+  height: 210px;
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  perspective: 900px;
 }
-.domino-logo::after { content: ''; position: absolute; top: 50%; left: 8px; right: 8px; height: 2px; background: #a89f91; margin-top: -1px; box-shadow: 0 1px 1px #fff; }
-.domino-logo .half { height: 50%; display: grid; place-items: center; padding: 12px; }
+.hero-domino-shadow {
+  position: absolute;
+  bottom: 22px;
+  width: 130px;
+  height: 22px;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  transition: transform 0.3s, opacity 0.3s;
+}
+.interactive-domino-stage:hover .hero-domino-shadow {
+  transform: scale(1.12);
+  opacity: 0.85;
+}
+
+/* Base Domino Styles (used by Main and Companion) */
+.domino-logo {
+  background: var(--ivory);
+  border: 2px solid var(--ivory-border);
+  border-radius: 12px;
+  position: relative;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.5), inset 0 2px 5px #fff;
+  display: flex;
+  flex-direction: column;
+}
+.domino-logo::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  background: #a89f91;
+  margin-top: -1px;
+  box-shadow: 0 1px 1px #fff;
+  z-index: 3;
+}
+.domino-logo .half {
+  height: 50%;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+/* Companion Domino (Angled in background) */
+.domino-logo-companion {
+  position: absolute;
+  width: 76px;
+  height: 152px;
+  background: linear-gradient(135deg, #f6eedb 0%, #ede0c8 100%);
+  border: 2px solid #b3a28c;
+  border-radius: 12px;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.45), inset 0 2px 4px #ffffff;
+  transform: rotate(-15deg) translate(-26px, 6px);
+  z-index: 2;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  filter: brightness(0.92);
+}
+.interactive-domino-stage:hover .domino-logo-companion {
+  transform: rotate(-21deg) translate(-32px, 2px);
+  filter: brightness(0.96);
+}
+.domino-logo-companion.bounce {
+  animation: companionBump 0.48s ease-out;
+}
+@keyframes companionBump {
+  0% { transform: rotate(-15deg) translate(-26px, 6px) scale(1); }
+  35% { transform: rotate(-24deg) translate(-36px, -4px) scale(1.05); }
+  100% { transform: rotate(-15deg) translate(-26px, 6px) scale(1); }
+}
+
+/* Main Hero Domino Wrap & Tile */
+.domino-logo-wrap {
+  position: relative;
+  z-index: 3;
+  transition: transform 0.15s ease-out;
+}
+.domino-logo-main {
+  width: 88px;
+  height: 176px;
+  background: linear-gradient(145deg, #fffdf8 0%, #f6edd9 100%);
+  border: 2.5px solid var(--ivory-border);
+  border-radius: 14px;
+  box-shadow: 0 16px 30px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.2), inset 0 2px 5px #ffffff;
+  transform: rotate(8deg);
+  transition: box-shadow 0.25s, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.interactive-domino-stage:hover .domino-logo-main {
+  box-shadow: 0 20px 36px rgba(0,0,0,0.65), 0 0 22px rgba(255, 214, 111, 0.45), inset 0 2px 5px #ffffff;
+}
+
+/* Brass Spinner Pin (Authentic Rivet) */
+.domino-spinner-pin {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 35% 35%, #fff6cc 0%, #d4af37 40%, #8c6d1f 85%, #59430c 100%);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.55), inset 0 1px 1px rgba(255,255,255,0.85);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Pip Sizing in Hero Dominoes */
+.domino-logo-main .pip {
+  width: 13px !important;
+  height: 13px !important;
+  border: 1.8px solid #111 !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.85), 0 1px 2px rgba(255,255,255,0.4) !important;
+}
+.domino-logo-companion .pip {
+  width: 10px !important;
+  height: 10px !important;
+  border: 1.5px solid #111 !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.85) !important;
+}
+
+/* Hero Domino 3D Tumble Flip Animation */
+.domino-logo-wrap.flipping {
+  animation: heroDominoTumble 0.52s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes heroDominoTumble {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-18deg) translateY(-22px) scale(1.14); }
+  55% { transform: rotate(185deg) translateY(-14px) scale(1.1); }
+  80% { transform: rotate(345deg) translateY(-4px) scale(1.03); }
+  100% { transform: rotate(360deg) translateY(0) scale(1); }
+}
+
+/* Roll Hint Badge */
+.hero-roll-hint {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 214, 111, 0.4);
+  color: #ffe7a5;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  z-index: 6;
+}
+.interactive-domino-stage:hover .hero-roll-hint {
+  background: rgba(0, 0, 0, 0.85);
+  border-color: #ffd66f;
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 18px rgba(255, 214, 111, 0.25);
+}
+.hero-roll-hint.bump {
+  animation: hintPop 0.35s ease;
+}
+@keyframes hintPop {
+  0% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.1); color: #fff; }
+  100% { transform: translateX(-50%) scale(1); }
+}
+
 h1 { font-family: Georgia, serif; font-size: 2.8rem; margin: 0 0 8px; color: #ffe7a5; letter-spacing: 2px; text-shadow: 0 4px 8px rgba(0,0,0,0.5); }
 .sub { font-size: 1.05rem; color: #c4e0d0; }
 
@@ -172,6 +351,92 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 .hand .tile.unplayable:hover { transform: none; }
 
 @media (max-width: 600px) {
+  .wrap {
+    padding: 12px 10px;
+  }
+  .panel {
+    padding: 20px 14px;
+    border-radius: 16px;
+  }
+  .profile-card {
+    padding: 12px 10px;
+    margin-bottom: 18px;
+    border: 1.5px solid rgba(255, 214, 111, 0.45);
+    border-radius: 14px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  .avatar-picker-row {
+    gap: 8px;
+    width: 100%;
+  }
+  .avatar-select-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 1.65rem;
+    border-radius: 12px;
+  }
+  #userNameInput {
+    padding: 10px 10px;
+    font-size: 0.95rem !important;
+    border-radius: 9px;
+    min-width: 0 !important;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .profile-card-title {
+    font-size: 0.88rem;
+    margin-bottom: 8px;
+  }
+  .profile-card-hint {
+    font-size: 0.75rem;
+    margin-top: 6px;
+  }
+  .interactive-domino-stage {
+    width: 175px;
+    height: 175px;
+    margin-bottom: 6px;
+  }
+  .domino-logo-main {
+    width: 72px;
+    height: 144px;
+    border-width: 2px;
+  }
+  .domino-logo-companion {
+    width: 62px;
+    height: 124px;
+    transform: rotate(-14deg) translate(-20px, 4px);
+  }
+  .domino-logo-main .pip {
+    width: 10px !important;
+    height: 10px !important;
+    border-width: 1.5px !important;
+  }
+  .domino-logo-companion .pip {
+    width: 8px !important;
+    height: 8px !important;
+    border-width: 1.2px !important;
+  }
+  .domino-spinner-pin {
+    width: 8px;
+    height: 8px;
+  }
+  .hero-roll-hint {
+    font-size: 0.72rem;
+    padding: 3px 10px;
+  }
+  .hero-domino-shadow {
+    bottom: 18px;
+    width: 105px;
+    height: 18px;
+  }
+  h1 {
+    font-size: 2.1rem;
+  }
+  .row {
+    gap: 8px;
+  }
   .hand-area {
     padding: 8px 10px;
   }
@@ -403,6 +668,133 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin-bottom: 24px; }
 .controls-grid label { display: block; font-size: 0.85rem; color: #aebdb4; margin-bottom: 6px; }
 .controls-grid select { width: 100%; padding: 10px; }
+
+/* Player Profile & Emoji Picker */
+.profile-card {
+  background: rgba(0, 0, 0, 0.42);
+  border: 1.5px solid rgba(255, 214, 111, 0.35);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+.profile-card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #aebdb4;
+  margin-bottom: 10px;
+  text-align: left;
+}
+.profile-card-hint {
+  text-align: left;
+  font-size: 0.8rem;
+  color: #aebdb4;
+  margin-top: 8px;
+  opacity: 0.85;
+}
+.avatar-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.avatar-select-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  border: 2px solid #ffd66f;
+  background: rgba(255, 214, 111, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s, background 0.15s;
+  flex-shrink: 0;
+  padding: 0;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+.avatar-select-btn:hover {
+  transform: scale(1.06);
+  background: rgba(255, 214, 111, 0.3);
+}
+#userNameInput {
+  flex: 1 1 0;
+  min-width: 0 !important;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 1.05rem;
+  background: #fffaf0;
+  color: #1b2c23;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+#userNameInput:focus {
+  border-color: #ffd66f;
+  box-shadow: 0 0 10px rgba(255, 214, 111, 0.4);
+  background: #ffffff;
+}
+.avatar-edit-badge {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  background: #ffd66f;
+  color: #222;
+  font-size: 0.7rem;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+.emoji-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin: 8px 0;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 4px;
+}
+.emoji-item-btn {
+  width: 100%;
+  aspect-ratio: 1/1;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06);
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.12s, border-color 0.12s, background 0.12s;
+  padding: 0;
+}
+.emoji-item-btn:hover {
+  transform: scale(1.15);
+  border-color: #ffd66f;
+  background: rgba(255, 214, 111, 0.25);
+}
+.emoji-item-btn.selected {
+  border-color: #ffd66f;
+  background: rgba(255, 214, 111, 0.38);
+  box-shadow: 0 0 10px rgba(255, 214, 111, 0.5);
+}
 </style>
 </head>
 <body>
@@ -419,13 +811,46 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 <main class="wrap" id="setupWrap">
   <section class="panel" id="setupPanel">
     <div class="hero">
-      <div class="domino-logo">
-        <div class="half" data-val="6"><div class="pips p6"><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></div></div>
-        <div class="half" data-val="6"><div class="pips p6"><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></div></div>
+      <div class="interactive-domino-stage" id="heroStage" title="Tap or click to roll the domino!">
+        <div class="hero-domino-shadow"></div>
+        <!-- Companion Domino (Angled in background) -->
+        <div class="domino-logo domino-logo-companion" id="heroCompanion">
+          <div class="half" id="heroCompA" data-val="5"><div class="pips p5"><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></div></div>
+          <div class="domino-spinner-pin"></div>
+          <div class="half" id="heroCompB" data-val="4"><div class="pips p4"><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></div></div>
+        </div>
+        <!-- Main Interactive Hero Domino (in front) -->
+        <div class="domino-logo-wrap" id="heroTileWrap">
+          <div class="domino-logo domino-logo-main" id="heroDomino">
+            <div class="half" id="heroHalfA" data-val="6"><div class="pips p6"><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></div></div>
+            <div class="domino-spinner-pin"></div>
+            <div class="half" id="heroHalfB" data-val="6"><div class="pips p6"><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></div></div>
+          </div>
+        </div>
+        <div class="hero-roll-hint" id="heroRollHint">
+          <span style="font-size:0.95rem;">🎲</span>
+          <span id="heroRollText">Tap tile to roll!</span>
+        </div>
       </div>
       <h1>DOMINOES</h1>
       <div class="sub">Absolute Snaking Board · Smart Auto-Zoom · Pure Sounds</div>
     </div>
+
+    <!-- Player Profile (Name & Custom Emoji Avatar) -->
+    <div class="profile-card">
+      <div class="profile-card-title">Your Player Profile</div>
+      <div class="avatar-picker-row">
+        <button id="avatarBtn" class="avatar-select-btn" type="button" title="Tap to change your emoji avatar">
+          <span id="avatarPreview">😎</span>
+          <span class="avatar-edit-badge">✎</span>
+        </button>
+        <input id="userNameInput" type="text" placeholder="Your username..." maxlength="20">
+      </div>
+      <div class="profile-card-hint">
+        💡 Tap the emoji to choose or type your custom avatar.
+      </div>
+    </div>
+
     <div class="row" style="margin-bottom: 24px;">
       <button id="hostBtn" style="font-size: 1.2rem; padding: 16px 30px;">Host a Game</button>
       <button id="soloBtn" class="btn-alt" type="button">Play Solo vs AI</button>
@@ -450,7 +875,16 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 
   <section class="panel hidden" id="lobbyPanel" style="text-align:center;">
     <h2 style="font-size:2.4rem; color:#ffe7a5; margin:0 0 10px;">Waiting Room</h2>
-    <div style="margin-bottom:30px;">Room Code: <span class="roomcode" id="roomCodeLabel">—</span></div>
+    <div style="margin-bottom:16px;">Room Code: <span class="roomcode" id="roomCodeLabel">—</span></div>
+    
+    <div style="display:flex; justify-content:center; align-items:center; gap:10px; margin-bottom:24px;">
+      <span style="color:#aebdb4; font-size:0.95rem;">You are playing as:</span>
+      <button id="lobbyAvatarBtn" class="avatar-select-btn" style="width:42px; height:42px; font-size:1.5rem; border-radius:12px;" type="button" title="Tap to change emoji">
+        <span id="lobbyAvatarPreview">😎</span>
+        <span class="avatar-edit-badge" style="width:14px; height:14px; font-size:0.55rem; bottom:-2px; right:-2px;">✎</span>
+      </button>
+      <strong id="lobbyNamePreview" style="color:#ffe7a5; font-size:1.15rem;">You</strong>
+    </div>
     <div style="display:flex; justify-content:center; gap: 30px; align-items:flex-start; flex-wrap:wrap; margin-bottom:30px;">
       <div style="flex: 1; min-width: 250px;">
         <div style="text-align:left; color:#aebdb4; margin-bottom:12px; font-weight:bold; font-size:1.1rem;">Players Connected:</div>
@@ -503,13 +937,103 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   </div>
 </div>
 
+<!-- EMOJI PICKER MODAL -->
+<div id="emojiModal" class="modal hidden">
+  <div class="modal-box" style="width: 440px; max-width: 92%; padding: 28px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h3 style="margin:0; color:#ffe7a5; font-size:1.35rem; display:flex; align-items:center; gap:8px;">
+        🎨 Choose Player Emoji
+      </h3>
+      <button id="closeEmojiModalBtn" class="icon-btn" type="button" style="width:32px; height:32px; font-size:1rem;" title="Close">✕</button>
+    </div>
+    
+    <!-- Current Selection Preview -->
+    <div style="display:flex; align-items:center; justify-content:center; gap:16px; padding:12px; background:rgba(255,214,111,0.12); border-radius:14px; border:1px solid rgba(255,214,111,0.3); margin-bottom:14px;">
+      <div id="modalEmojiPreview" style="font-size:3rem; line-height:1;">😎</div>
+      <div style="text-align:left;">
+        <div id="modalNamePreview" style="font-weight:700; color:#ffe7a5; font-size:1.15rem;">Player</div>
+        <div style="font-size:0.8rem; color:#c4e0d0;">Current active avatar</div>
+      </div>
+    </div>
+    
+    <!-- Quick Preset Grid -->
+    <div style="text-align:left; font-size:0.85rem; color:#aebdb4; margin-bottom:6px; font-weight:600;">Popular Avatars:</div>
+    <div id="emojiPresetGrid" class="emoji-preset-grid"></div>
+    
+    <!-- Custom Emoji Text Input Field -->
+    <div style="text-align:left; font-size:0.85rem; color:#aebdb4; margin:14px 0 6px; font-weight:600;">Or Type / Paste Any Custom Emoji:</div>
+    <div style="display:flex; gap:8px;">
+      <input id="customEmojiInput" type="text" placeholder="Type any emoji (e.g. 🦊, 🍛, 🎭)" style="font-size:1.15rem; text-align:center; flex:1;">
+      <button id="applyCustomEmojiBtn" type="button" style="padding:10px 18px; font-size:1rem;">Set ✓</button>
+    </div>
+    
+    <button id="doneEmojiModalBtn" class="btn-alt" type="button" style="width:100%; margin-top:16px; font-size:1.05rem;">Done</button>
+  </div>
+</div>
+
 <script>
 (()=>{
 const $ = id => document.getElementById(id);
-let peer=null, host=false, solo=false, roomCode='', myId='', myName='', hostId='';
+let peer=null, host=false, solo=false, roomCode='', myId='', hostId='';
 let connections=new Map(), transportPlayers=new Map(), players=[], state=null;
 let revision=0, participantLimit=4, winningScore=100, autoActionRevision=-1, lastWinnerTracker=null;
 let currentOffsetX = 0, currentOffsetY = 0;
+
+// === EMOJI AVATAR COLLECTION (50 Party Emojis as in imposter_local.html) ===
+const PRESET_EMOJIS = [
+  "😎", "🕵️", "🤠", "🧙‍♂️", "🥷", "👨‍🎤", "👩‍🚀", "🦁", "🐯", "🦊",
+  "🐼", "🤖", "👻", "👾", "👑", "🎭", "🔥", "⚡", "🚀", "🦄",
+  "🥥", "🌴", "🐘", "🦚", "🍛", "🥞", "🍌", "🍵", "🌶️", "🥭",
+  "🦉", "🐺", "🐙", "🦖", "🐱", "🐶", "🍕", "🥑", "🧁", "🍿",
+  "🎪", "⚽", "🎮", "🎸", "💎", "⭐", "🌈", "🗿", "👽", "🧊"
+];
+
+let myAvatar = localStorage.getItem('domAvatar') || PRESET_EMOJIS[Math.floor(Math.random() * PRESET_EMOJIS.length)];
+let myName = (localStorage.getItem('domName') || '').trim();
+
+function syncProfileUI() {
+  if($('userNameInput') && document.activeElement !== $('userNameInput')) $('userNameInput').value = myName;
+  if($('avatarPreview')) $('avatarPreview').textContent = myAvatar;
+  if($('lobbyAvatarPreview')) $('lobbyAvatarPreview').textContent = myAvatar;
+  if($('lobbyNamePreview')) $('lobbyNamePreview').textContent = myName || 'You';
+  if($('modalEmojiPreview')) $('modalEmojiPreview').textContent = myAvatar;
+  if($('modalNamePreview')) $('modalNamePreview').textContent = myName || 'Player';
+}
+
+function openEmojiPicker() {
+  syncProfileUI();
+  renderEmojiPresets();
+  $('emojiModal').classList.remove('hidden');
+}
+
+function closeEmojiPicker() {
+  $('emojiModal').classList.add('hidden');
+}
+
+function setPlayerAvatar(emoji) {
+  if (!emoji || !emoji.trim()) return;
+  myAvatar = emoji.trim();
+  localStorage.setItem('domAvatar', myAvatar);
+  syncProfileUI();
+  renderEmojiPresets();
+  if(host) {
+    const me = playerById(myId);
+    if(me) { me.avatar = myAvatar; }
+    lobbyBroadcast();
+    if(state) broadcastState();
+  } else if(window._hostConn) {
+    send(window._hostConn, { type: 'UPDATE_PROFILE', name: myName, avatar: myAvatar, playerId: myId });
+  }
+}
+
+function renderEmojiPresets() {
+  const grid = $('emojiPresetGrid');
+  if(!grid) return;
+  grid.innerHTML = PRESET_EMOJIS.map(em => {
+    const isSel = (myAvatar === em) ? 'selected' : '';
+    return `<button class="emoji-item-btn ${isSel}" data-emoji="${em}" type="button">${em}</button>`;
+  }).join('');
+}
 
 // === SOUND ENGINE (Web Audio API) ===
 let audioCtx;
@@ -602,9 +1126,11 @@ function renderMiniHand(count) {
 
 function updatePlayers() {
   if($('hostControls')) $('hostControls').classList.toggle('hidden', !host || solo);
+  syncProfileUI();
   $('lobbyPlayers').innerHTML = players.map(p => 
     `<div style="display:flex; align-items:center; gap:10px;">
       <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.connected!==false?'#22c55e':'#ef4444'}"></span>
+      <span style="font-size:1.5rem; line-height:1;">${p.avatar || '😎'}</span>
       <span style="font-size:1.15rem; ${p.id===hostId?'color:#ffe7a5;font-weight:bold;':''}">${esc(p.name)} ${p.id===hostId?'(Host)':''} ${p.id===myId?'(You)':''}</span>
     </div>`
   ).join('');
@@ -619,14 +1145,15 @@ function updatePlayers() {
       let isCurr = state.current === pid;
       let hCount = state.handCounts ? state.handCounts[pid] : (state.hands&&state.hands[pid]?state.hands[pid].length:0);
       let name = p ? esc(p.name) : 'Player';
+      let avatar = p?.avatar || '😎';
       let kickBtn = (host && !solo && pid !== myId) ? `<button class="kick-btn" data-kick="${esc(pid)}">✕</button>` : '';
       let miniHandHTML = renderMiniHand(hCount);
-      sbHtml += `<div class="ts-player ${isCurr?'active':''}">${name}: <strong>${score}</strong> ${miniHandHTML}${kickBtn}</div>`;
+      sbHtml += `<div class="ts-player ${isCurr?'active':''}"><span style="font-size:1.25rem; line-height:1;">${avatar}</span> <strong>${name}</strong>: ${score} ${miniHandHTML}${kickBtn}</div>`;
     });
     $('topScoreboard').innerHTML = sbHtml;
   }
 }
-function lobbyBroadcast() { sendHost({ type: 'LOBBY', roomCode, hostId, players: players.map(({id,name,connected})=>({id,name,connected})), revision, participantLimit, winningScore }); updatePlayers(); }
+function lobbyBroadcast() { sendHost({ type: 'LOBBY', roomCode, hostId, players: players.map(({id,name,avatar,connected})=>({id,name,avatar,connected})), revision, participantLimit, winningScore }); updatePlayers(); }
 
 // === NETWORKING ===
 function attachHostConnection(conn) {
@@ -637,12 +1164,28 @@ function attachHostConnection(conn) {
       const existing = playerById(stableId);
       if(!existing && players.length >= participantLimit) { send(conn, {type:'ERROR', message:`Room full.`}); return; }
       transportPlayers.set(conn.peer, stableId); connections.set(stableId, conn);
-      if(existing) { existing.connected = true; if(data.name) existing.name = String(data.name).slice(0,20); }
-      else players.push({id: stableId, name: String(data.name||'Player').slice(0,20), connected: true});
+      const pName = String(data.name || 'Player').slice(0,20);
+      const pAvatar = String(data.avatar || '😎').slice(0,10);
+      if(existing) { 
+        existing.connected = true; 
+        existing.name = pName; 
+        existing.avatar = pAvatar; 
+      }
+      else players.push({id: stableId, name: pName, avatar: pAvatar, connected: true});
       if(state && !state.hands[stableId]) state.hands[stableId] = [];
       saveHostSession();
-      send(conn, {type:'WELCOME', roomCode, hostId, players: players.map(({id,name,connected})=>({id,name,connected})), state: state?clientState(stableId):null, revision, participantLimit, winningScore});
+      send(conn, {type:'WELCOME', roomCode, hostId, players: players.map(({id,name,avatar,connected})=>({id,name,avatar,connected})), state: state?clientState(stableId):null, revision, participantLimit, winningScore});
       lobbyBroadcast();
+    } else if(data.type === 'UPDATE_PROFILE') {
+      const stableId = transportPlayers.get(conn.peer) || data.playerId;
+      const p = playerById(stableId);
+      if(p) {
+        if(data.name) p.name = String(data.name).slice(0, 20);
+        if(data.avatar) p.avatar = String(data.avatar).slice(0, 10);
+        saveHostSession();
+        lobbyBroadcast();
+        if(state) broadcastState();
+      }
     } else if(data.type === 'ACTION') {
       const stableId = transportPlayers.get(conn.peer);
       if(state && stableId && playerById(stableId)) handleAction(stableId, data);
@@ -662,8 +1205,11 @@ function getStableId() { let id = localStorage.getItem('domId'); if(!id) { id = 
 
 function connectToHost(id) {
   host = false; solo = false; hostId = id; myId = getStableId();
-  myName = localStorage.getItem('domName') || ('Player ' + Math.floor(10+Math.random()*90));
+  const inputName = $('userNameInput') ? $('userNameInput').value.trim() : '';
+  if(inputName) myName = inputName;
+  else if(!myName) myName = localStorage.getItem('domName') || ('Player ' + Math.floor(10+Math.random()*90));
   localStorage.setItem('domName', myName);
+  syncProfileUI();
   msg('Connecting...');
   
   if(!peer) {
@@ -675,7 +1221,7 @@ function connectToHost(id) {
   function openHostConn(hId) {
     const conn = peer.connect(hId, {reliable:true}); window._hostConn = conn;
     conn.on('open', () => {
-      send(conn, {type:'HELLO', name:myName, playerId:myId});
+      send(conn, {type:'HELLO', name:myName, avatar:myAvatar, playerId:myId});
       $('roomCodeLabel').textContent = roomCode; makeQr(); showPanel('lobbyPanel');
     });
     conn.on('data', data => handleClientMessage(data));
@@ -695,6 +1241,7 @@ function handleClientMessage(data) {
   } 
   else if(data.type === 'STATE' || data.type === 'STARTED') { 
     if(data.actionFired === 'PLAY') playClick(); else if(data.actionFired === 'DRAW') playDraw();
+    if(data.players) players = data.players;
     state = data.state; revision = data.revision; renderGame(); 
   }
   else if(data.type === 'KICKED') { alert('You were removed by the host.'); location.href=''; }
@@ -702,23 +1249,51 @@ function handleClientMessage(data) {
   else if(data.type === 'ERROR') { msg(data.message); showPanel('setupPanel'); }
 }
 
-function saveHostSession() { if(host && !solo) try{localStorage.setItem('domHost:'+roomCode, JSON.stringify({roomCode,players,state,revision,participantLimit,winningScore,hostId,myId}))}catch(e){} }
+function saveHostSession() { 
+  if(host && !solo) try{
+    localStorage.setItem('domHost:'+roomCode, JSON.stringify({
+      roomCode,
+      players: players.map(({id,name,avatar,connected})=>({id,name,avatar,connected})),
+      state,
+      revision,
+      participantLimit,
+      winningScore,
+      hostId,
+      myId
+    }));
+  }catch(e){} 
+}
 function restoreHostSession(c) { try{const r = localStorage.getItem('domHost:'+c); return r?JSON.parse(r):null;}catch(e){return null;} }
 
 function createHost() {
+  const inputName = $('userNameInput') ? $('userNameInput').value.trim() : '';
+  if(inputName) myName = inputName;
+  else if(!myName) myName = 'Host';
+  localStorage.setItem('domName', myName);
   const savedCode = localStorage.getItem('domLastHost'); const saved = savedCode ? restoreHostSession(savedCode) : null;
-  roomCode = saved?.roomCode || code(); hostId = roomCode; myName = 'Host'; host = true; solo = false;
+  roomCode = saved?.roomCode || code(); hostId = roomCode; host = true; solo = false;
   if(saved) { state=saved.state; players=saved.players; revision=saved.revision; participantLimit=saved.participantLimit; winningScore=saved.winningScore; }
   
   msg('Opening room...'); peer = new Peer(roomCode);
   peer.on('open', id => {
     myId = id; hostId = id;
-    if(!saved || !players.length) players = [{id:myId, name:myName, connected:true}];
+    if(!saved || !players.length) players = [{id:myId, name:myName, avatar:myAvatar, connected:true}];
     else {
-      const oldHost = players.find(p => p.id === saved.myId || p.name === 'Host');
-      if(oldHost) { oldHost.id = myId; oldHost.connected = true; if(state) { state.players = state.players.map(x=>x===(saved.myId||oldHost.id)?myId:x); if(state.hands[saved.myId]){state.hands[myId]=state.hands[saved.myId]; delete state.hands[saved.myId];} if(state.current===saved.myId) state.current=myId; } }
-      if(!playerById(myId)) players.unshift({id:myId, name:'Host', connected:true});
+      const oldHost = players.find(p => p.id === saved.myId || p.id === myId);
+      if(oldHost) { 
+        oldHost.id = myId; 
+        oldHost.name = myName;
+        oldHost.avatar = myAvatar;
+        oldHost.connected = true; 
+        if(state) { 
+          state.players = state.players.map(x=>x===(saved.myId||oldHost.id)?myId:x); 
+          if(state.hands[saved.myId]){state.hands[myId]=state.hands[saved.myId]; delete state.hands[saved.myId];} 
+          if(state.current===saved.myId) state.current=myId; 
+        } 
+      }
+      if(!playerById(myId)) players.unshift({id:myId, name:myName, avatar:myAvatar, connected:true});
     }
+    syncProfileUI();
     $('roomCodeLabel').textContent = roomCode; makeQr(); showPanel(state?'gamePanel':'lobbyPanel');
     localStorage.setItem('domLastHost', roomCode); lobbyBroadcast(); if(state) renderGame(); saveHostSession();
   });
@@ -731,9 +1306,15 @@ function joinRoom(c) {
   connectToHost(roomCode);
 }
 function startSolo() {
-  solo = true; host = true; roomCode = 'SOLO'; hostId = 'LOCAL'; myId = hostId; myName = 'You';
-  players = [{id:myId, name:'You', connected:true}, {id:'AI', name:'Computer', connected:true}];
-  connections.clear(); state = null; revision = 0; participantLimit = 2; winningScore = 100; startGame();
+  const inputName = $('userNameInput') ? $('userNameInput').value.trim() : '';
+  if(inputName) myName = inputName;
+  else if(!myName) myName = 'You';
+  localStorage.setItem('domName', myName);
+  solo = true; host = true; roomCode = 'SOLO'; hostId = 'LOCAL'; myId = hostId;
+  players = [{id:myId, name:myName, avatar:myAvatar, connected:true}, {id:'AI', name:'Computer', avatar:'🤖', connected:true}];
+  connections.clear(); state = null; revision = 0; participantLimit = 2; winningScore = 100; 
+  syncProfileUI();
+  startGame();
 }
 
 // === ENGINE LOGIC ===
@@ -776,7 +1357,7 @@ function clientState(id) {
 }
 function broadcastState(actionType) { 
   revision++; saveHostSession(); 
-  for(const [id, c] of connections) send(c, {type:'STATE', state:clientState(id), revision, actionFired: actionType}); 
+  for(const [id, c] of connections) send(c, {type:'STATE', state:clientState(id), revision, actionFired: actionType, players: players.map(({id,name,avatar,connected})=>({id,name,avatar,connected}))}); 
   if(actionType==='PLAY') playClick(); else if(actionType==='DRAW') playDraw();
   renderGame(); 
 }
@@ -990,7 +1571,7 @@ function renderGame() {
   const myTurn = state.current === myId && !state.winner;
   const p = playerById(state.current);
   
-  $('turnLabel').textContent = state.winner ? 'Round Complete' : (p ? (p.id===myId?'Your Turn':p.name+"'s Turn") : 'In Progress');
+  $('turnLabel').textContent = state.winner ? 'Round Complete' : (p ? (p.id===myId ? `${p.avatar||'😎'} Your Turn` : `${p.avatar||'😎'} ${p.name}'s Turn`) : 'In Progress');
   
   $('boardCanvas').innerHTML = state.board.map(t => renderTile(t, true)).join('');
   calculateAutoZoom();
@@ -1056,12 +1637,14 @@ function renderGame() {
     if(state.winner !== lastWinnerTracker) { playWin(); lastWinnerTracker = state.winner; }
     
     $('winModal').classList.remove('hidden');
-    let roundWinnerId = state.winner === 'blocked' ? state.blockedWinner : state.winner;
-    let roundWinnerName = playerById(roundWinnerId)?.name || 'Player';
+    let roundWinner = playerById(state.winner === 'blocked' ? state.blockedWinner : state.winner);
+    let roundWinnerName = (roundWinner?.avatar ? `${roundWinner.avatar} ` : '') + (roundWinner?.name || 'Player');
 
     if (state.matchWinner) {
-      let winnerName = playerById(state.matchWinner)?.name || 'Player';
-      let loserName = playerById(state.matchLoser)?.name || 'Player';
+      let winner = playerById(state.matchWinner);
+      let loser = playerById(state.matchLoser);
+      let winnerName = (winner?.avatar ? `${winner.avatar} ` : '') + (winner?.name || 'Player');
+      let loserName = (loser?.avatar ? `${loser.avatar} ` : '') + (loser?.name || 'Player');
       let maxScore = state.scores[state.matchLoser] || 0;
       $('winTitle').textContent = `${winnerName} Wins the Match!`;
       $('winWaitMsg').textContent = `${loserName} reached ${maxScore} points and lost the match!`;
@@ -1076,12 +1659,13 @@ function renderGame() {
     let scHtml = '';
     // Sort ascending: lowest score at the top (#1 winner), maximum score at the bottom (loser)
     [...state.players].sort((a,b)=>(state.scores[a]||0)-(state.scores[b]||0)).forEach((pid, rank) => {
-      let nm = playerById(pid)?.name || 'Player';
+      let p = playerById(pid);
+      let nm = (p?.avatar ? `${p.avatar} ` : '') + (p?.name || 'Player');
       let scr = state.scores[pid]||0;
       let badge = '';
       if (state.matchWinner === pid) badge = ' 🏆 Winner (Lowest Pts)';
       else if (state.matchLoser === pid) badge = ' ❌ Lost (Max Pts)';
-      else if (pid === roundWinnerId && !state.matchWinner) badge = ' ⭐️ Round Win (0 pts)';
+      else if (pid === (state.winner === 'blocked' ? state.blockedWinner : state.winner) && !state.matchWinner) badge = ' ⭐️ Round Win (0 pts)';
       scHtml += `<div class="score-row"><span>#${rank+1} ${esc(nm)}${badge}</span> <strong>${scr} pts</strong></div>`;
     });
     $('winScores').innerHTML = scHtml;
@@ -1127,6 +1711,131 @@ $('startBtn').onclick = startGame;
 $('nextRoundBtn').onclick = startGame;
 $('leaveBtn').onclick = () => location.href='';
 $('copyInviteBtn').onclick = async () => { try { await navigator.clipboard.writeText(inviteUrl()); $('copyInviteBtn').textContent='Copied!'; setTimeout(()=>$('copyInviteBtn').textContent='Copy Invite',2000); }catch(e){} };
+
+// Avatar & Emoji Picker Listeners
+$('avatarBtn').onclick = openEmojiPicker;
+if($('lobbyAvatarBtn')) $('lobbyAvatarBtn').onclick = openEmojiPicker;
+$('closeEmojiModalBtn').onclick = closeEmojiPicker;
+$('doneEmojiModalBtn').onclick = closeEmojiPicker;
+$('emojiModal').onclick = e => { if(e.target === $('emojiModal')) closeEmojiPicker(); };
+
+$('emojiPresetGrid').onclick = e => {
+  const btn = e.target.closest('[data-emoji]');
+  if(btn) {
+    setPlayerAvatar(btn.dataset.emoji);
+    closeEmojiPicker();
+  }
+};
+
+$('applyCustomEmojiBtn').onclick = () => {
+  const val = $('customEmojiInput').value.trim();
+  if(val) {
+    setPlayerAvatar(val);
+    $('customEmojiInput').value = '';
+    closeEmojiPicker();
+  }
+};
+$('customEmojiInput').onkeydown = e => {
+  if(e.key === 'Enter') $('applyCustomEmojiBtn').click();
+};
+
+$('userNameInput').addEventListener('input', e => {
+  myName = e.target.value.trim();
+  localStorage.setItem('domName', myName);
+  syncProfileUI();
+  if(host) {
+    const me = playerById(myId);
+    if(me) { me.name = myName || 'Host'; }
+    lobbyBroadcast();
+    if(state) broadcastState();
+  } else if(window._hostConn) {
+    send(window._hostConn, { type: 'UPDATE_PROFILE', name: myName, avatar: myAvatar, playerId: myId });
+  }
+});
+
+// === HERO INTERACTIVE DOMINO LOGIC ===
+let heroValA = 6, heroValB = 6;
+let heroCompA = 5, heroCompB = 4;
+let heroRolling = false;
+
+function renderHeroHalf(elId, val) {
+  const el = $(elId);
+  if (!el) return;
+  el.dataset.val = val;
+  el.innerHTML = pipHTML(val);
+}
+
+function rollHeroDomino() {
+  if (heroRolling) return;
+  heroRolling = true;
+  initAudio();
+  playClick();
+
+  const wrap = $('heroTileWrap');
+  const comp = $('heroCompanion');
+  const hint = $('heroRollHint');
+  const text = $('heroRollText');
+
+  if (wrap) wrap.classList.add('flipping');
+  if (comp) comp.classList.add('bounce');
+  if (hint) hint.classList.add('bump');
+
+  // Halfway through tumble, update pips with new random numbers
+  setTimeout(() => {
+    let newA, newB;
+    do {
+      newA = Math.floor(Math.random() * 7);
+      newB = Math.floor(Math.random() * 7);
+    } while (newA === heroValA && newB === heroValB);
+
+    heroValA = newA;
+    heroValB = newB;
+    renderHeroHalf('heroHalfA', heroValA);
+    renderHeroHalf('heroHalfB', heroValB);
+
+    heroCompA = Math.floor(Math.random() * 7);
+    heroCompB = Math.floor(Math.random() * 7);
+    renderHeroHalf('heroCompA', heroCompA);
+    renderHeroHalf('heroCompB', heroCompB);
+
+    if (text) {
+      text.textContent = `Rolled [${heroValA} | ${heroValB}] • Tap to roll!`;
+    }
+  }, 220);
+
+  setTimeout(() => {
+    if (wrap) wrap.classList.remove('flipping');
+    if (comp) comp.classList.remove('bounce');
+    if (hint) hint.classList.remove('bump');
+    heroRolling = false;
+  }, 530);
+}
+
+const heroStage = $('heroStage');
+if (heroStage) {
+  heroStage.addEventListener('click', rollHeroDomino);
+  
+  // Desktop Parallax 3D Tilt on mousemove
+  heroStage.addEventListener('mousemove', e => {
+    if (heroRolling) return;
+    const rect = heroStage.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    const rotX = -(y / (rect.height / 2)) * 14;
+    const rotY = (x / (rect.width / 2)) * 14;
+    const mainTile = $('heroDomino');
+    if (mainTile) {
+      mainTile.style.transform = `rotate(${8 + rotY * 0.25}deg) rotateX(${rotX}deg) rotateY(${rotY}deg) translateY(-4px)`;
+    }
+  });
+
+  heroStage.addEventListener('mouseleave', () => {
+    const mainTile = $('heroDomino');
+    if (mainTile && !heroRolling) {
+      mainTile.style.transform = '';
+    }
+  });
+}
 
 // Dual-Placement Choice Handling (Tile Diminishing Border Targets Only - Pure Touch)
 let selectedTileForPlacement = null;
@@ -1281,6 +1990,8 @@ $('playerLimit').onchange = () => { if(!host)return; participantLimit=Number($('
 $('winningScore').onchange = () => { if(!host)return; winningScore=Number($('winningScore').value)||100; saveHostSession(); sendHost({type:'SETTINGS',participantLimit,winningScore}); };
 
 window.addEventListener('resize', () => { if(state && state.board.length) calculateAutoZoom(); });
+
+syncProfileUI();
 
 const query = new URLSearchParams(location.search).get('join');
 if(query) { $('joinCode').value=query; joinRoom(query); }
