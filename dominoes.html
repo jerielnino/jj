@@ -10,431 +10,73 @@
 
 <style>
 :root {
-  --black: #050505;
-  --black-soft: #141414;
-  --black-softer: #1e1e1e;
   --gold: #e8b93a;
   --gold-dark: #b8860b;
   --cream: #f2efe6;
-  --ink: #161616;
   --green-board: #0d6f45;
 }
 
 * { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, system-ui; background: linear-gradient(160deg, #000, #141414 60%); color: var(--cream); }
 
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
-  background: radial-gradient(circle at 50% -10%, rgba(232,185,58,.12), transparent 55%),
-              linear-gradient(160deg, #000000, var(--black-soft) 60%, var(--black-softer));
-  color: var(--cream);
-  overflow: hidden;
-}
+#app { width: 100%; min-height: 100vh; display: flex; flex-direction: column; }
+.setup-screen { width: 100%; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; overflow-y: auto; }
+.setup-screen.hidden { display: none; }
 
-#app {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
+.screen { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; animation: fadeIn 0.25s; margin: auto; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-.setup-screen {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
+h1 { font-size: 1.6rem; text-align: center; margin: 0; color: var(--gold); text-shadow: 0 0 14px rgba(232,185,58,.35); }
+.subtitle { text-align: center; opacity: 0.85; font-size: 0.85rem; margin: 0 0 14px 0; }
 
-.setup-screen.hidden {
-  display: none;
-}
+.panel { width: 100%; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); border-radius: 18px; padding: 16px; backdrop-filter: blur(6px); }
+label { display: block; font-size: 0.85rem; margin-bottom: 6px; opacity: 0.9; }
+input[type=text] { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.2); font-size: 1rem; background: #1e1e1e; color: var(--cream); outline: none; }
+input[type=text]:focus { border-color: var(--gold); }
 
-.screen {
-  width: 100%;
-  max-width: 440px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  animation: fadeIn 0.25s ease-out;
-}
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.chip { padding: 8px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.06); color: var(--cream); font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
+.chip.active { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; border-color: var(--gold); font-weight: 600; }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-h1 {
-  font-size: 1.6rem;
-  text-align: center;
-  margin: 4px 0 2px;
-  color: var(--gold);
-  text-shadow: 0 0 14px rgba(232,185,58,.35);
-}
-
-.subtitle {
-  text-align: center;
-  opacity: 0.85;
-  font-size: 0.85rem;
-  margin-bottom: 14px;
-}
-
-.panel {
-  width: 100%;
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 18px;
-  padding: 16px;
-  backdrop-filter: blur(6px);
-}
-
-label {
-  display: block;
-  font-size: 0.85rem;
-  margin-bottom: 6px;
-  opacity: 0.9;
-}
-
-input[type=text] {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,.2);
-  font-size: 1rem;
-  background: var(--black-softer);
-  color: var(--cream);
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-input[type=text]:focus {
-  border-color: var(--gold);
-}
-
-.chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-}
-
-.chip {
-  padding: 8px 14px;
-  border-radius: 20px;
-  border: 1px solid rgba(255,255,255,.25);
-  background: rgba(255,255,255,.06);
-  color: var(--cream);
-  font-size: 0.82rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.chip.active {
-  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-  color: var(--ink);
-  border-color: var(--gold);
-  font-weight: 600;
-}
-
-button.primary {
-  width: 100%;
-  padding: 14px;
-  font-size: 1.02rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 14px;
-  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-  color: var(--ink);
-  cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0,0,0,.3);
-  transition: transform 0.15s;
-}
-
+button.primary { width: 100%; padding: 14px; font-size: 1.02rem; font-weight: 600; border: none; border-radius: 14px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
 button.primary:active { transform: scale(.98); }
 button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
-#qrCode {
-  display: flex;
-  justify-content: center;
-  margin: 16px 0;
-}
+#qrCode { display: flex; justify-content: center; margin: 16px 0; }
+.join-code { font-size: 1.8rem; font-weight: bold; color: var(--gold); font-family: monospace; letter-spacing: 2px; margin: 8px 0 16px; text-align: center; }
+.players-waiting { background: rgba(0,0,0,.3); border-radius: 12px; padding: 12px; margin: 12px 0; max-height: 120px; overflow-y: auto; min-height: 40px; }
+.waiting-player { padding: 8px 12px; background: rgba(255,255,255,.08); border-radius: 8px; margin-bottom: 6px; font-size: 0.9rem; }
 
-.join-code {
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: var(--gold);
-  font-family: monospace;
-  letter-spacing: 2px;
-  margin: 8px 0 16px;
-  text-align: center;
-}
+.game-screen { width: 100%; min-height: 100vh; display: flex; flex-direction: column; background: linear-gradient(135deg, var(--green-board) 0%, #0d5a3d 100%); padding: 12px; gap: 12px; overflow-y: auto; }
+.game-screen.hidden { display: none; }
 
-.players-waiting {
-  background: rgba(0,0,0,.3);
-  border-radius: 12px;
-  padding: 12px;
-  margin: 12px 0;
-  max-height: 120px;
-  overflow-y: auto;
-  min-height: 40px;
-}
+.top-bar { display: flex; justify-content: space-between; padding: 12px; background: rgba(0,0,0,.3); border-radius: 10px; font-size: 0.9rem; }
+.board-area { min-height: 200px; display: flex; align-items: center; justify-content: center; overflow-x: auto; overflow-y: hidden; border-radius: 10px; background: rgba(0,0,0,.2); }
+.board-inner { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; padding: 20px; max-width: 95%; }
 
-.waiting-player {
-  padding: 8px 12px;
-  background: rgba(255,255,255,.08);
-  border-radius: 8px;
-  margin-bottom: 6px;
-  font-size: 0.9rem;
-}
+.domino-played { width: 60px; height: 120px; background: linear-gradient(135deg, #f5f1e8 0%, #e8dcc8 100%); border-radius: 8px; border: 2px solid #c8b8a0; box-shadow: 0 8px 16px rgba(0,0,0,.6); display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.domino-played::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #999, transparent); }
 
-.hint {
-  font-size: 0.78rem;
-  opacity: 0.75;
-  text-align: center;
-  margin-top: 4px;
-}
+.domino-half-top, .domino-half-bottom { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+.dot { width: 5px; height: 5px; background: #333; border-radius: 50%; position: absolute; }
 
-.game-screen {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: linear-gradient(135deg, var(--green-board) 0%, #0d5a3d 100%);
-  padding: 12px;
-  gap: 12px;
-}
+.players-section { background: rgba(0,0,0,.3); border-radius: 10px; padding: 12px; display: flex; gap: 10px; overflow-x: auto; flex-wrap: wrap; justify-content: center; }
+.player-status { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; min-width: 100px; text-align: center; }
+.player-status.current { background: rgba(232,185,58,.15); border-color: var(--gold); font-weight: 600; }
 
-.game-screen.hidden {
-  display: none;
-}
+.hand-area { background: rgba(0,0,0,.3); border-radius: 10px; padding: 12px; display: flex; gap: 8px; overflow-x: auto; flex-wrap: wrap; align-content: flex-start; min-height: 120px; padding-bottom: 20px; }
 
-.top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(0,0,0,.3);
-  padding: 12px;
-  border-radius: 10px;
-  font-size: 0.9rem;
-}
+.hand-domino { width: 50px; height: 100px; background: linear-gradient(135deg, #f5f1e8 0%, #e8dcc8 100%); border-radius: 6px; border: 2px solid #c8b8a0; box-shadow: 0 4px 10px rgba(0,0,0,.5); cursor: pointer; display: flex; flex-direction: column; transition: all 0.2s; position: relative; overflow: hidden; }
+.hand-domino::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1.5px; background: linear-gradient(90deg, transparent, #999, transparent); }
+.hand-domino:hover { transform: translateY(-12px); border-color: var(--gold); }
 
-.board-area {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: auto;
-  border-radius: 10px;
-  background: rgba(0,0,0,.2);
-  position: relative;
-}
+.hand-half-top, .hand-half-bottom { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+.hand-dot { width: 3px; height: 3px; background: #333; border-radius: 50%; position: absolute; }
 
-.board-inner {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  max-width: 95%;
-}
-
-.domino-played {
-  width: 60px;
-  height: 120px;
-  background: linear-gradient(135deg, #f5f1e8 0%, #e8dcc8 100%);
-  border-radius: 8px;
-  border: 2px solid #c8b8a0;
-  box-shadow: 0 8px 16px rgba(0,0,0,.6), inset -1px -1px 2px rgba(0,0,0,.2), inset 1px 1px 2px rgba(255,255,255,.3);
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
-}
-
-.domino-played::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #999, transparent);
-  transform: translateY(-50%);
-}
-
-.domino-half-top, .domino-half-bottom {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  background: linear-gradient(135deg, rgba(255,255,255,.3) 0%, rgba(0,0,0,.05) 100%);
-}
-
-.dot {
-  width: 5px;
-  height: 5px;
-  background: #333;
-  border-radius: 50%;
-  position: absolute;
-}
-
-.dots-0 {}
-.dots-1 .dot { top: 50%; left: 50%; transform: translate(-50%, -50%); }
-.dots-2 .dot:nth-child(1) { top: 30%; left: 30%; }
-.dots-2 .dot:nth-child(2) { bottom: 30%; right: 30%; }
-.dots-3 .dot:nth-child(1) { top: 30%; left: 30%; }
-.dots-3 .dot:nth-child(2) { top: 50%; left: 50%; transform: translate(-50%, -50%); }
-.dots-3 .dot:nth-child(3) { bottom: 30%; right: 30%; }
-.dots-4 .dot:nth-child(1) { top: 30%; left: 30%; }
-.dots-4 .dot:nth-child(2) { top: 30%; right: 30%; }
-.dots-4 .dot:nth-child(3) { bottom: 30%; left: 30%; }
-.dots-4 .dot:nth-child(4) { bottom: 30%; right: 30%; }
-.dots-5 .dot:nth-child(1) { top: 30%; left: 30%; }
-.dots-5 .dot:nth-child(2) { top: 30%; right: 30%; }
-.dots-5 .dot:nth-child(3) { top: 50%; left: 50%; transform: translate(-50%, -50%); }
-.dots-5 .dot:nth-child(4) { bottom: 30%; left: 30%; }
-.dots-5 .dot:nth-child(5) { bottom: 30%; right: 30%; }
-.dots-6 .dot:nth-child(1) { top: 30%; left: 30%; }
-.dots-6 .dot:nth-child(2) { top: 30%; right: 30%; }
-.dots-6 .dot:nth-child(3) { top: 50%; left: 30%; }
-.dots-6 .dot:nth-child(4) { top: 50%; right: 30%; }
-.dots-6 .dot:nth-child(5) { bottom: 30%; left: 30%; }
-.dots-6 .dot:nth-child(6) { bottom: 30%; right: 30%; }
-
-.players-section {
-  background: rgba(0,0,0,.3);
-  border-radius: 10px;
-  padding: 12px;
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.player-status {
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 0.85rem;
-  min-width: 100px;
-  text-align: center;
-}
-
-.player-status.current {
-  background: rgba(232,185,58,.15);
-  border-color: var(--gold);
-  font-weight: 600;
-}
-
-.hand-area {
-  background: rgba(0,0,0,.3);
-  border-radius: 10px;
-  padding: 12px;
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  justify-content: center;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  min-height: 100px;
-  max-height: 110px;
-}
-
-.hand-domino {
-  width: 50px;
-  height: 100px;
-  background: linear-gradient(135deg, #f5f1e8 0%, #e8dcc8 100%);
-  border-radius: 6px;
-  border: 2px solid #c8b8a0;
-  box-shadow: 0 4px 10px rgba(0,0,0,.5), inset -1px -1px 1px rgba(0,0,0,.15), inset 1px 1px 1px rgba(255,255,255,.3);
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  transition: all 0.2s;
-  position: relative;
-  overflow: hidden;
-}
-
-.hand-domino::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1.5px;
-  background: linear-gradient(90deg, transparent, #999, transparent);
-  transform: translateY(-50%);
-}
-
-.hand-domino:hover {
-  transform: translateY(-12px);
-  box-shadow: 0 8px 16px rgba(0,0,0,.6), inset -1px -1px 1px rgba(0,0,0,.15), inset 1px 1px 1px rgba(255,255,255,.3);
-  border-color: var(--gold);
-}
-
-.hand-half-top, .hand-half-bottom {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  background: linear-gradient(135deg, rgba(255,255,255,.2) 0%, rgba(0,0,0,.03) 100%);
-}
-
-.hand-dot {
-  width: 3px;
-  height: 3px;
-  background: #333;
-  border-radius: 50%;
-  position: absolute;
-}
-
-.action-buttons {
-  background: rgba(0,0,0,.3);
-  border-radius: 10px;
-  padding: 12px;
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.draw-btn {
-  padding: 10px 20px;
-  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-  color: var(--ink);
-  border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.draw-btn:hover {
-  transform: scale(1.05);
-}
-
-.draw-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.status-msg {
-  text-align: center;
-  font-size: 0.9rem;
-  padding: 8px;
-  background: rgba(0,0,0,.3);
-  border-radius: 8px;
-  color: var(--gold);
-}
+.action-buttons { background: rgba(0,0,0,.3); border-radius: 10px; padding: 12px; display: flex; gap: 10px; justify-content: center; }
+.draw-btn { padding: 10px 20px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
+.draw-btn:hover { transform: scale(1.05); }
+.draw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -471,7 +113,7 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
         </div>
 
         <div id="qrCode"></div>
-        <div class="join-code" id="gameCode">Loading...</div>
+        <div class="join-code" id="gameCode">DOM-XXXX</div>
 
         <div class="players-waiting" id="playersList">Waiting for players...</div>
         <button class="primary" id="startBtn" onclick="startGame()" disabled>Start Game</button>
@@ -479,154 +121,88 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
       <div id="joinPanel" class="panel" style="display: none;">
         <label>Enter Game Code</label>
-        <input type="text" id="gameCodeInput" placeholder="e.g., DOM-ABCD" maxlength="8">
-        <button class="primary" id="joinBtn" onclick="joinGame()" style="margin-top: 12px;">Join Game</button>
-        <div class="hint">Or ask host to scan QR code</div>
+        <input type="text" id="gameCodeInput" placeholder="DOM-ABCD" maxlength="8">
+        <button class="primary" onclick="joinGame()" style="margin-top: 12px;">Join Game</button>
       </div>
     </div>
   </div>
 
   <div id="gameScreen" class="game-screen hidden">
-    <div class="status-msg" id="statusMsg">Connecting...</div>
-
     <div class="top-bar">
-      <div class="current-player-info">Current: <span id="currentPlayer">Player 1</span></div>
-      <div class="stock-info">Stock: <span id="stockCount">14</span></div>
+      <div>Current: <span id="currentPlayer">Player 1</span></div>
+      <div>Stock: <span id="stockCount">0</span></div>
     </div>
-
-    <div class="board-area">
-      <div class="board-inner" id="boardInner"></div>
-    </div>
-
+    <div class="board-area"><div class="board-inner" id="boardInner"></div></div>
     <div class="players-section" id="playersList"></div>
-
     <div class="hand-area" id="handArea"></div>
-
-    <div class="action-buttons">
-      <button class="draw-btn" id="drawBtn" onclick="drawDomino()">Draw</button>
-    </div>
+    <div class="action-buttons"><button class="draw-btn" onclick="drawDomino()">Draw</button></div>
   </div>
 </div>
 
 <script>
-const PEER_OPTS = {
-  debug: 1,
-  config: {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' }
-    ]
-  }
-};
+const STUN_SERVERS = { iceServers: [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' }
+]};
 
 let gameMode = 'host';
 let maxPlayers = 2;
 let myName = 'Player';
-let myId = null;
-let gameCode = null;
-let players = [];
-let myPlayerIndex = 0;
+let gameCode = '';
 let peer = null;
 let hostConn = null;
 let clientConns = new Map();
 let isHost = false;
 let game = null;
-let reconnectTimer = null;
-let reconnectAttempts = 0;
 
-class DominoesGame {
-  constructor(numPlayers = 2) {
-    this.numPlayers = numPlayers;
-    this.players = [];
+class Dominoes {
+  constructor(n) {
+    this.players = Array(n).fill(0).map((_, i) => ({ name: `P${i+1}`, hand: [] }));
     this.stock = [];
     this.played = [];
-    this.currentPlayerIndex = 0;
+    this.current = 0;
 
-    const allDominoes = [];
-    for (let i = 0; i <= 6; i++) {
-      for (let j = i; j <= 6; j++) {
-        allDominoes.push([i, j]);
-      }
+    let all = [];
+    for (let i = 0; i <= 6; i++)
+      for (let j = i; j <= 6; j++)
+        all.push([i, j]);
+
+    for (let p of all.length) all.sort(() => Math.random() - 0.5);
+    for (let p of this.players) {
+      for (let i = 0; i < 7; i++) p.hand.push(all.pop());
     }
-
-    this.shuffle(allDominoes);
-
-    for (let i = 0; i < numPlayers; i++) {
-      this.players.push({
-        hand: allDominoes.splice(0, 7),
-        name: `Player ${i + 1}`,
-        connected: true
-      });
-    }
-
-    this.stock = allDominoes;
-    const first = this.stock.pop();
-    this.played.push(first);
+    this.stock = all;
+    this.played.push(this.stock.pop());
   }
 
-  shuffle(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
+  canPlay(d) {
+    const l = this.played[0][0], r = this.played[this.played.length-1][1];
+    return d[0]===l || d[1]===l || d[0]===r || d[1]===r;
   }
 
-  canPlay(domino) {
-    const left = this.played[0][0];
-    const right = this.played[this.played.length - 1][1];
-    return domino[0] === left || domino[1] === left || domino[0] === right || domino[1] === right;
+  play(d, p) {
+    this.players[p].hand = this.players[p].hand.filter(x => x!==d);
+    const l = this.played[0][0], r = this.played[this.played.length-1][1];
+    if ((d[0]===l && d[1]!==l) || d[1]===l) this.played.unshift([d[1], d[0]]);
+    else if (d[0]===r) this.played.push(d);
+    else this.played.push([d[1], d[0]]);
+    this.current = (this.current + 1) % this.players.length;
   }
 
-  play(domino, playerIndex) {
-    const player = this.players[playerIndex];
-    player.hand = player.hand.filter(d => d !== domino);
-
-    const left = this.played[0][0];
-    const right = this.played[this.played.length - 1][1];
-
-    if ((domino[0] === left && domino[1] !== left) || domino[1] === left) {
-      this.played.unshift([domino[1], domino[0]]);
-    } else if (domino[0] === right) {
-      this.played.push(domino);
-    } else {
-      this.played.push([domino[1], domino[0]]);
-    }
-
-    this.nextTurn();
-  }
-
-  draw(playerIndex) {
-    if (this.stock.length > 0) {
-      this.players[playerIndex].hand.push(this.stock.pop());
-    }
-    this.nextTurn();
-  }
-
-  nextTurn() {
-    this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numPlayers;
-  }
-
-  getState() {
-    return {
-      players: this.players,
-      played: this.played,
-      stock: this.stock,
-      currentPlayerIndex: this.currentPlayerIndex
-    };
+  draw(p) {
+    if (this.stock.length > 0) this.players[p].hand.push(this.stock.pop());
+    this.current = (this.current + 1) % this.players.length;
   }
 }
 
-function setMode(mode) {
-  gameMode = mode;
+function setMode(m) {
+  gameMode = m;
   document.querySelectorAll('.chip-row .chip').forEach(c => c.classList.remove('active'));
   event.target.classList.add('active');
-  document.getElementById('hostPanel').style.display = mode === 'host' ? 'block' : 'none';
-  document.getElementById('joinPanel').style.display = mode === 'join' ? 'block' : 'none';
-
-  if (mode === 'host' && !peer) {
-    initHostRoom();
-  }
+  document.getElementById('hostPanel').style.display = m === 'host' ? 'block' : 'none';
+  document.getElementById('joinPanel').style.display = m === 'join' ? 'block' : 'none';
+  if (m === 'host') initHost();
 }
 
 function setPlayers(n) {
@@ -636,186 +212,110 @@ function setPlayers(n) {
   });
 }
 
-function initHostRoom() {
+function initHost() {
   isHost = true;
-  gameCode = generateRoomCode();
-  myId = 'dom-p2p-' + gameCode.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  gameCode = 'DOM-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+  const peerId = gameCode.replace(/-/g, '').toLowerCase();
 
-  if (peer) { try { peer.destroy(); } catch(e){} }
-  peer = new Peer(myId, PEER_OPTS);
+  peer = new Peer(peerId, { config: STUN_SERVERS });
 
   const url = window.location.href.split('?')[0];
-  const qrText = `${url}?join=${gameCode}`;
   document.getElementById('qrCode').innerHTML = '';
-  new QRCode(document.getElementById('qrCode'), qrText);
+  new QRCode(document.getElementById('qrCode'), `${url}?join=${gameCode}`);
   document.getElementById('gameCode').textContent = gameCode;
 
-  peer.on('open', () => {
-    console.log('Host ready with ID:', myId);
-  });
-
-  peer.on('connection', (conn) => {
+  peer.on('connection', conn => {
     clientConns.set(conn.peer, conn);
-    console.log('Client connected:', conn.peer);
+    console.log('Client joined:', conn.peer);
+    updatePlayersList();
 
-    conn.on('data', (msg) => {
+    conn.on('data', msg => {
       if (msg.type === 'join') {
-        const idx = Array.from(clientConns.values()).indexOf(conn);
-        if (idx >= 0 && idx < maxPlayers - 1) {
-          const pIndex = idx + 1;
-          if (game && game.players[pIndex]) {
-            game.players[pIndex].name = msg.name;
-          } else {
-            players[idx] = { conn, name: msg.name };
-          }
-          renderPlayers();
-          updateStartBtn();
-          broadcastGameState();
-        }
-      } else if (msg.type === 'play') {
-        if (game) {
-          game.play(msg.domino, msg.playerIndex);
-          broadcastGameState();
-        }
-      } else if (msg.type === 'draw') {
-        if (game) {
-          game.draw(msg.playerIndex);
-          broadcastGameState();
-        }
+        console.log('Join message from', conn.peer);
+        updatePlayersList();
+      } else if (msg.type === 'play' && game) {
+        game.play(msg.domino, msg.player);
+        broadcast({ type: 'update', state: gameState() });
+      } else if (msg.type === 'draw' && game) {
+        game.draw(msg.player);
+        broadcast({ type: 'update', state: gameState() });
       }
     });
-
-    conn.on('close', () => {
-      clientConns.delete(conn.peer);
-    });
-  });
-
-  peer.on('error', (err) => {
-    console.error('Peer error:', err);
   });
 }
 
 function joinGame() {
-  const code = document.getElementById('gameCodeInput').value.toUpperCase().trim();
-  if (code.length < 3) return;
+  const code = document.getElementById('gameCodeInput').value.toUpperCase();
+  if (!code || code.length < 3) { alert('Enter code'); return; }
 
   gameCode = code;
-  myId = 'dom-p2p-player-' + Math.random().toString(36).substr(2, 9);
+  const peerId = code.replace(/-/g, '').toLowerCase();
 
-  if (peer) { try { peer.destroy(); } catch(e){} }
-  peer = new Peer(myId, PEER_OPTS);
-
+  peer = new Peer({ config: STUN_SERVERS });
   peer.on('open', () => {
-    connectToHost();
-  });
+    console.log('Connecting to', peerId);
+    hostConn = peer.connect(peerId);
 
-  peer.on('error', (err) => {
-    console.error('Peer error:', err);
-    triggerClientAutoReconnect();
-  });
-}
+    hostConn.on('open', () => {
+      console.log('Connected!');
+      hostConn.send({ type: 'join', name: myName });
 
-function connectToHost() {
-  const targetPeerId = 'dom-p2p-' + gameCode.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-  if (hostConn) { try { hostConn.close(); } catch(e){} }
-
-  hostConn = peer.connect(targetPeerId, { reliable: true });
-
-  hostConn.on('open', () => {
-    reconnectAttempts = 0;
-    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-
-    hostConn.send({
-      type: 'join',
-      name: myName
+      hostConn.on('data', msg => {
+        if (msg.type === 'gameStart' || msg.type === 'update') {
+          loadState(msg.state);
+          if (msg.type === 'gameStart') startGameScreen();
+          render();
+        }
+      });
     });
 
-    document.getElementById('statusMsg').textContent = 'Connected! Waiting for host to start...';
-    render();
+    hostConn.on('error', e => console.error('Connection error:', e));
   });
-
-  hostConn.on('data', (msg) => {
-    if (msg.type === 'gameStart' || msg.type === 'update') {
-      updateGameState(msg.state);
-      if (msg.type === 'gameStart') {
-        startGameScreen();
-      }
-      render();
-    }
-  });
-
-  hostConn.on('close', () => {
-    document.getElementById('statusMsg').textContent = 'Connection lost. Reconnecting...';
-    triggerClientAutoReconnect();
-  });
-
-  hostConn.on('error', () => {
-    triggerClientAutoReconnect();
-  });
-}
-
-function triggerClientAutoReconnect() {
-  if (isHost || !gameCode) return;
-  if (reconnectTimer) return;
-
-  reconnectAttempts++;
-  if (reconnectAttempts > 25) {
-    alert('Could not connect to host. Please refresh and try again.');
-    return;
-  }
-
-  reconnectTimer = setTimeout(() => {
-    reconnectTimer = null;
-    if (peer && !peer.destroyed && peer.open) {
-      connectToHost();
-    } else {
-      joinGame();
-    }
-  }, Math.min(3000, 1000 + reconnectAttempts * 200));
-}
-
-function generateRoomCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "DOM-";
-  for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-  return code;
 }
 
 function startGame() {
-  game = new DominoesGame(maxPlayers);
-  Array.from(clientConns.values()).forEach((conn, i) => {
-    if (game.players[i + 1]) {
-      game.players[i + 1].name = conn.peer;
-    }
-  });
-  broadcastGameState();
+  game = new Dominoes(maxPlayers);
+  let i = 0;
+  for (let [_, conn] of clientConns) {
+    if (i < maxPlayers - 1) game.players[i + 1].name = 'P' + (i + 2);
+    i++;
+  }
+  broadcast({ type: 'gameStart', state: gameState() });
   startGameScreen();
 }
 
 function startGameScreen() {
   document.getElementById('setupScreen').classList.add('hidden');
   document.getElementById('gameScreen').classList.remove('hidden');
-  document.getElementById('statusMsg').textContent = '🎮 Game Started!';
   render();
 }
 
-function broadcastGameState() {
-  const msg = { type: 'update', state: game.getState() };
-  clientConns.forEach((conn) => {
-    if (conn && conn.open) {
-      try { conn.send(msg); } catch(e){}
-    }
-  });
+function gameState() {
+  return { players: game.players, played: game.played, stock: game.stock, current: game.current };
 }
 
-function playDomino(domino) {
+function loadState(s) {
   if (!game) return;
-  if (!game.canPlay(domino)) return;
+  game.players = s.players;
+  game.played = s.played;
+  game.stock = s.stock;
+  game.current = s.current;
+}
+
+function broadcast(msg) {
+  for (let conn of clientConns.values()) {
+    if (conn.open) conn.send(msg);
+  }
+}
+
+function playDomino(d) {
+  if (!game) return;
+  if (!game.canPlay(d)) return;
   if (isHost) {
-    game.play(domino, myPlayerIndex);
-    broadcastGameState();
-  } else if (hostConn && hostConn.open) {
-    hostConn.send({ type: 'play', domino, playerIndex: myPlayerIndex });
+    game.play(d, 0);
+    broadcast({ type: 'update', state: gameState() });
+  } else {
+    hostConn.send({ type: 'play', domino: d, player: 0 });
   }
   render();
 }
@@ -823,20 +323,12 @@ function playDomino(domino) {
 function drawDomino() {
   if (!game) return;
   if (isHost) {
-    game.draw(myPlayerIndex);
-    broadcastGameState();
-  } else if (hostConn && hostConn.open) {
-    hostConn.send({ type: 'draw', playerIndex: myPlayerIndex });
+    game.draw(0);
+    broadcast({ type: 'update', state: gameState() });
+  } else {
+    hostConn.send({ type: 'draw', player: 0 });
   }
   render();
-}
-
-function updateGameState(state) {
-  if (!game) return;
-  game.players = state.players;
-  game.played = state.played;
-  game.stock = state.stock;
-  game.currentPlayerIndex = state.currentPlayerIndex;
 }
 
 function render() {
@@ -844,94 +336,50 @@ function render() {
   renderBoard();
   renderPlayers();
   renderHand();
-  document.getElementById('currentPlayer').textContent = game.players[game.currentPlayerIndex].name;
+  document.getElementById('currentPlayer').textContent = game.players[game.current].name;
   document.getElementById('stockCount').textContent = game.stock.length;
 }
 
 function renderBoard() {
-  const board = document.getElementById('boardInner');
-  board.innerHTML = '';
-  game.played.forEach((domino) => {
-    const div = document.createElement('div');
-    div.className = 'domino-played';
-    div.innerHTML = `
-      <div class="domino-half-top"><div class="dots-${domino[0]}">${createDots(domino[0])}</div></div>
-      <div class="domino-half-bottom"><div class="dots-${domino[1]}">${createDots(domino[1])}</div></div>
-    `;
-    board.appendChild(div);
-  });
-}
-
-function createDots(n) {
-  let html = '';
-  for (let i = 0; i < n; i++) {
-    html += '<div class="dot"></div>';
-  }
-  return html;
+  const html = game.played.map(d => `<div class="domino-played">
+    <div class="domino-half-top"><div class="dots-${d[0]}">${'•'.repeat(d[0])}</div></div>
+    <div class="domino-half-bottom"><div class="dots-${d[1]}">${'•'.repeat(d[1])}</div></div>
+  </div>`).join('');
+  document.getElementById('boardInner').innerHTML = html;
 }
 
 function renderPlayers() {
-  const list = document.getElementById('playersList');
-  list.innerHTML = '';
-  if (!game) return;
-  game.players.forEach((p, i) => {
-    const div = document.createElement('div');
-    div.className = `player-status ${i === game.currentPlayerIndex ? 'current' : ''}`;
-    div.textContent = `${p.name} (${p.hand.length})`;
-    list.appendChild(div);
-  });
+  const html = game.players.map((p, i) => `<div class="player-status ${i === game.current ? 'current' : ''}">${p.name} (${p.hand.length})</div>`).join('');
+  document.getElementById('playersList').innerHTML = html;
 }
 
 function renderHand() {
-  const hand = document.getElementById('handArea');
-  hand.innerHTML = '';
-  if (!game || !game.players[0]) return;
-
-  game.players[0].hand.forEach(domino => {
-    const div = document.createElement('div');
-    div.className = 'hand-domino';
-    const canPlay = game.canPlay(domino);
-    div.style.opacity = canPlay ? '1' : '0.6';
-    div.innerHTML = `
-      <div class="hand-half-top"><div class="dots-${domino[0]}">${createDots(domino[0]).replace(/dot/g, 'hand-dot')}</div></div>
-      <div class="hand-half-bottom"><div class="dots-${domino[1]}">${createDots(domino[1]).replace(/dot/g, 'hand-dot')}</div></div>
-    `;
-    div.onclick = () => canPlay && playDomino(domino);
-    hand.appendChild(div);
-  });
+  const html = game.players[0].hand.map(d => {
+    const can = game.canPlay(d);
+    return `<div class="hand-domino" style="opacity:${can?1:0.6}" onclick="${can?`playDomino([${d[0]},${d[1]}])`:''}"
+      ><div class="hand-half-top">${'•'.repeat(d[0])}</div><div class="hand-half-bottom">${'•'.repeat(d[1])}</div></div>`;
+  }).join('');
+  document.getElementById('handArea').innerHTML = html;
 }
 
-function updateStartBtn() {
-  document.getElementById('startBtn').disabled = clientConns.size < maxPlayers - 1;
-}
-
-function renderPlayers() {
-  const list = document.getElementById('playersList');
-  if (!game) {
-    list.innerHTML = Array.from(clientConns.values()).map((_, i) =>
-      `<div class="waiting-player">Player ${i + 2} connected</div>`
+function updatePlayersList() {
+  if (isHost && !game) {
+    document.getElementById('playersList').innerHTML = Array(clientConns.size).fill(0).map((_, i) =>
+      `<div class="waiting-player">Player ${i + 2} joined</div>`
     ).join('');
-  } else {
-    list.innerHTML = '';
-    game.players.forEach((p, i) => {
-      const div = document.createElement('div');
-      div.className = `player-status ${i === game.currentPlayerIndex ? 'current' : ''}`;
-      div.textContent = `${p.name} (${p.hand.length})`;
-      list.appendChild(div);
-    });
+    document.getElementById('startBtn').disabled = clientConns.size < maxPlayers - 1;
   }
 }
 
-document.getElementById('playerName').addEventListener('change', e => {
-  myName = e.target.value || 'Player';
-});
+document.getElementById('playerName').addEventListener('change', e => myName = e.target.value || 'Player');
 
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.has('join')) {
-  document.querySelectorAll('.chip')[1].click();
-  document.getElementById('gameCodeInput').value = urlParams.get('join');
+const params = new URLSearchParams(window.location.search);
+if (params.has('join')) {
+  setTimeout(() => {
+    document.querySelectorAll('.chip')[1].click();
+    document.getElementById('gameCodeInput').value = params.get('join');
+  }, 100);
 }
 </script>
-
 </body>
 </html>
