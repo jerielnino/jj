@@ -1111,7 +1111,50 @@ function showPanel(id) {
   $('gameHeader').classList.toggle('hidden', id !== 'gamePanel');
   if(id === 'gamePanel') { currentOffsetX = 0; currentOffsetY = 0; calculateAutoZoom(); }
 }
-function code() { return 'DOM-' + Math.random().toString(36).slice(2,8).toUpperCase(); }
+// === NETWORKING & PEERJS CONFIG ===
+const PEER_OPTS = {
+  debug: 1,
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' }
+    ]
+  }
+};
+
+function peerIdForRoom(rCode) {
+  let clean = String(rCode || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  if (!clean.startsWith('dom')) clean = 'dom' + clean;
+  return 'domino-p2p-' + clean;
+}
+
+function code() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = 'DOM-';
+  for (let i = 0; i < 6; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
+  return s;
+}
+
+let heartbeatTimer = null;
+function startHeartbeat() {
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
+  heartbeatTimer = setInterval(() => {
+    if (peer && !peer.destroyed && peer.disconnected) {
+      try { peer.reconnect(); } catch(e){}
+    }
+    if (host) {
+      for (const c of connections.values()) {
+        if (c && c.open) {
+          try { c.send({ type: 'PING' }); } catch(e){}
+        }
+      }
+    } else if (window._hostConn && window._hostConn.open) {
+      try { window._hostConn.send({ type: 'PING' }); } catch(e){}
+    }
+  }, 3500);
+}
+
 function send(conn, obj) { if(conn && conn.open) try { conn.send(obj); } catch(e){} }
 function sendHost(obj) { if(host) for(const c of connections.values()) send(c, obj); }
 function playerById(id) { return players.find(p => p.id === id); }
@@ -1155,10 +1198,10 @@ function updatePlayers() {
 }
 function lobbyBroadcast() { sendHost({ type: 'LOBBY', roomCode, hostId, players: players.map(({id,name,avatar,connected})=>({id,name,avatar,connected})), revision, participantLimit, winningScore }); updatePlayers(); }
 
-// === NETWORKING ===
 function attachHostConnection(conn) {
   conn.on('data', data => {
     if(!data) return;
+    if(data.type === 'PING') return;
     if(data.type === 'HELLO') {
       const stableId = String(data.playerId || conn.peer);
       const existing = playerById(stableId);
@@ -1199,39 +1242,99 @@ function attachHostConnection(conn) {
       saveHostSession(); lobbyBroadcast(); if(state) broadcastState();
     }
   });
+  conn.on('error', err => {
+    console.warn('Host connection error with peer:', err);
+  });
 }
 
 function getStableId() { let id = localStorage.getItem('domId'); if(!id) { id = 'P-'+Math.random().toString(36).slice(2,10).toUpperCase(); localStorage.setItem('domId', id); } return id; }
 
-function connectToHost(id) {
-  host = false; solo = false; hostId = id; myId = getStableId();
+function connectToHost(rCode) {
+  host = false;
+  solo = false;
+  roomCode = rCode.trim().toUpperCase();
+  hostId = roomCode;
+  myId = getStableId();
+
   const inputName = $('userNameInput') ? $('userNameInput').value.trim() : '';
   if(inputName) myName = inputName;
   else if(!myName) myName = localStorage.getItem('domName') || ('Player ' + Math.floor(10+Math.random()*90));
   localStorage.setItem('domName', myName);
   syncProfileUI();
-  msg('Connecting...');
   
-  if(!peer) {
-    peer = new Peer();
-    peer.on('open', () => openHostConn(id));
-    peer.on('error', e => msg(e.type==='peer-unavailable'?'Room not found.':'Connection error.'));
-  } else if(peer.open) openHostConn(id);
+  msg('Connecting to room ' + roomCode + '...');
+  
+  if (peer) {
+    try { peer.destroy(); } catch(e){}
+    peer = null;
+  }
 
-  function openHostConn(hId) {
-    const conn = peer.connect(hId, {reliable:true}); window._hostConn = conn;
+  peer = new Peer(null, PEER_OPTS);
+  const targetPeerId = peerIdForRoom(roomCode);
+  let connected = false;
+  let connTimeout = null;
+
+  peer.on('open', () => {
+    openHostConn(targetPeerId);
+  });
+
+  peer.on('disconnected', () => {
+    if (peer && !peer.destroyed) {
+      try { peer.reconnect(); } catch(e){}
+    }
+  });
+
+  peer.on('error', e => {
+    if (connTimeout) clearTimeout(connTimeout);
+    console.warn('Client peer error:', e);
+    if (e.type === 'peer-unavailable') {
+      msg('Room "' + roomCode + '" not found. Check the room code or ask the host for a fresh link.');
+    } else {
+      msg('Connection error: ' + (e.message || e.type));
+    }
+    showPanel('setupPanel');
+  });
+
+  function openHostConn(targetId) {
+    if (window._hostConn) { try { window._hostConn.close(); } catch(e){} }
+    const conn = peer.connect(targetId, { reliable: true });
+    window._hostConn = conn;
+
+    connTimeout = setTimeout(() => {
+      if (!connected) {
+        msg('Still connecting to ' + roomCode + '... Make sure host room is open.');
+      }
+    }, 4500);
+
     conn.on('open', () => {
-      send(conn, {type:'HELLO', name:myName, avatar:myAvatar, playerId:myId});
-      $('roomCodeLabel').textContent = roomCode; makeQr(); showPanel('lobbyPanel');
+      connected = true;
+      if (connTimeout) clearTimeout(connTimeout);
+      send(conn, { type: 'HELLO', name: myName, avatar: myAvatar, playerId: myId });
+      $('roomCodeLabel').textContent = roomCode;
+      makeQr();
+      showPanel('lobbyPanel');
+      startHeartbeat();
+      msg('');
     });
+
     conn.on('data', data => handleClientMessage(data));
-    conn.on('error', () => msg('Could not connect.'));
-    conn.on('close', () => setTimeout(()=>openHostConn(hId), 2500));
+
+    conn.on('error', e => {
+      console.warn('Host conn error:', e);
+      msg('Could not connect to host. Please verify the room code.');
+    });
+
+    conn.on('close', () => {
+      connected = false;
+      msg('Disconnected from host.');
+      showPanel('setupPanel');
+    });
   }
 }
 
 function handleClientMessage(data) {
   if(!data) return;
+  if(data.type === 'PING') return;
   if(data.type === 'WELCOME' || data.type === 'LOBBY') {
     roomCode = data.roomCode||roomCode; hostId = data.hostId||hostId; players = data.players||players;
     revision = data.revision??revision; participantLimit = data.participantLimit||participantLimit; winningScore = data.winningScore||winningScore;
@@ -1270,49 +1373,74 @@ function createHost() {
   if(inputName) myName = inputName;
   else if(!myName) myName = 'Host';
   localStorage.setItem('domName', myName);
-  const savedCode = localStorage.getItem('domLastHost'); const saved = savedCode ? restoreHostSession(savedCode) : null;
-  roomCode = saved?.roomCode || code(); hostId = roomCode; host = true; solo = false;
-  if(saved) { state=saved.state; players=saved.players; revision=saved.revision; participantLimit=saved.participantLimit; winningScore=saved.winningScore; }
+
+  roomCode = code();
+  hostId = roomCode;
+  host = true;
+  solo = false;
+  state = null;
+  players = [];
+  connections.clear();
+  transportPlayers.clear();
   
-  msg('Opening room...'); peer = new Peer(roomCode);
+  msg('Opening room ' + roomCode + '...');
+  
+  if (peer) {
+    try { peer.destroy(); } catch(e){}
+    peer = null;
+  }
+  
+  const hostPeerId = peerIdForRoom(roomCode);
+  peer = new Peer(hostPeerId, PEER_OPTS);
+
   peer.on('open', id => {
-    myId = id; hostId = id;
-    if(!saved || !players.length) players = [{id:myId, name:myName, avatar:myAvatar, connected:true}];
-    else {
-      const oldHost = players.find(p => p.id === saved.myId || p.id === myId);
-      if(oldHost) { 
-        oldHost.id = myId; 
-        oldHost.name = myName;
-        oldHost.avatar = myAvatar;
-        oldHost.connected = true; 
-        if(state) { 
-          state.players = state.players.map(x=>x===(saved.myId||oldHost.id)?myId:x); 
-          if(state.hands[saved.myId]){state.hands[myId]=state.hands[saved.myId]; delete state.hands[saved.myId];} 
-          if(state.current===saved.myId) state.current=myId; 
-        } 
-      }
-      if(!playerById(myId)) players.unshift({id:myId, name:myName, avatar:myAvatar, connected:true});
-    }
+    myId = id;
+    players = [{ id: myId, name: myName, avatar: myAvatar, connected: true }];
     syncProfileUI();
-    $('roomCodeLabel').textContent = roomCode; makeQr(); showPanel(state?'gamePanel':'lobbyPanel');
-    localStorage.setItem('domLastHost', roomCode); lobbyBroadcast(); if(state) renderGame(); saveHostSession();
+    $('roomCodeLabel').textContent = roomCode;
+    makeQr();
+    showPanel('lobbyPanel');
+    localStorage.setItem('domLastHost', roomCode);
+    lobbyBroadcast();
+    startHeartbeat();
+    msg('');
   });
+
   peer.on('connection', attachHostConnection);
-  peer.on('error', () => msg('Could not open room. Try again.'));
+
+  peer.on('disconnected', () => {
+    if (peer && !peer.destroyed) {
+      try { peer.reconnect(); } catch(e){}
+    }
+  });
+
+  peer.on('error', e => {
+    console.warn('Host peer error:', e);
+    msg('Could not open room (' + (e.type || e.message) + '). Tap "Host a Game" to retry.');
+  });
 }
+
 function joinRoom(c) {
-  roomCode = c.trim().toUpperCase(); localStorage.setItem('domLastJoined', roomCode);
-  if(!/^DOM-[A-Z0-9]{6}$/.test(roomCode)) { msg('Invalid code format.'); return; }
+  if(!c || !c.trim()) { msg('Please enter a room code.'); return; }
+  let clean = c.trim().toUpperCase();
+  if(!clean.startsWith('DOM-') && clean.length >= 4) {
+    clean = 'DOM-' + clean;
+  }
+  roomCode = clean;
+  localStorage.setItem('domLastJoined', roomCode);
   connectToHost(roomCode);
 }
+
 function startSolo() {
+  if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
   const inputName = $('userNameInput') ? $('userNameInput').value.trim() : '';
   if(inputName) myName = inputName;
   else if(!myName) myName = 'You';
   localStorage.setItem('domName', myName);
   solo = true; host = true; roomCode = 'SOLO'; hostId = 'LOCAL'; myId = hostId;
   players = [{id:myId, name:myName, avatar:myAvatar, connected:true}, {id:'AI', name:'Computer', avatar:'🤖', connected:true}];
-  connections.clear(); state = null; revision = 0; participantLimit = 2; winningScore = 100; 
+  connections.clear(); transportPlayers.clear(); state = null; revision = 0; participantLimit = 2; winningScore = 100; 
   syncProfileUI();
   startGame();
 }
@@ -1709,7 +1837,10 @@ $('joinBtn').onclick = () => joinRoom($('joinCode').value);
 $('joinCode').onkeydown = e => { if(e.key==='Enter') joinRoom($('joinCode').value); };
 $('startBtn').onclick = startGame;
 $('nextRoundBtn').onclick = startGame;
-$('leaveBtn').onclick = () => location.href='';
+$('leaveBtn').onclick = () => {
+  if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+  location.href = location.pathname;
+};
 $('copyInviteBtn').onclick = async () => { try { await navigator.clipboard.writeText(inviteUrl()); $('copyInviteBtn').textContent='Copied!'; setTimeout(()=>$('copyInviteBtn').textContent='Copy Invite',2000); }catch(e){} };
 
 // Avatar & Emoji Picker Listeners
