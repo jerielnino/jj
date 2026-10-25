@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Game Portal</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sohne:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap">
+
+<style>
+:root {
+  --bg-primary: #0a0e27;
+  --bg-secondary: #111d3d;
+  --bg-tertiary: #1a2847;
+  --accent-gold: #f0a60c;
+  --accent-purple: #9b59b6;
+  --accent-cyan: #00d2d3;
+  --accent-red: #e74c3c;
+  --text-primary: #f5f5f5;
+  --text-secondary: #b0b0b0;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --success: #2ecc71;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: max(16px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-primary) 100%);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding-bottom: 32px;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  padding-block: 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.header h1 {
+  font-family: 'Sohne', sans-serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header p {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Games Grid */
+.games-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.game-card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(8px);
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.game-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.game-card.imposter::before {
+  background: linear-gradient(135deg, rgba(233, 212, 96, 0.1) 0%, rgba(155, 89, 182, 0.1) 100%);
+}
+
+.game-card.dominoes::before {
+  background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(155, 89, 182, 0.1) 100%);
+}
+
+.game-card.uno::before {
+  background: linear-gradient(135deg, rgba(231, 76, 60, 0.1) 0%, rgba(242, 112, 156, 0.1) 100%);
+}
+
+.game-card:hover::before {
+  opacity: 1;
+}
+
+.game-icon {
+  font-size: 4rem;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+}
+
+.game-header {
+  position: relative;
+  z-index: 1;
+}
+
+.game-title {
+  font-family: 'Sohne', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 12px 0 8px 0;
+}
+
+.game-description {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+}
+
+.game-info {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.info-badge {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.game-card.imposter .info-badge {
+  border-color: rgba(240, 166, 12, 0.3);
+}
+
+.game-card.dominoes .info-badge {
+  border-color: rgba(52, 152, 219, 0.3);
+}
+
+.game-card.uno .info-badge {
+  border-color: rgba(231, 76, 60, 0.3);
+}
+
+.play-button {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold) 100%);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  font-family: 'Inter', sans-serif;
+}
+
+.play-button:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 20px rgba(240, 166, 12, 0.3);
+}
+
+.play-button:active {
+  transform: scale(0.98);
+}
+
+.game-card.dominoes .play-button {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: #fff;
+}
+
+.game-card.uno .play-button {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .games-container {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .header h1 {
+    font-size: 1.75rem;
+  }
+
+  .game-card {
+    min-height: 280px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="header">
+    <h1>🎮 Game Portal</h1>
+    <p>Play multiplayer games on your local network</p>
+  </div>
+
+  <div class="games-container">
+    <!-- Imposter Game Card -->
+    <a href="imposter_local.html" class="game-card imposter" style="text-decoration: none;">
+      <div class="game-header">
+        <div class="game-icon">🕵️</div>
+        <h2 class="game-title">Imposter</h2>
+        <p class="game-description">One player is the imposter. Can you guess who it is? Word-guessing party game.</p>
+        <div class="game-info">
+          <div class="info-badge">👥 2-8 Players</div>
+          <div class="info-badge">⏱️ 10+ min</div>
+        </div>
+      </div>
+      <button class="play-button" onclick="event.preventDefault(); window.location.href='imposter_local.html';">Play Imposter</button>
+    </a>
+
+    <!-- Dominoes Game Card -->
+    <a href="dominoes.html" class="game-card dominoes" style="text-decoration: none;">
+      <div class="game-header">
+        <div class="game-icon" style="font-size: 3.5rem; display: flex; gap: 4px; justify-content: center;">
+          <svg width="35" height="60" viewBox="0 0 35 60" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3))">
+            <rect x="2" y="2" width="31" height="56" rx="2" fill="#f5f1e8" stroke="#c8b8a0" stroke-width="1.5"/>
+            <line x1="18" y1="2" x2="18" y2="58" stroke="#999" stroke-width="1"/>
+            <!-- Top half dots (3) -->
+            <circle cx="10" cy="12" r="2" fill="#333"/>
+            <circle cx="18" cy="18" r="2" fill="#333"/>
+            <circle cx="26" cy="24" r="2" fill="#333"/>
+            <!-- Bottom half dots (4) -->
+            <circle cx="8" cy="36" r="2" fill="#333"/>
+            <circle cx="13" cy="41" r="2" fill="#333"/>
+            <circle cx="23" cy="41" r="2" fill="#333"/>
+            <circle cx="28" cy="36" r="2" fill="#333"/>
+          </svg>
+          <svg width="35" height="60" viewBox="0 0 35 60" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3))">
+            <rect x="2" y="2" width="31" height="56" rx="2" fill="#f5f1e8" stroke="#c8b8a0" stroke-width="1.5"/>
+            <line x1="18" y1="2" x2="18" y2="58" stroke="#999" stroke-width="1"/>
+            <!-- Top half dots (6) -->
+            <circle cx="10" cy="10" r="2" fill="#333"/>
+            <circle cx="10" cy="18" r="2" fill="#333"/>
+            <circle cx="18" cy="10" r="2" fill="#333"/>
+            <circle cx="18" cy="18" r="2" fill="#333"/>
+            <circle cx="26" cy="10" r="2" fill="#333"/>
+            <circle cx="26" cy="18" r="2" fill="#333"/>
+            <!-- Bottom half dots (5) -->
+            <circle cx="10" cy="36" r="2" fill="#333"/>
+            <circle cx="10" cy="44" r="2" fill="#333"/>
+            <circle cx="18" cy="40" r="2" fill="#333"/>
+            <circle cx="26" cy="36" r="2" fill="#333"/>
+            <circle cx="26" cy="44" r="2" fill="#333"/>
+          </svg>
+        </div>
+        <h2 class="game-title">Dominoes</h2>
+        <p class="game-description">Classic domino game. Match dots and build the chain. Strategic tile-laying fun.</p>
+        <div class="game-info">
+          <div class="info-badge">👥 2-8 Players</div>
+          <div class="info-badge">⏱️ 15+ min</div>
+        </div>
+      </div>
+      <button class="play-button" onclick="event.preventDefault(); window.location.href='dominoes.html';">Play Dominoes</button>
+    </a>
+
+    <!-- Uno Game Card -->
+    <a href="uno.html" class="game-card uno" style="text-decoration: none;">
+      <div class="game-header">
+        <div class="game-icon" style="font-size: 3.5rem; display: flex; gap: 6px; justify-content: center;">
+          <svg width="40" height="56" viewBox="0 0 40 56" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3))">
+            <rect x="2" y="2" width="36" height="52" rx="3" fill="#e6261f" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>
+            <text x="20" y="35" font-size="24" font-weight="bold" fill="white" text-anchor="middle" font-family="Arial">5</text>
+          </svg>
+          <svg width="40" height="56" viewBox="0 0 40 56" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3))">
+            <rect x="2" y="2" width="36" height="52" rx="3" fill="#3d7dd5" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>
+            <text x="20" y="35" font-size="24" font-weight="bold" fill="white" text-anchor="middle" font-family="Arial">7</text>
+          </svg>
+          <svg width="40" height="56" viewBox="0 0 40 56" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3))">
+            <rect x="2" y="2" width="36" height="52" rx="3" fill="#2eb82e" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>
+            <text x="20" y="35" font-size="24" font-weight="bold" fill="white" text-anchor="middle" font-family="Arial">2</text>
+          </svg>
+          <svg width="40" height="56" viewBox="0 0 40 56" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3))">
+            <rect x="2" y="2" width="36" height="52" rx="3" fill="#f9d423" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>
+            <text x="20" y="35" font-size="24" font-weight="bold" fill="black" text-anchor="middle" font-family="Arial">9</text>
+          </svg>
+        </div>
+        <h2 class="game-title">Uno</h2>
+        <p class="game-description">Color and number matching card game. Draw cards and shout UNO when you're down to one!</p>
+        <div class="game-info">
+          <div class="info-badge">👥 2-8 Players</div>
+          <div class="info-badge">⏱️ 10+ min</div>
+        </div>
+      </div>
+      <button class="play-button" onclick="event.preventDefault(); window.location.href='uno.html';">Play Uno</button>
+    </a>
+  </div>
+</div>
+
+</body>
+</html>
