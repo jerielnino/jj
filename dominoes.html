@@ -499,17 +499,17 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
     height: 28px;
   }
   .tile .half {
-    padding: 1px;
+    padding: 2px;
   }
   .pips {
-    padding: 0px;
-    gap: 0px;
+    padding: 1px !important;
+    gap: 0.5px !important;
   }
   .hand .pip {
-    width: 6px !important;
-    height: 6px !important;
+    width: 5px !important;
+    height: 5px !important;
     box-shadow: 0 1px 1px rgba(0,0,0,0.4), inset 0 1px 1px rgba(0,0,0,0.6) !important;
-    border: 1.2px solid #111 !important;
+    border: 1px solid #111 !important;
   }
   .main-header {
     padding: 4px 6px;
@@ -588,17 +588,17 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
     height: 50%;
     padding: 1px;
   }
-  /* Ensure board tiles on mobile remain bold and properly sized */
+  /* Ensure board tiles on mobile remain bold and properly sized without overflowing on 3 and 5 */
   .board-tile .pip,
   #boardCanvas .pip {
-    width: 10px !important;
-    height: 10px !important;
-    border: 1.5px solid #111 !important;
+    width: 7.5px !important;
+    height: 7.5px !important;
+    border: 1.2px solid #111 !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.6), inset 0 1px 2px rgba(0,0,0,0.85) !important;
   }
   .board-tile .half,
   #boardCanvas .tile .half {
-    padding: 3px !important;
+    padding: 4px !important;
   }
 }
 
@@ -625,24 +625,50 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 #boardCanvas .tile .half {
   width: 50% !important;
   height: 100% !important;
-  padding: 3px !important;
+  padding: 4px !important;
   box-sizing: border-box !important;
   display: grid !important;
   place-items: center !important;
   overflow: hidden !important;
 }
+.board-tile .pips,
+#boardCanvas .tile .pips {
+  padding: 1px !important;
+  gap: 1px !important;
+}
 .board-tile .pip,
 #boardCanvas .pip {
-  width: 10px !important;
-  height: 10px !important;
+  width: 7.5px !important;
+  height: 7.5px !important;
   border-radius: 50% !important;
-  border: 1.5px solid #111 !important;
+  border: 1.2px solid #111 !important;
   box-shadow: 0 1px 2px rgba(0,0,0,0.6), inset 0 1px 2px rgba(0,0,0,0.85) !important;
 }
 
-/* Pip Logic */
-.pips { display: grid; width: 100%; height: 100%; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 2px; gap: 1px; box-sizing: border-box; overflow: hidden; }
-.pip { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: inset 0 1px 2px rgba(0,0,0,0.8); border: 1.5px solid #111; align-self: center; justify-self: center; }
+/* Pip Logic - minmax(0, 1fr) ensures 3-row/3-col tiles (3 & 5) never overflow their half */
+.pips {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  padding: 1px;
+  gap: 1px;
+  box-sizing: border-box;
+  overflow: hidden;
+  place-items: center;
+}
+.pip {
+  width: 7.5px;
+  height: 7.5px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+  border: 1.2px solid #111;
+  align-self: center;
+  justify-self: center;
+  flex-shrink: 0;
+}
 
 .half[data-val="0"] .pip { display: none; }
 .half[data-val="1"] .pip { background: var(--p1); }
@@ -795,12 +821,44 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   display: grid;
   place-items: center;
   box-sizing: border-box;
+  overflow: hidden;
+}
+.reveal-mini-domino .pips {
+  padding: 0 !important;
+  gap: 0.5px !important;
 }
 .reveal-mini-domino .pip {
-  width: 4.5px !important;
-  height: 4.5px !important;
-  border: 0.8px solid #111 !important;
+  width: 3.8px !important;
+  height: 3.8px !important;
+  border: 0.7px solid #111 !important;
   box-shadow: none !important;
+}
+
+/* Timer Badge Styles */
+.timer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1.5px solid rgba(255, 214, 111, 0.55);
+  color: #ffe7a5;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-family: monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.timer-badge.urgent {
+  background: rgba(220, 38, 38, 0.45);
+  border-color: #f87171;
+  color: #fecaca;
+  animation: urgentPulse 0.6s infinite alternate;
+}
+@keyframes urgentPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.08); }
 }
 .reveal-mini-domino.blinking {
   animation: tileRevealBlink 0.45s ease-in-out infinite alternate;
@@ -1094,14 +1152,39 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
       </div>
     </div>
 
-    <div class="row" style="margin-bottom: 24px;">
+    <!-- Host Match Timer Config on Setup Screen -->
+    <div style="background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 14px 16px; margin-bottom: 18px;">
+      <div style="font-size: 0.88rem; color: #aebdb4; font-weight: 600; margin-bottom: 10px; text-align: left;">⏱️ Match Timer Settings (When Hosting or Playing Solo)</div>
+      <div class="row" style="justify-content: flex-start; gap: 12px;">
+        <label style="font-size: 0.9rem; color: #c4e0d0; display:flex; align-items:center; gap:6px;">
+          Mode:
+          <select id="setupTimerMode" style="padding: 8px 12px; font-size: 0.92rem;">
+            <option value="untimed" selected>∞ Untimed Match</option>
+            <option value="match">⏱️ Timed Match (Total Mins)</option>
+            <option value="turn">⚡ Timed Turns (Sec / Turn)</option>
+          </select>
+        </label>
+        <label id="setupTimeLimitWrap" class="hidden" style="font-size: 0.9rem; color: #c4e0d0; display:flex; align-items:center; gap:6px;">
+          Time Limit:
+          <input id="setupTimeLimitInput" type="number" min="1" max="180" value="5" style="width: 74px; padding: 8px 10px; text-align:center; font-size: 0.95rem;">
+          <span id="setupTimeUnitLabel" style="font-weight:700; color:#ffe7a5;">mins</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="row" style="margin-bottom: 20px;">
       <button id="hostBtn" style="font-size: 1.2rem; padding: 16px 30px;">Host a Game</button>
       <button id="soloBtn" class="btn-alt" type="button">Play Solo vs AI</button>
       <button id="clearCacheBtn" class="btn-alt" type="button" title="Clear saved room & session cache" style="padding: 12px 16px; font-size: 0.95rem;">🧹 Clear Cache</button>
     </div>
-    <div class="row" style="background: rgba(0,0,0,0.3); padding: 24px; border-radius: 16px;">
-      <input id="joinCode" placeholder="Room Code (DOM-XXXXXX)" style="flex:1; max-width:280px; text-align:center; font-size:1.1rem; text-transform:uppercase;">
-      <button id="joinBtn">Join Room</button>
+    <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 16px;">
+      <div class="row">
+        <input id="joinCode" placeholder="Room Code (DOM-XXXXXX)" style="flex:1; max-width:280px; text-align:center; font-size:1.1rem; text-transform:uppercase;">
+        <button id="joinBtn" type="button">Join Room</button>
+      </div>
+      <div id="quickRejoinRow" class="row hidden" style="margin-top: 12px;">
+        <button id="quickRejoinBtn" type="button" class="btn-alt" style="font-size: 0.92rem; padding: 8px 16px; border-color: #ffd66f; color: #ffe7a5;">🔄 Rejoin Previous Game</button>
+      </div>
     </div>
     <div id="setupMsg" style="text-align:center; margin-top:16px; color:#ffe7a5; font-size:0.9rem;"></div>
     <div style="text-align:center; margin-top: 30px;">
@@ -1121,13 +1204,28 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
     <h2 style="font-size:2.4rem; color:#ffe7a5; margin:0 0 10px;">Waiting Room</h2>
     <div style="margin-bottom:16px;">Room Code: <span class="roomcode" id="roomCodeLabel">—</span></div>
     
-    <div style="display:flex; justify-content:center; align-items:center; gap:10px; margin-bottom:24px;">
-      <span style="color:#aebdb4; font-size:0.95rem;">You are playing as:</span>
-      <button id="lobbyAvatarBtn" class="avatar-select-btn" style="width:42px; height:42px; font-size:1.5rem; border-radius:12px;" type="button" title="Tap to change emoji">
-        <span id="lobbyAvatarPreview">😎</span>
-        <span class="avatar-edit-badge" style="width:14px; height:14px; font-size:0.55rem; bottom:-2px; right:-2px;">✎</span>
-      </button>
-      <strong id="lobbyNamePreview" style="color:#ffe7a5; font-size:1.15rem;">You</strong>
+    <div id="lobbyRulesBadge" style="margin-bottom: 14px; font-size: 0.9rem; color: #c4e0d0; font-weight: 600;"></div>
+    <!-- Editable Profile & Colour Theme right inside the Lobby / User Join Screen -->
+    <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,214,111,0.3); border-radius: 14px; padding: 12px 16px; margin-bottom: 22px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:center;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="color:#aebdb4; font-size:0.88rem;">Profile:</span>
+        <button id="lobbyAvatarBtn" class="avatar-select-btn" style="width:42px; height:42px; font-size:1.5rem; border-radius:12px;" type="button" title="Tap to change emoji">
+          <span id="lobbyAvatarPreview">😎</span>
+          <span class="avatar-edit-badge" style="width:14px; height:14px; font-size:0.55rem; bottom:-2px; right:-2px;">✎</span>
+        </button>
+        <input id="lobbyNameInput" type="text" placeholder="Your username..." maxlength="20" style="width: 150px; padding: 8px 10px; font-size: 0.95rem; border-radius: 8px;">
+        <strong id="lobbyNamePreview" class="hidden">You</strong>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="color:#aebdb4; font-size:0.88rem;">Theme:</span>
+        <select id="lobbyThemeSelect" style="padding: 8px 10px; font-size: 0.9rem; background:#fff; color:#000; border-radius:8px;">
+          <option value="blue">Ocean Blue</option>
+          <option value="green">Felt Green</option>
+          <option value="red">Casino Red</option>
+          <option value="black">Charcoal Black</option>
+          <option value="wood">Rustic Wood</option>
+        </select>
+      </div>
     </div>
     <div style="display:flex; justify-content:center; gap: 30px; align-items:flex-start; flex-wrap:wrap; margin-bottom:30px;">
       <div style="flex: 1; min-width: 250px;">
@@ -1142,6 +1240,18 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
     <div id="hostControls" class="controls-grid hidden">
       <div><label>Player Limit</label><select id="playerLimit"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
       <div><label>Match Target (Points)</label><select id="winningScore"><option value="50">50 Points</option><option value="100" selected>100 Points</option><option value="150">150 Points</option><option value="200">200 Points</option></select></div>
+      <div>
+        <label>Match Timer Mode</label>
+        <select id="lobbyTimerMode">
+          <option value="untimed" selected>∞ Untimed Match</option>
+          <option value="match">⏱️ Timed Match (Mins)</option>
+          <option value="turn">⚡ Timed Turns (Secs)</option>
+        </select>
+      </div>
+      <div id="lobbyTimeLimitBox" class="hidden">
+        <label id="lobbyTimeLimitLabel">Time Limit (Minutes)</label>
+        <input id="lobbyTimeLimitInput" type="number" min="1" max="180" value="5" style="width:100%; padding:10px; text-align:center;">
+      </div>
       <div style="grid-column: 1 / -1; display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1);">
         <div style="display:flex; gap:8px; flex:1; min-width:200px;">
           <input id="addPlayerNameInput" type="text" placeholder="Bot / Player name (optional)" maxlength="18" style="flex:1; padding:8px 12px; font-size:0.95rem;">
@@ -1161,8 +1271,10 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 
 <!-- GAME AREA -->
 <main class="game-area hidden" id="gamePanel">
-  <div style="padding: 6px 16px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.05); text-align:center;">
-    <div id="turnLabel" style="font-size:1rem; font-weight:bold; color:#ffe7a5; letter-spacing:1px;">Waiting...</div>
+  <div style="padding: 5px 12px; background: rgba(0,0,0,0.35); border-bottom: 1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;">
+    <div id="turnLabel" style="font-size:0.98rem; font-weight:bold; color:#ffe7a5; letter-spacing:0.5px;">Waiting...</div>
+    <div id="gameTimerBadge" class="timer-badge hidden">⏱️ --:--</div>
+    <button id="inGameRejoinBtn" type="button" class="btn-alt hidden" style="padding:3px 10px; font-size:0.78rem; border-color:#ffd66f; color:#ffe7a5;">🔄 Reconnect</button>
   </div>
   
   <div class="game-core">
@@ -1262,7 +1374,8 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 const $ = id => document.getElementById(id);
 let peer=null, host=false, solo=false, roomCode='', myId='', hostId='';
 let connections=new Map(), transportPlayers=new Map(), players=[], state=null;
-let revision=0, participantLimit=4, winningScore=100, autoActionRevision=-1, botActionRevision=-1, lastWinnerTracker=null;
+let revision=0, participantLimit=4, winningScore=100, timerMode='untimed', timeLimitValue=5, gameClockInterval=null;
+let autoActionRevision=-1, botActionRevision=-1, lastWinnerTracker=null;
 let roundRevealPhase = 'points', roundRevealTimer = null, modalOpenTimer = null, lastSeenDrawEventId = 0, activeDrawPlayerId = null;
 let currentOffsetX = 0, currentOffsetY = 0;
 
@@ -1283,6 +1396,7 @@ let myName = (safeGet('domName') || '').trim();
 
 function syncProfileUI() {
   if($('userNameInput') && document.activeElement !== $('userNameInput')) $('userNameInput').value = myName;
+  if($('lobbyNameInput') && document.activeElement !== $('lobbyNameInput')) $('lobbyNameInput').value = myName;
   if($('avatarPreview')) $('avatarPreview').textContent = myAvatar;
   if($('lobbyAvatarPreview')) $('lobbyAvatarPreview').textContent = myAvatar;
   if($('lobbyNamePreview')) $('lobbyNamePreview').textContent = myName || 'You';
@@ -1387,9 +1501,114 @@ function applyTheme(t) {
   document.body.setAttribute('data-theme', theme);
   safeSet('domTheme', theme);
   if($('themeSelect')) $('themeSelect').value = theme;
+  if($('lobbyThemeSelect')) $('lobbyThemeSelect').value = theme;
 }
 applyTheme(safeGet('domTheme') || 'blue');
 $('themeSelect').onchange = e => applyTheme(e.target.value);
+if($('lobbyThemeSelect')) $('lobbyThemeSelect').onchange = e => applyTheme(e.target.value);
+
+// === TIMER CONTROLS & HELPERS ===
+function syncTimerControlsUI(fromSetup=false) {
+  if (fromSetup && $('setupTimerMode')) {
+    timerMode = $('setupTimerMode').value || 'untimed';
+    timeLimitValue = Math.max(1, Number($('setupTimeLimitInput')?.value) || (timerMode === 'turn' ? 30 : 5));
+  } else if (!fromSetup && $('lobbyTimerMode')) {
+    timerMode = $('lobbyTimerMode').value || 'untimed';
+    timeLimitValue = Math.max(1, Number($('lobbyTimeLimitInput')?.value) || (timerMode === 'turn' ? 30 : 5));
+  }
+
+  if ($('setupTimerMode')) $('setupTimerMode').value = timerMode;
+  if ($('lobbyTimerMode')) $('lobbyTimerMode').value = timerMode;
+  if ($('setupTimeLimitInput') && document.activeElement !== $('setupTimeLimitInput')) $('setupTimeLimitInput').value = String(timeLimitValue);
+  if ($('lobbyTimeLimitInput') && document.activeElement !== $('lobbyTimeLimitInput')) $('lobbyTimeLimitInput').value = String(timeLimitValue);
+
+  if ($('setupTimeLimitWrap')) $('setupTimeLimitWrap').classList.toggle('hidden', timerMode === 'untimed');
+  if ($('lobbyTimeLimitBox')) $('lobbyTimeLimitBox').classList.toggle('hidden', timerMode === 'untimed');
+
+  if ($('setupTimeUnitLabel')) $('setupTimeUnitLabel').textContent = (timerMode === 'turn') ? 'secs / turn' : 'mins';
+  if ($('lobbyTimeLimitLabel')) $('lobbyTimeLimitLabel').textContent = (timerMode === 'turn') ? 'Turn Limit (Seconds)' : 'Match Limit (Minutes)';
+
+  if ($('lobbyRulesBadge')) {
+    const modeDesc = (timerMode === 'match')
+      ? `⏱️ Timed Match (${timeLimitValue} min)`
+      : (timerMode === 'turn')
+        ? `⚡ Timed Turns (${timeLimitValue}s / turn)`
+        : `∞ Untimed Match`;
+    $('lobbyRulesBadge').textContent = `🎯 Target: ${winningScore} pts  ·  ${modeDesc}`;
+  }
+}
+
+function formatTimerClock(secs, mode) {
+  const s = Math.max(0, Math.ceil(Number(secs) || 0));
+  if (mode === 'turn') {
+    return `⏱️ ${s}s`;
+  }
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return `⏱️ ${String(m).padStart(2, '0')}:${String(rem).padStart(2, '0')}`;
+}
+
+function updateTimerBadgeUI() {
+  const badge = $('gameTimerBadge');
+  if (!badge) return;
+  if (!state || !state.started || state.winner || !state.timerMode || state.timerMode === 'untimed') {
+    badge.classList.add('hidden');
+    badge.classList.remove('urgent');
+    return;
+  }
+  badge.classList.remove('hidden');
+  const rem = state.timeRemaining ?? state.timeLimitSecs ?? 0;
+  badge.textContent = formatTimerClock(rem, state.timerMode);
+  const urgentThreshold = (state.timerMode === 'turn') ? 5 : 15;
+  badge.classList.toggle('urgent', rem <= urgentThreshold);
+}
+
+function stopGameClock() {
+  if (gameClockInterval) {
+    clearInterval(gameClockInterval);
+    gameClockInterval = null;
+  }
+}
+
+function startGameClock() {
+  stopGameClock();
+  if (!host || !state || !state.started || state.winner || !state.timerMode || state.timerMode === 'untimed') {
+    updateTimerBadgeUI();
+    return;
+  }
+  updateTimerBadgeUI();
+  gameClockInterval = setInterval(() => {
+    if (!host || !state || !state.started || state.winner || !state.timerMode || state.timerMode === 'untimed') {
+      stopGameClock();
+      updateTimerBadgeUI();
+      return;
+    }
+    state.timeRemaining = Math.max(0, (state.timeRemaining ?? state.timeLimitSecs ?? 0) - 1);
+    updateTimerBadgeUI();
+    sendHost({ type: 'TIMER_TICK', timeRemaining: state.timeRemaining, timerMode: state.timerMode });
+
+    if (state.timeRemaining <= 0) {
+      if (state.timerMode === 'match') {
+        stopGameClock();
+        finishTimedOutMatch();
+        broadcastState('TIMEOUT');
+      } else if (state.timerMode === 'turn') {
+        const currId = state.current;
+        const hand = state.hands[currId] || [];
+        const playable = state.mustPlayTile
+          ? hand.find(t => t.id === state.mustPlayTile && isPlayable(t))
+          : hand.find(isPlayable);
+        if (playable) {
+          handleAction(currId, { action: 'PLAY', tileId: playable.id, revision });
+        } else if (state.stock && state.stock.length > 0) {
+          handleAction(currId, { action: 'DRAW', revision });
+        } else {
+          handleAction(currId, { action: 'PASS', revision });
+        }
+      }
+    }
+  }, 1000);
+}
 
 // === CORE UI ===
 function msg(s) { $('setupMsg').textContent = s; }
@@ -1560,7 +1779,7 @@ function updatePlayers() {
     $('topScoreboard').innerHTML = sbHtml;
   }
 }
-function lobbyBroadcast() { sendHost({ type: 'LOBBY', roomCode, hostId, players: players.map(({id,name,avatar,connected})=>({id,name,avatar,connected})), revision, participantLimit, winningScore }); updatePlayers(); }
+function lobbyBroadcast() { syncTimerControlsUI(false); sendHost({ type: 'LOBBY', roomCode, hostId, players: players.map(({id,name,avatar,connected,isBot})=>({id,name,avatar,connected,isBot})), revision, participantLimit, winningScore, timerMode, timeLimitValue }); updatePlayers(); }
 
 function attachHostConnection(conn) {
   conn.on('open', () => {
@@ -1578,27 +1797,52 @@ function attachHostConnection(conn) {
       let stableId = String(data.playerId || conn.peer);
       const pName = String(data.name || 'Player').trim().slice(0,20) || 'Player';
       const pAvatar = String(data.avatar || '😎').slice(0,10);
+      const normName = pName.toLowerCase();
       let existing = playerById(stableId);
 
-      // Fallback: match offline player with same name if storage was cleared
+      // Priority 2: Match by username against any non-host human player (even if old socket hasn't closed yet)
       if(!existing) {
-        const normName = pName.toLowerCase();
-        existing = players.find(p => p.connected === false && p.name && p.name.trim().toLowerCase() === normName);
-        if(existing) {
-          const oldId = existing.id;
-          existing.id = stableId;
-          if(state) {
-            state.players = state.players.map(pid => pid === oldId ? stableId : pid);
-            if(state.hands && state.hands[oldId]) {
-              state.hands[stableId] = state.hands[oldId];
-              delete state.hands[oldId];
-            }
-            if(state.scores && state.scores[oldId] !== undefined) {
-              state.scores[stableId] = state.scores[oldId];
-              delete state.scores[oldId];
-            }
-            if(state.current === oldId) state.current = stableId;
+        existing = players.find(p => p.id !== hostId && !p.isBot && p.name && p.name.trim().toLowerCase() === normName);
+      }
+      // Priority 3: If game is already in progress, match any disconnected human player seat so they can rejoin directly by room code
+      if(!existing && state && state.started) {
+        existing = players.find(p => p.id !== hostId && !p.isBot && p.connected === false);
+      }
+      // Priority 4: If game is in progress and room is full (e.g. 2-player game where WebRTC socket didn't close yet), reclaim non-host human seat
+      if(!existing && state && state.started && players.length >= participantLimit) {
+        existing = players.find(p => p.id !== hostId && !p.isBot);
+      }
+
+      if(existing && existing.id !== stableId) {
+        const oldId = existing.id;
+        const oldConn = connections.get(oldId);
+        if (oldConn && oldConn !== conn) {
+          try { oldConn.close(); } catch(e){}
+        }
+        connections.delete(oldId);
+        existing.id = stableId;
+        if(state) {
+          state.players = state.players.map(pid => pid === oldId ? stableId : pid);
+          if(state.hands && state.hands[oldId]) {
+            state.hands[stableId] = state.hands[oldId];
+            delete state.hands[oldId];
           }
+          if(state.scores && state.scores[oldId] !== undefined) {
+            state.scores[stableId] = state.scores[oldId];
+            delete state.scores[oldId];
+          }
+          if(state.prevScores && state.prevScores[oldId] !== undefined) {
+            state.prevScores[stableId] = state.prevScores[oldId];
+            delete state.prevScores[oldId];
+          }
+          if(state.roundGained && state.roundGained[oldId] !== undefined) {
+            state.roundGained[stableId] = state.roundGained[oldId];
+            delete state.roundGained[oldId];
+          }
+          if(state.current === oldId) state.current = stableId;
+          if(state.winner === oldId) state.winner = stableId;
+          if(state.matchWinner === oldId) state.matchWinner = stableId;
+          if(state.blockedWinner === oldId) state.blockedWinner = stableId;
         }
       }
 
@@ -1606,14 +1850,31 @@ function attachHostConnection(conn) {
         send(conn, {type:'ERROR', message:'Room is full (' + participantLimit + ' players max).'});
         return;
       }
+
+      const prevConn = connections.get(stableId);
+      if (prevConn && prevConn !== conn) {
+        try { prevConn.close(); } catch(e){}
+      }
       transportPlayers.set(conn.peer, stableId);
       connections.set(stableId, conn);
+
       if(existing) { 
         existing.connected = true; 
         existing.name = pName; 
         existing.avatar = pAvatar; 
       } else {
         players.push({id: stableId, name: pName, avatar: pAvatar, connected: true});
+        // If joining mid-game into an open slot, deal tiles so they can play immediately
+        if(state && state.started) {
+          if(!state.players.includes(stableId)) state.players.push(stableId);
+          state.hands[stableId] = [];
+          for(let i=0; i<7; i++) {
+            if(state.stock && state.stock.length) state.hands[stableId].push(state.stock.pop());
+          }
+          state.scores[stableId] = state.scores[stableId] || 0;
+          if(state.prevScores) state.prevScores[stableId] = 0;
+          if(state.roundGained) state.roundGained[stableId] = 0;
+        }
       }
       if(state && !state.hands[stableId]) state.hands[stableId] = [];
       saveHostSession();
@@ -1621,13 +1882,16 @@ function attachHostConnection(conn) {
         type: 'WELCOME',
         roomCode,
         hostId,
-        players: players.map(({id,name,avatar,connected})=>({id,name,avatar,connected})),
+        players: players.map(({id,name,avatar,connected,isBot})=>({id,name,avatar,connected,isBot})),
         state: state ? clientState(stableId) : null,
         revision,
         participantLimit,
-        winningScore
+        winningScore,
+        timerMode,
+        timeLimitValue
       });
       lobbyBroadcast();
+      if(state) broadcastState();
     } else if(data.type === 'UPDATE_PROFILE') {
       const stableId = transportPlayers.get(conn.peer) || data.playerId;
       const p = playerById(stableId);
@@ -1683,25 +1947,58 @@ function sendClientHello(conn) {
   } catch(e){}
 }
 
+function updateQuickRejoinUI() {
+  const row = $('quickRejoinRow');
+  const btn = $('quickRejoinBtn');
+  if (!row || !btn) return;
+  const lastHost = safeGet('domLastHost');
+  const savedHost = lastHost ? restoreHostSession(lastHost) : null;
+  const lastJoined = safeGet('domLastJoined');
+  const codeToOffer = (savedHost && savedHost.roomCode) ? savedHost.roomCode : lastJoined;
+  if (codeToOffer) {
+    row.classList.remove('hidden');
+    btn.textContent = (savedHost && savedHost.roomCode === codeToOffer)
+      ? `🔄 Resume Hosted Game (${codeToOffer})`
+      : `🔄 Rejoin Game (${codeToOffer})`;
+    btn.onclick = () => {
+      if ($('joinCode')) $('joinCode').value = codeToOffer;
+      joinRoom(codeToOffer);
+    };
+  } else {
+    row.classList.add('hidden');
+  }
+}
+
 function triggerClientAutoReconnect() {
   if (host || solo || !roomCode) return;
+  if ($('inGameRejoinBtn') && state) {
+    $('inGameRejoinBtn').classList.remove('hidden');
+  }
   if (reconnectTimer) return;
 
   reconnectAttempts++;
-  const maxAttempts = hasJoinedRoom ? 25 : 4;
+  const maxAttempts = hasJoinedRoom ? 30 : 5;
   if (reconnectAttempts > maxAttempts) {
     if (!hasJoinedRoom) {
       msg('Room "' + roomCode + '" not found or unreachable. Check the room code and make sure the host has the room open.');
       showPanel('setupPanel');
+      updateQuickRejoinUI();
     } else {
-      msg('Disconnected from room ' + roomCode + '.');
-      showPanel('setupPanel');
+      if ($('gameMsg') && state) {
+        $('gameMsg').textContent = 'Connection lost. Tap Reconnect or re-enter room code ' + roomCode + '.';
+      } else {
+        msg('Disconnected from room ' + roomCode + '. Enter code to rejoin directly.');
+        showPanel('setupPanel');
+        updateQuickRejoinUI();
+      }
     }
     return;
   }
 
   if (!hasJoinedRoom) {
     msg('Connecting to room ' + roomCode + ' (attempt ' + reconnectAttempts + '/' + maxAttempts + ')...');
+  } else if ($('gameMsg') && state) {
+    $('gameMsg').textContent = 'Reconnecting to ' + roomCode + ' (attempt ' + reconnectAttempts + ')...';
   }
 
   reconnectTimer = setTimeout(() => {
@@ -1784,6 +2081,12 @@ function initClientPeer() {
 
   peer.on('error', e => {
     console.warn('Client peer error:', e);
+    if (e.type === 'peer-unavailable' && window._pendingHostResume && window._pendingHostResume.roomCode === roomCode) {
+      const toResume = window._pendingHostResume;
+      window._pendingHostResume = null;
+      resumeHostSession(toResume);
+      return;
+    }
     triggerClientAutoReconnect();
   });
 }
@@ -1835,9 +2138,18 @@ function handleClientMessage(data) {
     }
     return;
   }
+  if(data.type === 'TIMER_TICK') {
+    if(state) {
+      state.timeRemaining = data.timeRemaining;
+      if(data.timerMode) state.timerMode = data.timerMode;
+      updateTimerBadgeUI();
+    }
+    return;
+  }
   if(data.type === 'WELCOME' || data.type === 'LOBBY') {
     hasJoinedRoom = true;
     reconnectAttempts = 0;
+    if ($('inGameRejoinBtn')) $('inGameRejoinBtn').classList.add('hidden');
     if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
     if (handshakeTimer) { clearInterval(handshakeTimer); handshakeTimer = null; }
     roomCode = data.roomCode||roomCode;
@@ -1846,6 +2158,9 @@ function handleClientMessage(data) {
     revision = data.revision??revision;
     participantLimit = data.participantLimit||participantLimit;
     winningScore = data.winningScore||winningScore;
+    if(data.timerMode) timerMode = data.timerMode;
+    if(data.timeLimitValue) timeLimitValue = data.timeLimitValue;
+    syncTimerControlsUI(false);
     $('roomCodeLabel').textContent = roomCode;
     makeQr();
     updatePlayers();
@@ -1861,6 +2176,7 @@ function handleClientMessage(data) {
   else if(data.type === 'STATE' || data.type === 'STARTED') { 
     hasJoinedRoom = true;
     reconnectAttempts = 0;
+    if ($('inGameRejoinBtn')) $('inGameRejoinBtn').classList.add('hidden');
     if(data.actionFired === 'PLAY') playClick(); else if(data.actionFired === 'DRAW') playDraw();
     if(data.players) players = data.players;
     state = data.state; revision = data.revision; renderGame(); 
@@ -1875,7 +2191,13 @@ function handleClientMessage(data) {
     showPanel('setupPanel');
     msg('You were removed from the room by the host.');
   }
-  else if(data.type === 'SETTINGS') { participantLimit = data.participantLimit||participantLimit; winningScore = data.winningScore||winningScore; }
+  else if(data.type === 'SETTINGS') {
+    participantLimit = data.participantLimit||participantLimit;
+    winningScore = data.winningScore||winningScore;
+    if(data.timerMode) timerMode = data.timerMode;
+    if(data.timeLimitValue) timeLimitValue = data.timeLimitValue;
+    syncTimerControlsUI(false);
+  }
   else if(data.type === 'ERROR') {
     hasJoinedRoom = false;
     if (handshakeTimer) { clearInterval(handshakeTimer); handshakeTimer = null; }
@@ -1889,15 +2211,71 @@ function saveHostSession() {
   if(host && !solo) try{
     localStorage.setItem('domHost:'+roomCode, JSON.stringify({
       roomCode,
-      players: players.map(({id,name,avatar,connected})=>({id,name,avatar,connected})),
+      players: players.map(({id,name,avatar,connected,isBot})=>({id,name,avatar,connected,isBot})),
       state,
       revision,
       participantLimit,
       winningScore,
+      timerMode,
+      timeLimitValue,
       hostId,
       myId
     }));
   }catch(e){} 
+}
+
+function resumeHostSession(saved) {
+  if (!saved || !saved.roomCode) return false;
+  const inputName = $('userNameInput') ? $('userNameInput').value.trim() : '';
+  if (inputName) myName = inputName;
+  else if (!myName) myName = 'Host';
+  safeSet('domName', myName);
+
+  roomCode = saved.roomCode;
+  const hostPeerId = peerIdForRoom(roomCode);
+  hostId = hostPeerId;
+  myId = hostPeerId;
+  host = true;
+  solo = false;
+  hasJoinedRoom = true;
+  players = (saved.players || []).map(p => p.id === hostId ? { ...p, name: myName, avatar: myAvatar, connected: true } : { ...p, connected: !!p.isBot });
+  state = saved.state || null;
+  revision = saved.revision || 0;
+  participantLimit = saved.participantLimit || 4;
+  winningScore = saved.winningScore || 100;
+  timerMode = saved.timerMode || 'untimed';
+  timeLimitValue = saved.timeLimitValue || 5;
+  connections.clear();
+  transportPlayers.clear();
+
+  msg('Resuming room ' + roomCode + '...');
+  if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+  peer = new Peer(hostPeerId, PEER_OPTS);
+
+  peer.on('open', id => {
+    myId = id;
+    hostId = id;
+    syncProfileUI();
+    syncTimerControlsUI(false);
+    $('roomCodeLabel').textContent = roomCode;
+    makeQr();
+    startHeartbeat();
+    msg('');
+    if (state && state.started) {
+      renderGame();
+      startGameClock();
+    } else {
+      showPanel('lobbyPanel');
+      lobbyBroadcast();
+    }
+  });
+  peer.on('connection', attachHostConnection);
+  peer.on('disconnected', () => { if (peer && !peer.destroyed) { try { peer.reconnect(); } catch(e){} } });
+  peer.on('error', e => {
+    console.warn('Resume host error:', e);
+    msg('Could not resume host room (' + (e.type || e.message) + ').');
+  });
+  return true;
 }
 function restoreHostSession(c) { try{const r = localStorage.getItem('domHost:'+c); return r?JSON.parse(r):null;}catch(e){return null;} }
 
@@ -1933,11 +2311,13 @@ function createHost() {
   
   peer = new Peer(hostPeerId, PEER_OPTS);
 
+  syncTimerControlsUI(true);
   peer.on('open', id => {
     myId = id;
     hostId = id;
     players = [{ id: myId, name: myName, avatar: myAvatar, connected: true }];
     syncProfileUI();
+    syncTimerControlsUI(false);
     $('roomCodeLabel').textContent = roomCode;
     makeQr();
     showPanel('lobbyPanel');
@@ -1973,8 +2353,17 @@ function joinRoom(c) {
     msg('Please enter a valid room code.');
     return;
   }
+  // If this device was the Host for this exact room code and has a saved host session, offer/resume if not already open
+  const savedHost = restoreHostSession(clean);
+  if (savedHost && savedHost.roomCode === clean && !host) {
+    // Try connecting as client first in case another tab/device is hosting; if unavailable on first try, resume host!
+    window._pendingHostResume = savedHost;
+  } else {
+    window._pendingHostResume = null;
+  }
   roomCode = clean;
   try { localStorage.setItem('domLastJoined', roomCode); } catch(e){}
+  updateQuickRejoinUI();
   connectToHost(roomCode);
 }
 
@@ -2107,6 +2496,7 @@ function startSolo() {
   safeSet('domName', myName);
   solo = true; host = true; roomCode = 'SOLO'; hostId = 'LOCAL'; myId = hostId;
   players = [{id:myId, name:myName, avatar:myAvatar, connected:true}, {id:'AI', name:'Computer', avatar:'🤖', connected:true}];
+  syncTimerControlsUI(true);
   connections.clear(); transportPlayers.clear(); state = null; revision = 0; participantLimit = 2; winningScore = 100; 
   syncProfileUI();
   startGame();
@@ -2132,11 +2522,17 @@ function startGame() {
   const hands = {}; players.forEach(p => hands[p.id]=[]);
   for(let i=0; i<7; i++) players.forEach(p => { if(tiles.length) hands[p.id].push(tiles.pop()); });
   
+  const totalLimitSecs = (timerMode === 'match')
+    ? Math.max(1, Number(timeLimitValue) || 5) * 60
+    : (timerMode === 'turn')
+      ? Math.max(5, Number(timeLimitValue) || 30)
+      : 0;
   const initialScores = Object.fromEntries(players.map(p=>[p.id, prevScores[p.id]||0]));
   state = {
     started:true, players:players.map(p=>p.id), hands, stock:tiles, board:[], 
     leftEnd:null, rightEnd:null, current:starterId, passCount:0, winner:null, 
-    matchWinner:null, matchLoser:null, forfeitedBy:null,
+    matchWinner:null, matchLoser:null, forfeitedBy:null, timedOut:false,
+    timerMode, timeLimitSecs: totalLimitSecs, timeRemaining: totalLimitSecs,
     scores: initialScores,
     prevScores: {...initialScores},
     roundGained: Object.fromEntries(players.map(p=>[p.id, 0])),
@@ -2151,6 +2547,7 @@ function startGame() {
   botActionRevision = -1;
   revision++; for(const [id, c] of connections) send(c, {type:'STARTED', state:clientState(id), revision, players: players.map(({id,name,avatar,connected,isBot})=>({id,name,avatar,connected,isBot}))});
   saveHostSession(); currentOffsetX = 0; currentOffsetY = 0; renderGame();
+  startGameClock();
 }
 
 function clientState(id) {
@@ -2161,7 +2558,8 @@ function clientState(id) {
     handCounts:Object.fromEntries(state.players.map(pid=>[pid, (state.hands[pid]||[]).length])),
     stockCount:state.stock.length, board:state.board, current:state.current, winner:state.winner,
     matchWinner:state.matchWinner, matchLoser:state.matchLoser, blockedWinner:state.blockedWinner,
-    forfeitedBy:state.forfeitedBy||null,
+    forfeitedBy:state.forfeitedBy||null, timedOut:!!state.timedOut,
+    timerMode:state.timerMode||'untimed', timeLimitSecs:state.timeLimitSecs||0, timeRemaining:state.timeRemaining??0,
     scores:state.scores||{}, prevScores:state.prevScores||{}, roundGained:state.roundGained||{},
     lastDrawPlayer:state.lastDrawPlayer||null, lastDrawEventId:state.lastDrawEventId||0,
     winningScore:state.winningScore, round:state.round, mustPlayTile:state.mustPlayTile||null, leftEnd:state.leftEnd, rightEnd:state.rightEnd
@@ -2188,6 +2586,7 @@ function handleAction(id, d) {
     state.winner = wId;
     state.matchWinner = wId;
     state.matchLoser = id;
+    stopGameClock();
     broadcastState('FORFEIT', id);
     return;
   }
@@ -2298,7 +2697,10 @@ function nextTurn() {
     const p = state.players[(i+n)%state.players.length];
     if(playerById(p)) { state.current = p; break; }
   }
-  state.mustPlayTile = null; autoActionRevision = -1;
+  if (state.timerMode === 'turn' && state.timeLimitSecs) {
+    state.timeRemaining = state.timeLimitSecs;
+  }
+  state.mustPlayTile = null; autoActionRevision = -1; botActionRevision = -1;
 }
 
 function checkMatchOutcome() {
@@ -2330,6 +2732,7 @@ function finishRound(wId) {
   state.winner = wId;
   state.roundPoints = 0;
   checkMatchOutcome();
+  stopGameClock();
 }
 
 function finishBlockedRound() {
@@ -2357,6 +2760,25 @@ function finishBlockedRound() {
   } else {
     state.winner = 'blocked';
   }
+  stopGameClock();
+}
+
+function finishTimedOutMatch() {
+  if (!state || state.winner) return;
+  state.prevScores = {...(state.scores || {})};
+  state.roundGained = {};
+  state.players.forEach(pid => {
+    const oppPts = (state.hands[pid] || []).reduce((n, t) => n + t.a + t.b, 0);
+    state.roundGained[pid] = oppPts;
+    state.scores[pid] = (state.scores[pid] || 0) + oppPts;
+  });
+  const sorted = [...state.players].sort((a, b) => (state.scores[a] || 0) - (state.scores[b] || 0));
+  const wId = sorted[0] || state.players[0];
+  state.timedOut = true;
+  state.winner = wId;
+  state.matchWinner = wId;
+  state.matchLoser = sorted[sorted.length - 1] || null;
+  stopGameClock();
 }
 
 function sendAct(action, extra={}) {
@@ -2515,6 +2937,8 @@ function renderWinModalContent() {
       let fPlayer = playerById(state.forfeitedBy);
       let fName = (fPlayer?.avatar ? `${fPlayer.avatar} ` : '') + (fPlayer?.name || 'Player');
       $('winSubStatus').textContent = `${fName} forfeited the match.`;
+    } else if (state.timedOut) {
+      $('winSubStatus').textContent = isBlinking ? `⏰ Time's Up! Revealing remaining tiles...` : `⏰ Time's Up! Final Standings`;
     } else if (isBlinking) {
       $('winSubStatus').textContent = `✨ Revealing opponents' remaining tiles...`;
     } else {
@@ -2594,6 +3018,7 @@ function renderWinModalContent() {
 
 function renderGame() {
   if(!state) return; showPanel('gamePanel');
+  updateTimerBadgeUI();
 
   if (state.lastDrawEventId && state.lastDrawEventId !== lastSeenDrawEventId) {
     lastSeenDrawEventId = state.lastDrawEventId;
@@ -2870,8 +3295,8 @@ $('customEmojiInput').onkeydown = e => {
   if(e.key === 'Enter') $('applyCustomEmojiBtn').click();
 };
 
-$('userNameInput').addEventListener('input', e => {
-  myName = e.target.value.trim();
+function handleNameChange(val) {
+  myName = val.trim();
   safeSet('domName', myName);
   syncProfileUI();
   if(host) {
@@ -2882,7 +3307,49 @@ $('userNameInput').addEventListener('input', e => {
   } else if(window._hostConn) {
     send(window._hostConn, { type: 'UPDATE_PROFILE', name: myName, avatar: myAvatar, playerId: myId });
   }
-});
+}
+$('userNameInput').addEventListener('input', e => handleNameChange(e.target.value));
+if($('lobbyNameInput')) $('lobbyNameInput').addEventListener('input', e => handleNameChange(e.target.value));
+
+if($('setupTimerMode')) {
+  $('setupTimerMode').onchange = () => {
+    const mode = $('setupTimerMode').value;
+    if (mode === 'turn' && Number($('setupTimeLimitInput').value) <= 10) $('setupTimeLimitInput').value = '30';
+    if (mode === 'match' && Number($('setupTimeLimitInput').value) >= 20) $('setupTimeLimitInput').value = '5';
+    syncTimerControlsUI(true);
+  };
+}
+if($('setupTimeLimitInput')) {
+  $('setupTimeLimitInput').oninput = () => syncTimerControlsUI(true);
+}
+if($('lobbyTimerMode')) {
+  $('lobbyTimerMode').onchange = () => {
+    if(!host) return;
+    const mode = $('lobbyTimerMode').value;
+    if (mode === 'turn' && Number($('lobbyTimeLimitInput').value) <= 10) $('lobbyTimeLimitInput').value = '30';
+    if (mode === 'match' && Number($('lobbyTimeLimitInput').value) >= 20) $('lobbyTimeLimitInput').value = '5';
+    syncTimerControlsUI(false);
+    saveHostSession();
+    sendHost({ type: 'SETTINGS', participantLimit, winningScore, timerMode, timeLimitValue });
+  };
+}
+if($('lobbyTimeLimitInput')) {
+  $('lobbyTimeLimitInput').oninput = () => {
+    if(!host) return;
+    syncTimerControlsUI(false);
+    saveHostSession();
+    sendHost({ type: 'SETTINGS', participantLimit, winningScore, timerMode, timeLimitValue });
+  };
+}
+if($('inGameRejoinBtn')) {
+  $('inGameRejoinBtn').onclick = () => {
+    if (roomCode) {
+      reconnectAttempts = 0;
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      initClientPeer();
+    }
+  };
+}
 
 // === HERO INTERACTIVE DOMINO LOGIC ===
 let heroValA = 6, heroValB = 6;
@@ -3179,6 +3646,8 @@ $('winningScore').onchange = () => { if(!host)return; winningScore=Number($('win
 window.addEventListener('resize', () => { if(state && state.board.length) calculateAutoZoom(); });
 
 syncProfileUI();
+syncTimerControlsUI(true);
+updateQuickRejoinUI();
 
 const params = new URLSearchParams(location.search);
 const query = params.get('join') || params.get('room');
