@@ -51,8 +51,13 @@ body[data-theme="wood"] {
 .icon-btn:hover { background: rgba(255,255,255,0.2); }
 
 .top-scoreboard {
-  display: flex; gap: 16px; align-items: center; overflow-x: auto; scrollbar-width: none; flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  overflow: visible;
 }
+.top-scoreboard::-webkit-scrollbar { display: none; }
 .top-scoreboard::-webkit-scrollbar { display: none; }
 .ts-player {
   display: flex; align-items: center; gap: 8px;
@@ -143,6 +148,16 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 .hand .tile:hover { transform: translateY(-8px); box-shadow: 0 12px 20px rgba(0,0,0,0.6), inset 0 2px 3px #fff; }
 .hand .tile.unplayable { opacity: 0.5; cursor: not-allowed; }
 .hand .tile.unplayable:hover { transform: none; }
+@media (max-width: 600px) {
+  .hand .tile, .tile {
+    width: 60px;
+    height: 30px;
+  }
+  .mini-tile {
+    width: 7px;
+    height: 11px;
+  }
+}
 
 /* Pip Logic */
 .pips { display: grid; width: 100%; height: 100%; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 2px; gap: 1px; }
@@ -663,20 +678,46 @@ function nextTurn() {
 }
 
 function finishRound(wId) {
-  const pts = state.players.filter(pid=>pid!==wId).reduce((sum,pid)=>sum+(state.hands[pid]||[]).reduce((n,t)=>n+t.a+t.b,0), 0);
-  state.scores[wId] = (state.scores[wId]||0) + pts;
-  state.winner = wId; state.roundPoints = pts;
+  // Sum remaining pips in opponents' hands
+  const pts = state.players.filter(pid => pid !== wId)
+    .reduce((sum, pid) => sum + (state.hands[pid] || []).reduce((n, t) => n + t.a + t.b, 0), 0);
+  // Add points to each opponent
+  state.players.forEach(pid => {
+    if (pid !== wId) {
+      state.scores[pid] = (state.scores[pid] || 0) + pts;
+    }
+  });
+  // Subtract points from the round winner (who emptied hand)
+  state.scores[wId] = (state.scores[wId] || 0) - pts;
+  state.winner = wId;
+  state.roundPoints = pts;
   state.matchWinner = state.scores[wId] >= state.winningScore ? wId : null;
 }
 function finishBlockedRound() {
-  const sums = state.players.map(pid=>({id:pid, pts:(state.hands[pid]||[]).reduce((n,t)=>n+t.a+t.b,0)})).sort((a,b)=>a.pts-b.pts);
-  const wId = sums[0]?.id;
-  if(wId) {
-    const pts = sums.filter(x=>x.id!==wId).reduce((n,x)=>n+x.pts,0);
-    state.scores[wId] = (state.scores[wId]||0) + pts;
-    state.winner = 'blocked'; state.blockedWinner = wId; state.roundPoints = pts;
+  // Calculate pip totals for each player
+  const sums = state.players.map(pid => ({
+    id: pid,
+    pts: (state.hands[pid] || []).reduce((n, t) => n + t.a + t.b, 0)
+  }));
+  // Player with the lowest pip total loses points (wId)
+  const wId = sums.reduce((min, p) => (p.pts < min.pts ? p : min), sums[0]).id;
+  if (wId) {
+    const pts = sums.filter(x => x.id !== wId).reduce((n, x) => n + x.pts, 0);
+    // Add points to all other players
+    state.players.forEach(pid => {
+      if (pid !== wId) {
+        state.scores[pid] = (state.scores[pid] || 0) + pts;
+      }
+    });
+    // Subtract points from the blocked winner (lowest pip count)
+    state.scores[wId] = (state.scores[wId] || 0) - pts;
+    state.winner = 'blocked';
+    state.blockedWinner = wId;
+    state.roundPoints = pts;
     state.matchWinner = state.scores[wId] >= state.winningScore ? wId : null;
-  } else state.winner = 'blocked';
+  } else {
+    state.winner = 'blocked';
+  }
 }
 
 function sendAct(action, extra={}) {
