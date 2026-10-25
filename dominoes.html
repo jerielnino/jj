@@ -87,24 +87,16 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
   --dot-5: #66d9ef;
   --dot-6: #ae81ff;
 }
-.domino-half-top[data-val="0"], .domino-half-bottom[data-val="0"] { background: var(--dot-0); }
-.domino-half-top[data-val="1"], .domino-half-bottom[data-val="1"] { background: var(--dot-1); }
-.domino-half-top[data-val="2"], .domino-half-bottom[data-val="2"] { background: var(--dot-2); }
-.domino-half-top[data-val="3"], .domino-half-bottom[data-val="3"] { background: var(--dot-3); }
-.domino-half-top[data-val="4"], .domino-half-bottom[data-val="4"] { background: var(--dot-4); }
-.domino-half-top[data-val="5"], .domino-half-bottom[data-val="5"] { background: var(--dot-5); }
-.domino-half-top[data-val="6"], .domino-half-bottom[data-val="6"] { background: var(--dot-6); }
-.domino-half-top::after,
-.domino-half-bottom::after {
-  content: attr(data-val);
-  position: absolute;
-  inset: 0;
-  font-weight: 600;
-  color: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Sprite sheet for domino tiles */
+.domino-tile {
+  width: 80px;
+  height: 40px;
+  background-image: url('file:///C:/Users/Asus/.gemini/antigravity-ide/brain/1b5149cb-9ee6-4997-9c3e-e4d9f39c0791/domino_sheet_1792917705091.jpg');
+  background-size: 700% 400%; /* 7 columns, 4 rows */
+  background-repeat: no-repeat;
 }
+.domino-tile.horizontal { transform: none; }
+.domino-tile.vertical { transform: rotate(90deg); transform-origin: center; }
 .kick-btn {
   background: transparent;
   border: none;
@@ -169,7 +161,7 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
       <div>Current: <span id="currentPlayer">Player 1</span></div>
       <div>Stock: <span id="stockCount">0</span></div>
     </div>
-    <div class="board-area"><div class="board-inner" id="boardInner"></div></div>
+    <div class="board-area"><div id="scoreBoard" class="score-board"></div><div id="board" class="board"></div></div>
     <div class="players-section" id="playersList"></div>
     <div class="hand-area" id="handArea"></div>
     <div class="action-buttons"><button class="draw-btn" onclick="drawDomino()">Draw</button></div>
@@ -398,8 +390,10 @@ function render() {
   renderBoard();
   renderPlayers();
   renderHand();
+  attachBoardEvents();
   document.getElementById('currentPlayer').textContent = game.players[game.current].name;
   document.getElementById('stockCount').textContent = game.stock.length;
+  updateScoreBoard();
 }
 
 function renderBoard() {
@@ -437,6 +431,48 @@ function updatePlayersList() {
     document.getElementById('startBtn').disabled = clientConns.size < maxPlayers - 1;
   }
 }
+
+// utility functions for sprite handling and drag‑and‑drop
+function getSpriteIndex([a,b]) {
+  const min = Math.min(a,b);
+  const max = Math.max(a,b);
+  return min * 7 - (min*(min-1))/2 + (max - min);
+}
+function spritePos(idx) {
+  const col = idx % 7;
+  const row = Math.floor(idx / 7);
+  const x = -(col * 100/7) + "%";
+  const y = -(row * 100/4) + "%";
+  return `${x} ${y}`;
+}
+function dragStart(ev, domino) {
+  ev.dataTransfer.setData('application/json', JSON.stringify(domino));
+}
+function allowDrop(ev) { ev.preventDefault(); }
+function dropTile(ev) {
+  ev.preventDefault();
+  const domino = JSON.parse(ev.dataTransfer.getData('application/json'));
+  if (!game.canPlay(domino)) return alert('Illegal move');
+  if (isHost) {
+    const playerIdx = 0;
+    game.play(domino, playerIdx);
+    broadcast({type:'play', domino, player:playerIdx});
+    render();
+    updateScoreBoard();
+  } else {
+    hostConn.send({type:'play', domino, player:0});
+  }
+}
+function attachBoardEvents() {
+  const board = document.getElementById('board');
+  board.ondragover = allowDrop;
+  board.ondrop = dropTile;
+}
+function updateScoreBoard() {
+  const html = game.players.map(p => `<div>${p.name}: ${p.hand.length} tiles</div>`).join('');
+  document.getElementById('scoreBoard').innerHTML = html;
+}
+
 
 document.getElementById('playerName').addEventListener('change', e => myName = e.target.value || 'Player');
 
