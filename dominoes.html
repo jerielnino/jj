@@ -1118,15 +1118,37 @@ const PEER_OPTS = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' }
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun3.l.google.com:19302' },
+      { urls: 'stun:stun4.l.google.com:19302' },
+      // STUN + free public TURN relays for Internet & cross-network mobile play
+      { urls: 'turns:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:3478', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:numb.viagenie.ca:3478', username: 'muazkh', credential: 'muazkh' },
+      { urls: 'turns:numb.viagenie.ca:443', username: 'muazkh', credential: 'muazkh' }
     ]
   }
 };
 
+function cleanRoomCode(input) {
+  if (!input) return '';
+  let str = String(input).trim().toUpperCase();
+  if (str.includes('JOIN=')) {
+    str = str.split('JOIN=')[1].split('&')[0];
+  }
+  str = decodeURIComponent(str).replace(/[^A-Z0-9]/g, '');
+  if (str.startsWith('DOM')) {
+    str = str.slice(3);
+  }
+  return str ? ('DOM-' + str) : '';
+}
+
 function peerIdForRoom(rCode) {
-  let clean = String(rCode || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-  if (!clean.startsWith('dom')) clean = 'dom' + clean;
-  return 'domino-p2p-' + clean;
+  const code = cleanRoomCode(rCode);
+  const alphanumeric = code.replace(/[^A-Z0-9]/g, '').toLowerCase();
+  return 'domino-p2p-' + alphanumeric;
 }
 
 function code() {
@@ -1155,7 +1177,18 @@ function startHeartbeat() {
   }, 3500);
 }
 
-function send(conn, obj) { if(conn && conn.open) try { conn.send(obj); } catch(e){} }
+function send(conn, obj) {
+  if (!conn) return;
+  if (conn.open) {
+    try { conn.send(obj); } catch(e){}
+  } else {
+    try {
+      conn.once('open', () => {
+        try { conn.send(obj); } catch(e){}
+      });
+    } catch(e){}
+  }
+}
 function sendHost(obj) { if(host) for(const c of connections.values()) send(c, obj); }
 function playerById(id) { return players.find(p => p.id === id); }
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -1205,8 +1238,12 @@ function attachHostConnection(conn) {
     if(data.type === 'HELLO') {
       const stableId = String(data.playerId || conn.peer);
       const existing = playerById(stableId);
-      if(!existing && players.length >= participantLimit) { send(conn, {type:'ERROR', message:`Room full.`}); return; }
-      transportPlayers.set(conn.peer, stableId); connections.set(stableId, conn);
+      if(!existing && players.length >= participantLimit) {
+        send(conn, {type:'ERROR', message:`Room full.`});
+        return;
+      }
+      transportPlayers.set(conn.peer, stableId);
+      connections.set(stableId, conn);
       const pName = String(data.name || 'Player').slice(0,20);
       const pAvatar = String(data.avatar || '😎').slice(0,10);
       if(existing) { 
@@ -1217,7 +1254,16 @@ function attachHostConnection(conn) {
       else players.push({id: stableId, name: pName, avatar: pAvatar, connected: true});
       if(state && !state.hands[stableId]) state.hands[stableId] = [];
       saveHostSession();
-      send(conn, {type:'WELCOME', roomCode, hostId, players: players.map(({id,name,avatar,connected})=>({id,name,avatar,connected})), state: state?clientState(stableId):null, revision, participantLimit, winningScore});
+      send(conn, {
+        type: 'WELCOME',
+        roomCode,
+        hostId,
+        players: players.map(({id,name,avatar,connected})=>({id,name,avatar,connected})),
+        state: state ? clientState(stableId) : null,
+        revision,
+        participantLimit,
+        winningScore
+      });
       lobbyBroadcast();
     } else if(data.type === 'UPDATE_PROFILE') {
       const stableId = transportPlayers.get(conn.peer) || data.playerId;
@@ -1235,11 +1281,16 @@ function attachHostConnection(conn) {
     }
   });
   conn.on('close', () => {
-    const stableId = transportPlayers.get(conn.peer); transportPlayers.delete(conn.peer);
+    const stableId = transportPlayers.get(conn.peer);
+    transportPlayers.delete(conn.peer);
     if(stableId) {
-      connections.delete(stableId); const p = playerById(stableId); if(p) p.connected = false;
+      connections.delete(stableId);
+      const p = playerById(stableId);
+      if(p) p.connected = false;
       if(state && state.current === stableId) nextTurn();
-      saveHostSession(); lobbyBroadcast(); if(state) broadcastState();
+      saveHostSession();
+      lobbyBroadcast();
+      if(state) broadcastState();
     }
   });
   conn.on('error', err => {
@@ -1250,9 +1301,14 @@ function attachHostConnection(conn) {
 function getStableId() { let id = localStorage.getItem('domId'); if(!id) { id = 'P-'+Math.random().toString(36).slice(2,10).toUpperCase(); localStorage.setItem('domId', id); } return id; }
 
 function connectToHost(rCode) {
+  const clean = cleanRoomCode(rCode);
+  if(!clean || clean.length < 5) {
+    msg('Please enter a valid room code.');
+    return;
+  }
   host = false;
   solo = false;
-  roomCode = rCode.trim().toUpperCase();
+  roomCode = clean;
   hostId = roomCode;
   myId = getStableId();
 
@@ -1270,12 +1326,14 @@ function connectToHost(rCode) {
   }
 
   peer = new Peer(null, PEER_OPTS);
-  const targetPeerId = peerIdForRoom(roomCode);
+  const primaryTarget = peerIdForRoom(roomCode);
+  const fallbackTarget = roomCode;
   let connected = false;
   let connTimeout = null;
+  let hasTriedFallback = false;
 
   peer.on('open', () => {
-    openHostConn(targetPeerId);
+    attemptConnection(primaryTarget);
   });
 
   peer.on('disconnected', () => {
@@ -1285,23 +1343,40 @@ function connectToHost(rCode) {
   });
 
   peer.on('error', e => {
-    if (connTimeout) clearTimeout(connTimeout);
     console.warn('Client peer error:', e);
     if (e.type === 'peer-unavailable') {
+      if (!hasTriedFallback) {
+        hasTriedFallback = true;
+        console.log('Primary target unavailable, trying fallback:', fallbackTarget);
+        attemptConnection(fallbackTarget);
+        return;
+      }
+      if (connTimeout) clearTimeout(connTimeout);
       msg('Room "' + roomCode + '" not found. Check the room code or ask the host for a fresh link.');
+      showPanel('setupPanel');
     } else {
+      if (connTimeout) clearTimeout(connTimeout);
       msg('Connection error: ' + (e.message || e.type));
+      showPanel('setupPanel');
     }
-    showPanel('setupPanel');
   });
 
-  function openHostConn(targetId) {
-    if (window._hostConn) { try { window._hostConn.close(); } catch(e){} }
+  function attemptConnection(targetId) {
+    if (window._hostConn) {
+      try { window._hostConn.close(); } catch(e){}
+    }
     const conn = peer.connect(targetId, { reliable: true });
     window._hostConn = conn;
 
+    if (connTimeout) clearTimeout(connTimeout);
     connTimeout = setTimeout(() => {
       if (!connected) {
+        if (!hasTriedFallback && targetId !== fallbackTarget) {
+          hasTriedFallback = true;
+          console.log('Timeout on primary target, trying fallback:', fallbackTarget);
+          attemptConnection(fallbackTarget);
+          return;
+        }
         msg('Still connecting to ' + roomCode + '... Make sure host room is open.');
       }
     }, 4500);
@@ -1320,7 +1395,14 @@ function connectToHost(rCode) {
     conn.on('data', data => handleClientMessage(data));
 
     conn.on('error', e => {
-      console.warn('Host conn error:', e);
+      console.warn('Host conn error on', targetId, e);
+      if (!hasTriedFallback && targetId !== fallbackTarget) {
+        hasTriedFallback = true;
+        console.log('Error on primary target, attempting fallback:', fallbackTarget);
+        attemptConnection(fallbackTarget);
+        return;
+      }
+      if (connTimeout) clearTimeout(connTimeout);
       msg('Could not connect to host. Please verify the room code.');
     });
 
@@ -1336,11 +1418,23 @@ function handleClientMessage(data) {
   if(!data) return;
   if(data.type === 'PING') return;
   if(data.type === 'WELCOME' || data.type === 'LOBBY') {
-    roomCode = data.roomCode||roomCode; hostId = data.hostId||hostId; players = data.players||players;
-    revision = data.revision??revision; participantLimit = data.participantLimit||participantLimit; winningScore = data.winningScore||winningScore;
-    $('roomCodeLabel').textContent = roomCode; makeQr(); updatePlayers();
-    if(data.state) { state = data.state; renderGame(); }
-    else if(data.type === 'WELCOME' && state) { state = null; showPanel('lobbyPanel'); }
+    roomCode = data.roomCode||roomCode;
+    hostId = data.hostId||hostId;
+    players = data.players||players;
+    revision = data.revision??revision;
+    participantLimit = data.participantLimit||participantLimit;
+    winningScore = data.winningScore||winningScore;
+    $('roomCodeLabel').textContent = roomCode;
+    makeQr();
+    updatePlayers();
+    if(data.state) {
+      state = data.state;
+      renderGame();
+    } else {
+      state = null;
+      showPanel('lobbyPanel');
+    }
+    msg('');
   } 
   else if(data.type === 'STATE' || data.type === 'STARTED') { 
     if(data.actionFired === 'PLAY') playClick(); else if(data.actionFired === 'DRAW') playDraw();
@@ -1416,15 +1510,21 @@ function createHost() {
 
   peer.on('error', e => {
     console.warn('Host peer error:', e);
+    if (e.type === 'unavailable-id') {
+      console.log('Room ID taken, auto-regenerating new code...');
+      roomCode = code();
+      createHost();
+      return;
+    }
     msg('Could not open room (' + (e.type || e.message) + '). Tap "Host a Game" to retry.');
   });
 }
 
 function joinRoom(c) {
-  if(!c || !c.trim()) { msg('Please enter a room code.'); return; }
-  let clean = c.trim().toUpperCase();
-  if(!clean.startsWith('DOM-') && clean.length >= 4) {
-    clean = 'DOM-' + clean;
+  const clean = cleanRoomCode(c);
+  if(!clean || clean.length < 5) {
+    msg('Please enter a valid room code.');
+    return;
   }
   roomCode = clean;
   localStorage.setItem('domLastJoined', roomCode);
@@ -2125,8 +2225,13 @@ window.addEventListener('resize', () => { if(state && state.board.length) calcul
 syncProfileUI();
 
 const query = new URLSearchParams(location.search).get('join');
-if(query) { $('joinCode').value=query; joinRoom(query); }
-else if(localStorage.getItem('domLastJoined')) $('joinCode').value = localStorage.getItem('domLastJoined');
+if(query) {
+  const clean = cleanRoomCode(query);
+  $('joinCode').value = clean;
+  joinRoom(clean);
+} else if(localStorage.getItem('domLastJoined')) {
+  $('joinCode').value = localStorage.getItem('domLastJoined');
+}
 })();
 </script>
 </body>
