@@ -76,6 +76,45 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .waiting-message { text-align: center; color: var(--gold); font-size: 1.2rem; padding: 40px; }
 </style>
+<!-- Domino tile colours -->
+<style>
+:root {
+  --dot-0: #1e1e1e;
+  --dot-1: #ff4d4d;
+  --dot-2: #ffad33;
+  --dot-3: #ffff66;
+  --dot-4: #a6e22e;
+  --dot-5: #66d9ef;
+  --dot-6: #ae81ff;
+}
+.domino-half-top[data-val="0"], .domino-half-bottom[data-val="0"] { background: var(--dot-0); }
+.domino-half-top[data-val="1"], .domino-half-bottom[data-val="1"] { background: var(--dot-1); }
+.domino-half-top[data-val="2"], .domino-half-bottom[data-val="2"] { background: var(--dot-2); }
+.domino-half-top[data-val="3"], .domino-half-bottom[data-val="3"] { background: var(--dot-3); }
+.domino-half-top[data-val="4"], .domino-half-bottom[data-val="4"] { background: var(--dot-4); }
+.domino-half-top[data-val="5"], .domino-half-bottom[data-val="5"] { background: var(--dot-5); }
+.domino-half-top[data-val="6"], .domino-half-bottom[data-val="6"] { background: var(--dot-6); }
+.domino-half-top::after,
+.domino-half-bottom::after {
+  content: attr(data-val);
+  position: absolute;
+  inset: 0;
+  font-weight: 600;
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.kick-btn {
+  background: transparent;
+  border: none;
+  color: #ff4d4d;
+  font-size: 1rem;
+  margin-left: 6px;
+  cursor: pointer;
+}
+.kick-btn:hover { opacity: 0.8; }
+</style>
 </head>
 <body>
 
@@ -238,6 +277,11 @@ function initHost() {
       } else if (msg.type === 'draw' && game) {
         game.draw(msg.player);
         broadcast({ type: 'update', state: gameState() });
+      } else if (msg.type === 'kick') {
+        // host asked to remove a player
+        game.players.splice(msg.idx, 1);
+        if (game.current >= msg.idx) game.current = Math.max(0, game.current - 1);
+        render();
       }
     });
   });
@@ -360,14 +404,18 @@ function render() {
 
 function renderBoard() {
   const html = game.played.map(d => `<div class="domino-played">
-    <div class="domino-half-top">${'●'.repeat(d[0])}</div>
-    <div class="domino-half-bottom">${'●'.repeat(d[1])}</div>
+    <div class="domino-half-top" data-val="${d[0]}"></div>
+    <div class="domino-half-bottom" data-val="${d[1]}"></div>
   </div>`).join('');
   document.getElementById('boardInner').innerHTML = html;
 }
 
 function renderPlayers() {
-  const html = game.players.map((p, i) => `<div class="player-status ${i === game.current ? 'current' : ''}">${p.name} (${p.hand.length})</div>`).join('');
+  const html = game.players.map((p, i) => `
+    <div class="player-status ${i===game.current?'current':''}">
+      ${p.name} (${p.hand.length})
+      ${isHost ? `<button class="kick-btn" onclick="kickPlayer(${i})">✖</button>` : ''}
+    </div>`).join('');
   document.getElementById('playersList').innerHTML = html;
 }
 
