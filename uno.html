@@ -52,6 +52,7 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 @media (min-width: 600px) {
   .play-area { flex-direction: row; min-height: 160px; }
 }
+
 .pile { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .pile-label { font-size: 0.8rem; opacity: 0.7; font-weight: 600; }
 
@@ -87,7 +88,7 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 .hand-card.yellow { background: linear-gradient(135deg, #f9d423 0%, #f0b500 100%); color: #000; }
 .hand-card.black { background: linear-gradient(135deg, #1a1a1a 0%, #000 100%); color: #fff; }
 
-.actions-bar { background: rgba(0,0,0,.3); border-radius: 10px; padding: 12px; display: flex; gap: 10px; justify-content: center; }
+.actions-bar { background: rgba(0,0,0,.3); border-radius: 10px; padding: 12px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .action-btn { padding: 10px 20px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
 .action-btn:hover { transform: scale(1.05); }
 
@@ -101,6 +102,8 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 .color-btn.blue { background: linear-gradient(135deg, #3d7dd5 0%, #2d5ab5 100%); color: #fff; }
 .color-btn.green { background: linear-gradient(135deg, #2eb82e 0%, #1d9d1d 100%); color: #fff; }
 .color-btn.yellow { background: linear-gradient(135deg, #f9d423 0%, #f0b500 100%); color: #000; }
+
+.waiting-message { text-align: center; color: var(--gold); font-size: 1.2rem; padding: 40px; }
 </style>
 </head>
 <body>
@@ -146,7 +149,7 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
       <div id="joinPanel" class="panel" style="display: none;">
         <label>Enter Game Code</label>
         <input type="text" id="gameCodeInput" placeholder="UNO-ABCD" maxlength="8">
-        <button class="primary" onclick="joinGame()" style="margin-top: 12px;">Join Game</button>
+        <button class="primary" id="joinGameBtn" onclick="joinGame()">Join Game</button>
       </div>
     </div>
   </div>
@@ -212,6 +215,7 @@ let hostConn = null;
 let clientConns = new Map();
 let isHost = false;
 let game = null;
+let isJoining = false;
 
 const COLORS = ['red', 'blue', 'green', 'yellow'];
 const SYM = { skip: '⏭️', reverse: '↩️', draw2: '+2', wild: '🌈', wilddraw4: '+4' };
@@ -235,7 +239,7 @@ class Uno {
       this.deck.push({ color: 'black', value: 'wilddraw4' });
     }
 
-    this.deck.sort(() => Math.random() - 0.5);
+    for (let p of this.deck) this.deck.sort(() => Math.random() - 0.5);
     for (let p of this.players) {
       for (let i = 0; i < 7; i++) p.hand.push(this.deck.pop());
     }
@@ -260,7 +264,7 @@ class Uno {
   draw(pi) {
     if (this.deck.length === 0) {
       while (this.discard.length > 1) this.deck.push(this.discard.shift());
-      this.deck.sort(() => Math.random() - 0.5);
+      for (let p of this.deck) this.deck.sort(() => Math.random() - 0.5);
     }
     if (this.deck.length > 0) this.players[pi].hand.push(this.deck.pop());
     this.current = (this.current + 1) % this.players.length;
@@ -288,6 +292,7 @@ function initHost() {
   gameCode = 'UNO-' + Math.random().toString(36).substr(2, 4).toUpperCase();
   const peerId = gameCode.replace(/-/g, '').toLowerCase();
 
+  if (peer) try { peer.destroy(); } catch(e) {}
   peer = new Peer(peerId, { config: STUN });
 
   const url = window.location.href.split('?')[0];
@@ -315,13 +320,20 @@ function initHost() {
 }
 
 function joinGame() {
+  if (isJoining) return;
+
   const code = document.getElementById('gameCodeInput').value.toUpperCase();
   if (!code || code.length < 3) { alert('Enter code'); return; }
+
+  isJoining = true;
+  document.getElementById('joinGameBtn').disabled = true;
 
   gameCode = code;
   const peerId = code.replace(/-/g, '').toLowerCase();
 
+  if (peer) try { peer.destroy(); } catch(e) {}
   peer = new Peer({ config: STUN });
+
   peer.on('open', () => {
     console.log('Connecting to', peerId);
     hostConn = peer.connect(peerId);
@@ -330,37 +342,45 @@ function joinGame() {
       console.log('Connected!');
       hostConn.send({ type: 'join', name: myName });
 
+      document.getElementById('setupScreen').classList.add('hidden');
+      document.getElementById('gameScreen').classList.remove('hidden');
+      document.getElementById('boardInner').innerHTML = '<div class="waiting-message">⏳ Waiting for host to start...</div>';
+
       hostConn.on('data', msg => {
-        if (msg.type === 'gameStart' || msg.type === 'update') {
+        console.log('Received:', msg.type);
+        if (msg.type === 'gameStart') {
+          game = new Uno(msg.state.players.length);
           loadState(msg.state);
-          if (msg.type === 'gameStart') startGameScreen();
+          render();
+        } else if (msg.type === 'update') {
+          loadState(msg.state);
           render();
         }
       });
     });
 
-    hostConn.on('error', e => console.error('Error:', e));
+    hostConn.on('error', e => {
+      console.error('Error:', e);
+      isJoining = false;
+      document.getElementById('joinGameBtn').disabled = false;
+      alert('Connection failed');
+    });
   });
 }
 
 function startGame() {
-  game = new Uno(maxPlayers);
-  let i = 0;
-  for (let [_, conn] of clientConns) {
-    if (i < maxPlayers - 1) game.players[i + 1].name = 'P' + (i + 2);
-    i++;
+  if (!game) {
+    game = new Uno(maxPlayers);
   }
+  console.log('Starting game with', clientConns.size, 'clients');
   broadcast({ type: 'gameStart', state: getState() });
-  startGameScreen();
-}
-
-function startGameScreen() {
   document.getElementById('setupScreen').classList.add('hidden');
   document.getElementById('gameScreen').classList.remove('hidden');
   render();
 }
 
 function getState() {
+  if (!game) return null;
   return { players: game.players, deck: game.deck, discard: game.discard, current: game.current };
 }
 
@@ -448,9 +468,10 @@ function render() {
 
 function updatePlayersList() {
   if (isHost && !game) {
-    document.getElementById('playersList').innerHTML = Array(clientConns.size).fill(0).map((_, i) =>
+    const html = Array(clientConns.size).fill(0).map((_, i) =>
       `<div class="waiting-player">Player ${i + 2} joined</div>`
     ).join('');
+    document.getElementById('playersList').innerHTML = html || 'Waiting for players...';
     document.getElementById('startBtn').disabled = clientConns.size < maxPlayers - 1;
   }
 }

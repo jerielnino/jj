@@ -23,22 +23,20 @@ html, body { margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, system-ui; 
 .setup-screen { width: 100%; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; overflow-y: auto; }
 .setup-screen.hidden { display: none; }
 
-.screen { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; animation: fadeIn 0.25s; margin: auto; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-h1 { font-size: 1.6rem; text-align: center; margin: 0; color: var(--gold); text-shadow: 0 0 14px rgba(232,185,58,.35); }
+.screen { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; margin: auto; }
+h1 { font-size: 1.6rem; text-align: center; margin: 0; color: var(--gold); }
 .subtitle { text-align: center; opacity: 0.85; font-size: 0.85rem; margin: 0 0 14px 0; }
 
-.panel { width: 100%; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); border-radius: 18px; padding: 16px; backdrop-filter: blur(6px); }
+.panel { width: 100%; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); border-radius: 18px; padding: 16px; }
 label { display: block; font-size: 0.85rem; margin-bottom: 6px; opacity: 0.9; }
-input[type=text] { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.2); font-size: 1rem; background: #1e1e1e; color: var(--cream); outline: none; }
-input[type=text]:focus { border-color: var(--gold); }
+input[type=text] { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.2); font-size: 1rem; background: #1e1e1e; color: var(--cream); }
+input[type=text]:focus { border-color: var(--gold); outline: none; }
 
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-.chip { padding: 8px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.06); color: var(--cream); font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
+.chip { padding: 8px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.06); color: var(--cream); font-size: 0.82rem; cursor: pointer; }
 .chip.active { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; border-color: var(--gold); font-weight: 600; }
 
-button.primary { width: 100%; padding: 14px; font-size: 1.02rem; font-weight: 600; border: none; border-radius: 14px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
+button.primary { width: 100%; padding: 14px; font-size: 1.02rem; font-weight: 600; border: none; border-radius: 14px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; cursor: pointer; }
 button.primary:active { transform: scale(.98); }
 button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
@@ -58,7 +56,6 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 .domino-played::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #999, transparent); }
 
 .domino-half-top, .domino-half-bottom { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
-.dot { width: 5px; height: 5px; background: #333; border-radius: 50%; position: absolute; }
 
 .players-section { background: rgba(0,0,0,.3); border-radius: 10px; padding: 12px; display: flex; gap: 10px; overflow-x: auto; flex-wrap: wrap; justify-content: center; }
 .player-status { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; min-width: 100px; text-align: center; }
@@ -71,12 +68,13 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 .hand-domino:hover { transform: translateY(-12px); border-color: var(--gold); }
 
 .hand-half-top, .hand-half-bottom { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
-.hand-dot { width: 3px; height: 3px; background: #333; border-radius: 50%; position: absolute; }
 
 .action-buttons { background: rgba(0,0,0,.3); border-radius: 10px; padding: 12px; display: flex; gap: 10px; justify-content: center; }
 .draw-btn { padding: 10px 20px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
 .draw-btn:hover { transform: scale(1.05); }
 .draw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.waiting-message { text-align: center; color: var(--gold); font-size: 1.2rem; padding: 40px; }
 </style>
 </head>
 <body>
@@ -122,7 +120,7 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
       <div id="joinPanel" class="panel" style="display: none;">
         <label>Enter Game Code</label>
         <input type="text" id="gameCodeInput" placeholder="DOM-ABCD" maxlength="8">
-        <button class="primary" onclick="joinGame()" style="margin-top: 12px;">Join Game</button>
+        <button class="primary" id="joinGameBtn" onclick="joinGame()">Join Game</button>
       </div>
     </div>
   </div>
@@ -140,7 +138,7 @@ button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
 </div>
 
 <script>
-const STUN_SERVERS = { iceServers: [
+const STUN = { iceServers: [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:stun2.l.google.com:19302' }
@@ -155,6 +153,7 @@ let hostConn = null;
 let clientConns = new Map();
 let isHost = false;
 let game = null;
+let isJoining = false; // Prevent multiple join attempts
 
 class Dominoes {
   constructor(n) {
@@ -168,7 +167,7 @@ class Dominoes {
       for (let j = i; j <= 6; j++)
         all.push([i, j]);
 
-    for (let p of all.length) all.sort(() => Math.random() - 0.5);
+    for (let p of all) all.sort(() => Math.random() - 0.5);
     for (let p of this.players) {
       for (let i = 0; i < 7; i++) p.hand.push(all.pop());
     }
@@ -217,7 +216,8 @@ function initHost() {
   gameCode = 'DOM-' + Math.random().toString(36).substr(2, 4).toUpperCase();
   const peerId = gameCode.replace(/-/g, '').toLowerCase();
 
-  peer = new Peer(peerId, { config: STUN_SERVERS });
+  if (peer) try { peer.destroy(); } catch(e) {}
+  peer = new Peer(peerId, { config: STUN });
 
   const url = window.location.href.split('?')[0];
   document.getElementById('qrCode').innerHTML = '';
@@ -231,7 +231,6 @@ function initHost() {
 
     conn.on('data', msg => {
       if (msg.type === 'join') {
-        console.log('Join message from', conn.peer);
         updatePlayersList();
       } else if (msg.type === 'play' && game) {
         game.play(msg.domino, msg.player);
@@ -245,13 +244,20 @@ function initHost() {
 }
 
 function joinGame() {
+  if (isJoining) return;
+
   const code = document.getElementById('gameCodeInput').value.toUpperCase();
   if (!code || code.length < 3) { alert('Enter code'); return; }
+
+  isJoining = true;
+  document.getElementById('joinGameBtn').disabled = true;
 
   gameCode = code;
   const peerId = code.replace(/-/g, '').toLowerCase();
 
-  peer = new Peer({ config: STUN_SERVERS });
+  if (peer) try { peer.destroy(); } catch(e) {}
+  peer = new Peer({ config: STUN });
+
   peer.on('open', () => {
     console.log('Connecting to', peerId);
     hostConn = peer.connect(peerId);
@@ -260,42 +266,54 @@ function joinGame() {
       console.log('Connected!');
       hostConn.send({ type: 'join', name: myName });
 
+      // Show game screen with waiting message
+      document.getElementById('setupScreen').classList.add('hidden');
+      document.getElementById('gameScreen').classList.remove('hidden');
+      document.getElementById('boardInner').innerHTML = '<div class="waiting-message">⏳ Waiting for host to start...</div>';
+
       hostConn.on('data', msg => {
-        if (msg.type === 'gameStart' || msg.type === 'update') {
+        console.log('Received:', msg.type);
+        if (msg.type === 'gameStart') {
+          game = new Dominoes(msg.state.players.length);
           loadState(msg.state);
-          if (msg.type === 'gameStart') startGameScreen();
+          render();
+        } else if (msg.type === 'update') {
+          loadState(msg.state);
           render();
         }
       });
     });
 
-    hostConn.on('error', e => console.error('Connection error:', e));
+    hostConn.on('error', e => {
+      console.error('Error:', e);
+      isJoining = false;
+      document.getElementById('joinGameBtn').disabled = false;
+      alert('Connection failed');
+    });
   });
 }
 
 function startGame() {
-  game = new Dominoes(maxPlayers);
-  let i = 0;
-  for (let [_, conn] of clientConns) {
-    if (i < maxPlayers - 1) game.players[i + 1].name = 'P' + (i + 2);
-    i++;
+  if (!game) {
+    game = new Dominoes(maxPlayers);
   }
+  console.log('Starting game with', clientConns.size, 'clients');
   broadcast({ type: 'gameStart', state: gameState() });
-  startGameScreen();
-}
-
-function startGameScreen() {
   document.getElementById('setupScreen').classList.add('hidden');
   document.getElementById('gameScreen').classList.remove('hidden');
   render();
 }
 
 function gameState() {
+  if (!game) return null;
   return { players: game.players, played: game.played, stock: game.stock, current: game.current };
 }
 
 function loadState(s) {
-  if (!game) return;
+  if (!game) {
+    // Initialize a new game with the correct number of players
+    game = new Dominoes(s.players.length);
+  }
   game.players = s.players;
   game.played = s.played;
   game.stock = s.stock;
@@ -342,8 +360,8 @@ function render() {
 
 function renderBoard() {
   const html = game.played.map(d => `<div class="domino-played">
-    <div class="domino-half-top"><div class="dots-${d[0]}">${'•'.repeat(d[0])}</div></div>
-    <div class="domino-half-bottom"><div class="dots-${d[1]}">${'•'.repeat(d[1])}</div></div>
+    <div class="domino-half-top">${'●'.repeat(d[0])}</div>
+    <div class="domino-half-bottom">${'●'.repeat(d[1])}</div>
   </div>`).join('');
   document.getElementById('boardInner').innerHTML = html;
 }
@@ -357,16 +375,17 @@ function renderHand() {
   const html = game.players[0].hand.map(d => {
     const can = game.canPlay(d);
     return `<div class="hand-domino" style="opacity:${can?1:0.6}" onclick="${can?`playDomino([${d[0]},${d[1]}])`:''}"
-      ><div class="hand-half-top">${'•'.repeat(d[0])}</div><div class="hand-half-bottom">${'•'.repeat(d[1])}</div></div>`;
+      ><div class="hand-half-top">${'●'.repeat(d[0])}</div><div class="hand-half-bottom">${'●'.repeat(d[1])}</div></div>`;
   }).join('');
   document.getElementById('handArea').innerHTML = html;
 }
 
 function updatePlayersList() {
   if (isHost && !game) {
-    document.getElementById('playersList').innerHTML = Array(clientConns.size).fill(0).map((_, i) =>
+    const html = Array(clientConns.size).fill(0).map((_, i) =>
       `<div class="waiting-player">Player ${i + 2} joined</div>`
     ).join('');
+    document.getElementById('playersList').innerHTML = html || 'Waiting for players...';
     document.getElementById('startBtn').disabled = clientConns.size < maxPlayers - 1;
   }
 }
