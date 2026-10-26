@@ -144,6 +144,10 @@ body {
   background: linear-gradient(135deg, rgba(231, 76, 60, 0.1) 0%, rgba(242, 112, 156, 0.1) 100%);
 }
 
+.game-card.monopoly::before {
+  background: linear-gradient(135deg, rgba(46, 204, 113, 0.1) 0%, rgba(0, 210, 211, 0.1) 100%);
+}
+
 .game-card:hover::before {
   opacity: 1;
 }
@@ -207,6 +211,10 @@ body {
   border-color: rgba(231, 76, 60, 0.3);
 }
 
+.game-card.monopoly .info-badge {
+  border-color: rgba(46, 204, 113, 0.3);
+}
+
 .play-button {
   position: relative;
   z-index: 1;
@@ -239,6 +247,11 @@ body {
 
 .game-card.uno .play-button {
   background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  color: #fff;
+}
+
+.game-card.monopoly .play-button {
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
   color: #fff;
 }
 
@@ -356,6 +369,35 @@ body {
         </div>
       </div>
       <button class="play-button" onclick="event.preventDefault(); window.location.href='uno.html';">Play Uno</button>
+    </a>
+
+    <!-- Monopoly Game Card -->
+    <a href="monopoly.html" class="game-card monopoly" style="text-decoration: none;">
+      <div class="game-header">
+        <div class="game-icon" style="font-size: 3.5rem; display: flex; gap: 6px; justify-content: center; align-items: center;">
+          <svg width="42" height="56" viewBox="0 0 42 56" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3))">
+            <rect x="2" y="2" width="38" height="52" rx="4" fill="#fffdf9" stroke="#1e293b" stroke-width="2"/>
+            <rect x="2" y="2" width="38" height="14" rx="3" fill="#1d4ed8"/>
+            <line x1="2" y1="16" x2="40" y2="16" stroke="#1e293b" stroke-width="1.5"/>
+            <text x="21" y="34" font-size="16" text-anchor="middle">🎩</text>
+            <text x="21" y="47" font-size="8" font-weight="bold" fill="#15803d" text-anchor="middle" font-family="Arial">$4M</text>
+          </svg>
+          <svg width="42" height="56" viewBox="0 0 42 56" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3))">
+            <rect x="2" y="2" width="38" height="52" rx="4" fill="#fffdf9" stroke="#1e293b" stroke-width="2"/>
+            <rect x="2" y="2" width="38" height="14" rx="3" fill="#dc2626"/>
+            <line x1="2" y1="16" x2="40" y2="16" stroke="#1e293b" stroke-width="1.5"/>
+            <text x="21" y="34" font-size="16" text-anchor="middle">🏨</text>
+            <text x="21" y="47" font-size="8" font-weight="bold" fill="#b91c1c" text-anchor="middle" font-family="Arial">$2.4M</text>
+          </svg>
+        </div>
+        <h2 class="game-title">Monopoly</h2>
+        <p class="game-description">World Edition property trading board game. Buy global cities, build hotels, and bankrupt your rivals!</p>
+        <div class="game-info">
+          <div class="info-badge">👥 2-6 Players</div>
+          <div class="info-badge">⏱️ 20+ min</div>
+        </div>
+      </div>
+      <button class="play-button" onclick="event.preventDefault(); window.location.href='monopoly.html';">Play Monopoly</button>
     </a>
   </div>
 </div>
