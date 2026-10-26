@@ -1,0 +1,711 @@
+<!-- ... existing code ... -->
+.active-color-pill[data-color="red"] { background: var(--uno-red); color: #fff; }
+.active-color-pill[data-color="yellow"] { background: var(--uno-yellow); color: #1c1917; }
+.active-color-pill[data-color="green"] { background: var(--uno-green); color: #fff; }
+.active-color-pill[data-color="blue"] { background: var(--uno-blue); color: #fff; }
+
+.stack-penalty-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 900;
+  font-size: 0.92rem;
+  padding: 4px 14px;
+  border-radius: 99px;
+  background: linear-gradient(135deg, #ef4444 0%, #f59e0b 100%);
+  color: #fff;
+  border: 2px solid #fde047;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.85);
+  animation: urgentPulse 0.55s infinite alternate;
+  letter-spacing: 0.5px;
+}
+
+.rule-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 214, 111, 0.35);
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  color: #ffe7a5;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+.rule-toggle-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin: 0;
+  accent-color: #eab308;
+  cursor: pointer;
+}
+
+/* Center Piles (Draw Pile & Discard Pile) */
+.center-piles {
+<!-- ... existing code ... -->
+        <label id="setupTimeLimitWrap" class="hidden" style="font-size: 0.9rem; color: #c4e0d0; display:flex; align-items:center; gap:6px;">
+          Time Limit:
+          <input id="setupTimeLimitInput" type="number" min="1" max="180" value="5" style="width: 74px; padding: 8px 10px; text-align:center; font-size: 0.95rem;">
+          <span id="setupTimeUnitLabel" style="font-weight:700; color:#ffe7a5;">mins</span>
+        </label>
+      </div>
+      <div class="row" style="justify-content: flex-start; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <label class="rule-toggle-label" title="Allow stacking +2 on +2 and +4 on +4">
+          <input type="checkbox" id="setupStackingToggle" checked>
+          <span>🔥 Stack +2 on +2 &amp; +4 on +4</span>
+        </label>
+        <label class="rule-toggle-label" title="Wild, +4, +2, Reverse, and Skip cannot be placed as the last card">
+          <input type="checkbox" id="setupNoActionFinishToggle" checked>
+          <span>🚫 No Action / Wild Last Card</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="row" style="margin-bottom: 20px;">
+<!-- ... existing code ... -->
+      <div id="lobbyTimeLimitBox" class="hidden">
+        <label id="lobbyTimeLimitLabel">Time Limit (Minutes)</label>
+        <input id="lobbyTimeLimitInput" type="number" min="1" max="180" value="5" style="width:100%; padding:10px; text-align:center;">
+      </div>
+      <div style="grid-column: 1 / -1; display:flex; gap:12px; flex-wrap:wrap; align-items:center; padding-top:6px; border-top:1px solid rgba(255,255,255,0.1);">
+        <label class="rule-toggle-label" style="margin:0; color:#ffe7a5;">
+          <input type="checkbox" id="lobbyStackingToggle" checked>
+          <span>🔥 Stack +2/+4</span>
+        </label>
+        <label class="rule-toggle-label" style="margin:0; color:#ffe7a5;">
+          <input type="checkbox" id="lobbyNoActionFinishToggle" checked>
+          <span>🚫 No Action/Wild Finish</span>
+        </label>
+      </div>
+      <div style="grid-column: 1 / -1; display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1);">
+        <div style="display:flex; gap:8px; flex:1; min-width:200px;">
+          <input id="addPlayerNameInput" type="text" placeholder="Bot / Player name (optional)" maxlength="18" style="flex:1; padding:8px 12px; font-size:0.95rem;">
+<!-- ... existing code ... -->
+      <!-- Direction & Active Color Status -->
+      <div class="arena-status-bar">
+        <div class="direction-pill" id="directionPill">
+          <span class="direction-icon" id="directionIcon">↻</span>
+          <span id="directionText">Clockwise</span>
+        </div>
+        <div class="active-color-pill" id="activeColorPill" data-color="red">
+          <span>Active:</span>
+          <span id="activeColorText">RED</span>
+        </div>
+        <div class="stack-penalty-pill hidden" id="stackPenaltyPill">
+          <span>🔥 STACK:</span>
+          <span id="stackPenaltyText">+2</span>
+        </div>
+      </div>
+
+      <!-- Draw Pile & Discard Pile -->
+      <div class="center-piles">
+        <div class="pile-slot">
+          <div class="uno-card card-back" id="drawPileBtn" title="Click or tap to draw a card">
+            <div class="uno-card-oval"></div>
+            <span class="uno-back-logo">UNO</span>
+          </div>
+          <div class="pile-label" id="drawPileLabel">Draw (<span id="drawPileCount">0</span>)</div>
+        </div>
+
+        <div class="pile-slot">
+<!-- ... existing code ... -->
+let peer=null, host=false, solo=false, roomCode='', myId='', hostId='';
+let connections=new Map(), transportPlayers=new Map(), players=[], state=null;
+let revision=0, participantLimit=4, winningScore=200, timerMode='untimed', timeLimitValue=5, gameClockInterval=null;
+let stackingRule=true, noActionFinishRule=true;
+let botActionRevision=-1, lastWinnerTracker=null;
+let roundRevealPhase = 'points', roundRevealTimer = null, lastSeenEventId = 0, activeDrawPlayerId = null;
+let pendingWildCardId = null;
+<!-- ... existing code ... -->
+  if ($('setupTimerMode') && fromSetup) {
+    timerMode = $('setupTimerMode').value || 'untimed';
+    timeLimitValue = Math.max(1, Number($('setupTimeLimitInput')?.value) || (timerMode === 'turn' ? 25 : 5));
+    if ($('setupStackingToggle')) stackingRule = $('setupStackingToggle').checked;
+    if ($('setupNoActionFinishToggle')) noActionFinishRule = $('setupNoActionFinishToggle').checked;
+  } else if (!fromSetup && $('lobbyTimerMode')) {
+    timerMode = $('lobbyTimerMode').value || 'untimed';
+    timeLimitValue = Math.max(1, Number($('lobbyTimeLimitInput')?.value) || (timerMode === 'turn' ? 25 : 5));
+    if ($('lobbyStackingToggle') && host) stackingRule = $('lobbyStackingToggle').checked;
+    if ($('lobbyNoActionFinishToggle') && host) noActionFinishRule = $('lobbyNoActionFinishToggle').checked;
+  }
+
+  if ($('setupTimerMode')) $('setupTimerMode').value = timerMode;
+  if ($('lobbyTimerMode')) $('lobbyTimerMode').value = timerMode;
+  if ($('setupTimeLimitInput') && document.activeElement !== $('setupTimeLimitInput')) $('setupTimeLimitInput').value = String(timeLimitValue);
+  if ($('lobbyTimeLimitInput') && document.activeElement !== $('lobbyTimeLimitInput')) $('lobbyTimeLimitInput').value = String(timeLimitValue);
+  if ($('setupStackingToggle')) $('setupStackingToggle').checked = !!stackingRule;
+  if ($('lobbyStackingToggle')) $('lobbyStackingToggle').checked = !!stackingRule;
+  if ($('setupNoActionFinishToggle')) $('setupNoActionFinishToggle').checked = !!noActionFinishRule;
+  if ($('lobbyNoActionFinishToggle')) $('lobbyNoActionFinishToggle').checked = !!noActionFinishRule;
+
+  if ($('setupTimeLimitWrap')) $('setupTimeLimitWrap').classList.toggle('hidden', timerMode === 'untimed');
+  if ($('lobbyTimeLimitBox')) $('lobbyTimeLimitBox').classList.toggle('hidden', timerMode === 'untimed');
+
+  if ($('setupTimeUnitLabel')) $('setupTimeUnitLabel').textContent = (timerMode === 'turn') ? 'secs / turn' : 'mins';
+  if ($('lobbyTimeLimitLabel')) $('lobbyTimeLimitLabel').textContent = (timerMode === 'turn') ? 'Turn Limit (Seconds)' : 'Match Limit (Minutes)';
+
+  if ($('lobbyRulesBadge')) {
+    const modeDesc = (timerMode === 'match')
+      ? `⏱️ Timed Match (${timeLimitValue} min)`
+      : (timerMode === 'turn')
+        ? `⚡ Timed Turns (${timeLimitValue}s / turn)`
+        : `∞ Untimed Match`;
+    const stackDesc = stackingRule ? '🔥 Stack +2/+4: ON' : 'Stack: OFF';
+    const finishDesc = noActionFinishRule ? '🚫 No Action Finish: ON' : 'Action Finish: ON';
+    $('lobbyRulesBadge').textContent = `🎯 Target: ${winningScore} pts · ${modeDesc} · ${stackDesc} · ${finishDesc}`;
+  }
+}
+
+function formatTimerClock(secs, mode) {
+<!-- ... existing code ... -->
+      } else if (state.timerMode === 'turn') {
+        const currId = state.current;
+        if (state.drawnPlayableCardId) {
+          handleAction(currId, { action: 'PASS_DRAWN', revision });
+        } else {
+          const hand = state.hands[currId] || [];
+          const playable = hand.find(c => isCardPlayable(c, state, hand.length));
+          if (playable) {
+            const chosenColor = (playable.color === 'wild') ? pickSmartColorForHand(hand) : null;
+            handleAction(currId, { action: 'PLAY', cardId: playable.id, chosenColor, revision });
+          } else {
+            handleAction(currId, { action: 'DRAW', revision });
+          }
+        }
+      }
+    }
+  }, 1000);
+}
+
+// === CORE UI ===
+<!-- ... existing code ... -->
+function lobbyBroadcast() {
+  syncTimerControlsUI(false);
+  sendHost({
+    type: 'LOBBY',
+    roomCode,
+    hostId,
+    players: players.map(({id,name,avatar,connected,isBot})=>({id,name,avatar,connected,isBot})),
+    revision,
+    participantLimit,
+    winningScore,
+    timerMode,
+    timeLimitValue,
+    stackingRule,
+    noActionFinishRule
+  });
+  updatePlayers();
+}
+
+function attachHostConnection(conn) {
+<!-- ... existing code ... -->
+      send(conn, {
+        type: 'WELCOME',
+        roomCode,
+        hostId,
+        players: players.map(({id,name,avatar,connected,isBot})=>({id,name,avatar,connected,isBot})),
+        state: state ? clientState(stableId) : null,
+        revision,
+        participantLimit,
+        winningScore,
+        timerMode,
+        timeLimitValue,
+        stackingRule,
+        noActionFinishRule
+      });
+      lobbyBroadcast();
+      if(state) broadcastState();
+<!-- ... existing code ... -->
+    winningScore = data.winningScore||winningScore;
+    if(data.timerMode) timerMode = data.timerMode;
+    if(data.timeLimitValue) timeLimitValue = data.timeLimitValue;
+    if(data.stackingRule !== undefined) stackingRule = !!data.stackingRule;
+    if(data.noActionFinishRule !== undefined) noActionFinishRule = !!data.noActionFinishRule;
+    syncTimerControlsUI(false);
+    $('roomCodeLabel').textContent = roomCode;
+    makeQr();
+    updatePlayers();
+<!-- ... existing code ... -->
+  } else if(data.type === 'SETTINGS') {
+    participantLimit = data.participantLimit||participantLimit;
+    winningScore = data.winningScore||winningScore;
+    if(data.timerMode) timerMode = data.timerMode;
+    if(data.timeLimitValue) timeLimitValue = data.timeLimitValue;
+    if(data.stackingRule !== undefined) stackingRule = !!data.stackingRule;
+    if(data.noActionFinishRule !== undefined) noActionFinishRule = !!data.noActionFinishRule;
+    syncTimerControlsUI(false);
+  } else if(data.type === 'ERROR') {
+<!-- ... existing code ... -->
+function saveHostSession() {
+  if(host && !solo) try {
+    localStorage.setItem('unoHost:'+roomCode, JSON.stringify({
+      roomCode,
+      players: players.map(({id,name,avatar,connected,isBot})=>({id,name,avatar,connected,isBot})),
+      state,
+      revision,
+      participantLimit,
+      winningScore,
+      timerMode,
+      timeLimitValue,
+      stackingRule,
+      noActionFinishRule,
+      hostId,
+      myId
+    }));
+  } catch(e){}
+}
+
+function restoreHostSession(c) {
+<!-- ... existing code ... -->
+  winningScore = saved.winningScore || 200;
+  timerMode = saved.timerMode || 'untimed';
+  timeLimitValue = saved.timeLimitValue || 5;
+  stackingRule = saved.stackingRule !== undefined ? !!saved.stackingRule : true;
+  noActionFinishRule = saved.noActionFinishRule !== undefined ? !!saved.noActionFinishRule : true;
+  connections.clear(); transportPlayers.clear();
+
+  msg('Resuming room ' + roomCode + '...');
+<!-- ... existing code ... -->
+function cardLabel(val) {
+  if (val === 'skip') return '⊘';
+  if (val === 'reverse') return '⇄';
+  if (val === 'draw2') return '+2';
+  if (val === 'wild') return 'W';
+  if (val === 'wild4') return '+4';
+  return String(val);
+}
+
+function isActionOrWildCard(card) {
+  if (!card) return false;
+  return card.color === 'wild' || ['skip', 'reverse', 'draw2', 'wild', 'wild4'].includes(card.value);
+}
+
+function isCardPlayable(card, st=state, handCount=null) {
+  if (!card || !st || !st.discard || !st.discard.length) return true;
+
+  const hLen = (handCount !== null)
+    ? handCount
+    : (host ? (st.hands?.[st.current]?.length ?? 2) : (st.hand?.length ?? 2));
+
+  // Rule: Wild, +4, +2, Reverse, or Skip cannot be placed as the last card!
+  const enforceNoActionFinish = (st.noActionFinishRule !== undefined) ? st.noActionFinishRule : noActionFinishRule;
+  if (enforceNoActionFinish && hLen === 1 && isActionOrWildCard(card)) {
+    return false;
+  }
+
+  // Rule: Active +2 or +4 Stacking Penalty
+  if ((st.pendingDrawCount || 0) > 0) {
+    const canStack = (st.stackingRule !== undefined) ? st.stackingRule : stackingRule;
+    if (!canStack) return false;
+    if (st.drawnPlayableCardId && card.id !== st.drawnPlayableCardId) return false;
+    if (st.pendingDrawType === 'draw2') return card.value === 'draw2';
+    if (st.pendingDrawType === 'wild4') return card.value === 'wild4';
+    return false;
+  }
+
+  if (st.drawnPlayableCardId && card.id !== st.drawnPlayableCardId) return false;
+  if (card.color === 'wild') return true;
+  const top = st.discard[st.discard.length - 1];
+  return card.color === st.currentColor || card.value === top.value;
+}
+
+function pickSmartColorForHand(hand) {
+<!-- ... existing code ... -->
+    timedOut: false,
+    timerMode,
+    timeLimitSecs: totalLimitSecs,
+    timeRemaining: totalLimitSecs,
+    stackingRule,
+    noActionFinishRule,
+    pendingDrawCount: 0,
+    pendingDrawType: null,
+    scores: initialScores,
+    prevScores: {...initialScores},
+    roundGained: Object.fromEntries(players.map(p=>[p.id, 0])),
+    unoCalled: {},
+    drawnPlayableCardId: null,
+    lastEventText: null,
+    lastEventPlayer: null,
+    lastEventId: 0,
+    winningScore,
+    round: nextRound
+  };
+
+  if (roundRevealTimer) { clearTimeout(roundRevealTimer); roundRevealTimer = null; }
+<!-- ... existing code ... -->
+function clientState(id) {
+  if(!state) return null;
+  return {
+    started: state.started,
+    players: state.players,
+    hand: id ? state.hands[id] : null,
+    revealedHands: state.winner ? state.hands : null,
+    handCounts: Object.fromEntries(state.players.map(pid => [pid, (state.hands[pid]||[]).length])),
+    stockCount: state.stock.length,
+    discard: state.discard.slice(-4),
+    currentColor: state.currentColor,
+    direction: state.direction,
+    current: state.current,
+    winner: state.winner,
+    matchWinner: state.matchWinner,
+    forfeitedBy: state.forfeitedBy || null,
+    timedOut: !!state.timedOut,
+    timerMode: state.timerMode || 'untimed',
+    timeLimitSecs: state.timeLimitSecs || 0,
+    timeRemaining: state.timeRemaining ?? 0,
+    stackingRule: state.stackingRule !== undefined ? state.stackingRule : stackingRule,
+    noActionFinishRule: state.noActionFinishRule !== undefined ? state.noActionFinishRule : noActionFinishRule,
+    pendingDrawCount: state.pendingDrawCount || 0,
+    pendingDrawType: state.pendingDrawType || null,
+    scores: state.scores || {},
+    prevScores: state.prevScores || {},
+    roundGained: state.roundGained || {},
+    unoCalled: state.unoCalled || {},
+    drawnPlayableCardId: state.drawnPlayableCardId || null,
+    lastEventText: state.lastEventText || null,
+    lastEventPlayer: state.lastEventPlayer || null,
+    lastEventId: state.lastEventId || 0,
+    winningScore: state.winningScore,
+    round: state.round
+  };
+}
+
+function broadcastState(actionType, actorId=null) {
+<!-- ... existing code ... -->
+  // Draw a card from Draw Pile (or accept stacked +2 / +4 penalty)
+  if(d.action === 'DRAW') {
+    if (state.drawnPlayableCardId) return;
+
+    // If there is an active stacked draw penalty (+2, +4, +6, +8...), player draws the penalty and ends turn
+    if ((state.pendingDrawCount || 0) > 0) {
+      const penalty = state.pendingDrawCount;
+      for (let i = 0; i < penalty; i++) {
+        const c = drawOneFromDeck();
+        if (c) hand.push(c);
+      }
+      state.pendingDrawCount = 0;
+      state.pendingDrawType = null;
+      state.unoCalled[id] = false;
+      const p = playerById(id);
+      state.lastEventPlayer = id;
+      state.lastEventText = `💥 ${p?.avatar||'😎'} ${p?.name||'Player'} drew +${penalty} stacked penalty cards!`;
+      state.lastEventId = (state.lastEventId || 0) + 1;
+      advanceTurn(1);
+      broadcastState('DRAW', id);
+      return;
+    }
+
+    const drawn = drawOneFromDeck();
+    if (!drawn) {
+      advanceTurn(1);
+      broadcastState('PASS', id);
+      return;
+    }
+    hand.push(drawn);
+    state.unoCalled[id] = false;
+    const p = playerById(id);
+    state.lastEventPlayer = id;
+    state.lastEventText = `${p?.avatar||'😎'} ${p?.name||'Player'} drew a card`;
+    state.lastEventId = (state.lastEventId || 0) + 1;
+
+    // Standard UNO: if drawn card is playable, allow playing it right away or keeping it
+    if (isCardPlayable(drawn, state, hand.length)) {
+      state.drawnPlayableCardId = drawn.id;
+      botActionRevision = -1;
+      broadcastState('DRAW', id);
+    } else {
+      advanceTurn(1);
+      broadcastState('DRAW', id);
+    }
+    return;
+  }
+
+  // Play a card
+  if(d.action === 'PLAY') {
+    const idx = hand.findIndex(c => c.id === d.cardId);
+    if (idx < 0) return;
+    const card = hand[idx];
+    if (!isCardPlayable(card, state, hand.length)) return;
+
+    // Remove from hand and place on discard pile
+    hand.splice(idx, 1);
+    state.drawnPlayableCardId = null;
+
+    if (hand.length !== 1) {
+      state.unoCalled[id] = false;
+    }
+
+    let nextColor = card.color;
+    if (card.color === 'wild') {
+      nextColor = UNO_COLORS.includes(d.chosenColor) ? d.chosenColor : pickSmartColorForHand(hand);
+    }
+    state.currentColor = nextColor;
+    state.discard.push({ ...card, chosenColor: nextColor });
+
+    // Check if player emptied their hand
+    if (hand.length === 0) {
+      state.pendingDrawCount = 0;
+      state.pendingDrawType = null;
+      finishRound(id);
+      broadcastState('PLAY', id);
+      return;
+    }
+
+    const p = playerById(id);
+    // Apply Action Card effects & Stacking
+    if (card.value === 'reverse') {
+      if (state.players.length === 2) {
+        // Standard 2-player UNO rule: Reverse acts like Skip!
+        state.lastEventPlayer = id;
+        state.lastEventText = `⇄ ${p?.name||'Player'} played Reverse (Turn Again!)`;
+        state.lastEventId = (state.lastEventId || 0) + 1;
+        advanceTurn(2);
+      } else {
+        state.direction *= -1;
+        state.lastEventPlayer = id;
+        state.lastEventText = `⇄ ${p?.name||'Player'} reversed direction!`;
+        state.lastEventId = (state.lastEventId || 0) + 1;
+        advanceTurn(1);
+      }
+    } else if (card.value === 'skip') {
+      const skippedId = getNextPlayerId(id, 1);
+      const skippedP = playerById(skippedId);
+      state.lastEventPlayer = skippedId;
+      state.lastEventText = `⊘ ${skippedP?.name||'Player'} was skipped!`;
+      state.lastEventId = (state.lastEventId || 0) + 1;
+      advanceTurn(2);
+    } else if (card.value === 'draw2') {
+      if (state.stackingRule) {
+        state.pendingDrawCount = (state.pendingDrawCount || 0) + 2;
+        state.pendingDrawType = 'draw2';
+        const nextId = getNextPlayerId(id, 1);
+        const nextP = playerById(nextId);
+        state.lastEventPlayer = id;
+        state.lastEventText = `🔥 ${p?.name||'Player'} stacked +2! Penalty is now +${state.pendingDrawCount} for ${nextP?.name||'Next'}!`;
+        state.lastEventId = (state.lastEventId || 0) + 1;
+        advanceTurn(1);
+      } else {
+        const victimId = getNextPlayerId(id, 1);
+        const victimP = playerById(victimId);
+        for (let i = 0; i < 2; i++) {
+          const c = drawOneFromDeck();
+          if (c) state.hands[victimId].push(c);
+        }
+        state.unoCalled[victimId] = false;
+        state.lastEventPlayer = victimId;
+        state.lastEventText = `+2 ${victimP?.name||'Player'} drew 2 cards & skipped!`;
+        state.lastEventId = (state.lastEventId || 0) + 1;
+        advanceTurn(2);
+      }
+    } else if (card.value === 'wild4') {
+      if (state.stackingRule) {
+        state.pendingDrawCount = (state.pendingDrawCount || 0) + 4;
+        state.pendingDrawType = 'wild4';
+        const nextId = getNextPlayerId(id, 1);
+        const nextP = playerById(nextId);
+        state.lastEventPlayer = id;
+        state.lastEventText = `🔥 ${p?.name||'Player'} played +4 (${nextColor.toUpperCase()})! Stack is +${state.pendingDrawCount} for ${nextP?.name||'Next'}!`;
+        state.lastEventId = (state.lastEventId || 0) + 1;
+        advanceTurn(1);
+      } else {
+        const victimId = getNextPlayerId(id, 1);
+        const victimP = playerById(victimId);
+        for (let i = 0; i < 4; i++) {
+          const c = drawOneFromDeck();
+          if (c) state.hands[victimId].push(c);
+        }
+        state.unoCalled[victimId] = false;
+        state.lastEventPlayer = victimId;
+        state.lastEventText = `+4 ${victimP?.name||'Player'} drew 4 cards & skipped! (${nextColor.toUpperCase()})`;
+        state.lastEventId = (state.lastEventId || 0) + 1;
+        advanceTurn(2);
+      }
+    } else if (card.value === 'wild') {
+      state.lastEventPlayer = id;
+      state.lastEventText = `🎨 ${p?.name||'Player'} chose ${nextColor.toUpperCase()}!`;
+      state.lastEventId = (state.lastEventId || 0) + 1;
+      advanceTurn(1);
+    } else {
+      advanceTurn(1);
+    }
+
+    broadcastState('PLAY', id);
+    return;
+  }
+}
+
+function finishRound(wId) {
+<!-- ... existing code ... -->
+  if ($('directionText')) $('directionText').textContent = isCW ? 'Clockwise' : 'Counter-Clockwise';
+  if ($('activeColorPill')) $('activeColorPill').setAttribute('data-color', state.currentColor || 'red');
+  if ($('activeColorText')) $('activeColorText').textContent = (state.currentColor || 'red').toUpperCase();
+
+  const pendingDraw = state.pendingDrawCount || 0;
+  if ($('stackPenaltyPill')) {
+    $('stackPenaltyPill').classList.toggle('hidden', pendingDraw <= 0);
+    if (pendingDraw > 0 && $('stackPenaltyText')) {
+      $('stackPenaltyText').textContent = `+${pendingDraw} (${state.pendingDrawType === 'wild4' ? '+4 only' : '+2 only'})`;
+    }
+  }
+
+  // Draw Pile Count & Pulse
+  const stockLeft = state.stockCount ?? (state.stock?.length || 0);
+  if ($('drawPileLabel')) {
+    if (pendingDraw > 0 && myTurn) {
+      $('drawPileLabel').innerHTML = `<span style="color:#fde047;">Take +${pendingDraw} Penalty (<span id="drawPileCount">${stockLeft}</span>)</span>`;
+    } else {
+      $('drawPileLabel').innerHTML = `Draw (<span id="drawPileCount">${stockLeft}</span>)`;
+    }
+  }
+
+  let hand = host ? (state.hands[myId]||[]) : (state.hand||[]);
+  const hasPlay = hand.some(c => isCardPlayable(c, state, hand.length));
+  if ($('drawPileBtn')) {
+    $('drawPileBtn').classList.toggle('can-draw', myTurn && (!hasPlay || !state.drawnPlayableCardId || pendingDraw > 0));
+  }
+
+  // Discard Pile Stack
+<!-- ... existing code ... -->
+  $('passDrawnBtn').classList.toggle('hidden', !(myTurn && state.drawnPlayableCardId));
+
+  // Render User Hand
+  $('hand').innerHTML = hand.map(c => {
+    const playable = myTurn && isCardPlayable(c, state, hand.length);
+    const playCls = playable ? 'playable' : 'unplayable';
+    const mustCls = (state.drawnPlayableCardId === c.id) ? 'must-play' : '';
+    return renderUnoCardHTML(c, `${playCls} ${mustCls}`, `data-id="${esc(c.id)}"`);
+  }).join('') || '<span style="color:#aebdb4;line-height:42px;">Empty hand</span>';
+
+  let msgTxt = `Waiting for ${p?.name||'player'}...`;
+  if (myTurn) {
+    const blockedLastAction = state.noActionFinishRule && hand.length === 1 && isActionOrWildCard(hand[0]);
+    if (pendingDraw > 0) {
+      const reqLabel = state.pendingDrawType === 'wild4' ? 'Wild +4' : '+2';
+      msgTxt = hasPlay
+        ? `🔥 Stack another ${reqLabel} to pass +${pendingDraw + (state.pendingDrawType === 'wild4' ? 4 : 2)}, or tap Draw Pile to take +${pendingDraw}!`
+        : `💥 No ${reqLabel} to stack — tap the Draw Pile to draw +${pendingDraw} penalty cards.`;
+    } else if (blockedLastAction) {
+      msgTxt = "🚫 Wild, +4, +2, Reverse & Skip cannot be placed last! Tap the Draw Pile to draw a card.";
+    } else if (state.drawnPlayableCardId) {
+      msgTxt = "Drawn card is playable! Tap it to play or click 'Keep Card & End Turn'.";
+    } else if (hasPlay) {
+      msgTxt = "Tap a matching card in your hand to play, or tap the Draw Pile.";
+    } else {
+      msgTxt = "No matching card in hand — tap the Draw Pile to draw a card.";
+    }
+  }
+  $('gameMsg').textContent = state.winner ? '' : msgTxt;
+
+  // Bot AI Turn Logic
+  const currPlayerObj = playerById(state.current);
+  const isCurrentBot = host && !state.winner && currPlayerObj && (currPlayerObj.id === 'AI' || currPlayerObj.isBot);
+  if (isCurrentBot && botActionRevision !== revision) {
+    botActionRevision = revision;
+    const expectedRev = revision;
+    const botId = state.current;
+    setTimeout(() => {
+      if (!host || !state || state.winner || state.current !== botId || revision !== expectedRev) return;
+      const aiHand = state.hands[botId] || [];
+      // If bot has 2 cards and is about to play down to 1, 85% chance it remembers to call UNO immediately
+      if (aiHand.length <= 2 && !state.unoCalled[botId] && Math.random() < 0.85) {
+        state.unoCalled[botId] = true;
+      }
+      const playableCards = aiHand.filter(c => isCardPlayable(c, state, aiHand.length));
+      if (playableCards.length > 0) {
+        // When bot has 2 cards and No Action Finish is active, shed Action/Wild cards first so a number card remains last!
+        playableCards.sort((a, b) => {
+          if (state.noActionFinishRule && aiHand.length === 2) {
+            return (isActionOrWildCard(b) ? 1 : 0) - (isActionOrWildCard(a) ? 1 : 0);
+          }
+          return (a.color === 'wild' ? 1 : 0) - (b.color === 'wild' ? 1 : 0);
+        });
+        const chosen = playableCards[0];
+        const chosenColor = (chosen.color === 'wild') ? pickSmartColorForHand(aiHand) : null;
+        handleAction(botId, { action: 'PLAY', cardId: chosen.id, chosenColor, revision: expectedRev });
+      } else if (state.drawnPlayableCardId) {
+        handleAction(botId, { action: 'PASS_DRAWN', revision: expectedRev });
+      } else {
+        handleAction(botId, { action: 'DRAW', revision: expectedRev });
+      }
+    }, 950);
+  }
+
+  // Win Modal & Two-Stage Card Blink -> Points Reveal
+<!-- ... existing code ... -->
+// === INTERACTIONS & LISTENERS ===
+$('hand').addEventListener('click', e => {
+  const el = e.target.closest('[data-id]');
+  if (!el || !state || state.winner || state.current !== myId) return;
+  const cid = el.dataset.id;
+  const hand = host ? (state.hands[myId]||[]) : (state.hand||[]);
+  const card = hand.find(c => c.id === cid);
+  if (!card) return;
+  if (!isCardPlayable(card, state, hand.length)) {
+    if (state.noActionFinishRule && hand.length === 1 && isActionOrWildCard(card)) {
+      showEventToast(myId, '🚫 Action & Wild cards cannot be placed as your last card! Draw a card.');
+    } else if ((state.pendingDrawCount || 0) > 0) {
+      const req = state.pendingDrawType === 'wild4' ? 'Wild +4' : '+2';
+      showEventToast(myId, `🔥 Must stack a ${req} or tap Draw Pile (+${state.pendingDrawCount})!`);
+    }
+    return;
+  }
+
+  if (card.color === 'wild') {
+    pendingWildCardId = cid;
+    $('wildColorModal').classList.remove('hidden');
+    return;
+  }
+  sendAct('PLAY', { cardId: cid });
+});
+
+$('wildColorGrid').addEventListener('click', e => {
+<!-- ... existing code ... -->
+if($('setupTimeLimitInput')) $('setupTimeLimitInput').oninput = () => syncTimerControlsUI(true);
+if($('setupStackingToggle')) $('setupStackingToggle').onchange = () => syncTimerControlsUI(true);
+if($('setupNoActionFinishToggle')) $('setupNoActionFinishToggle').onchange = () => syncTimerControlsUI(true);
+
+if($('lobbyTimerMode')) {
+  $('lobbyTimerMode').onchange = () => {
+    if(!host) return;
+    const mode = $('lobbyTimerMode').value;
+    if (mode === 'turn' && Number($('lobbyTimeLimitInput').value) <= 10) $('lobbyTimeLimitInput').value = '25';
+    if (mode === 'match' && Number($('lobbyTimeLimitInput').value) >= 20) $('lobbyTimeLimitInput').value = '5';
+    syncTimerControlsUI(false);
+    saveHostSession();
+    sendHost({ type: 'SETTINGS', participantLimit, winningScore, timerMode, timeLimitValue, stackingRule, noActionFinishRule });
+  };
+}
+if($('lobbyTimeLimitInput')) {
+  $('lobbyTimeLimitInput').oninput = () => {
+    if(!host) return;
+    syncTimerControlsUI(false);
+    saveHostSession();
+    sendHost({ type: 'SETTINGS', participantLimit, winningScore, timerMode, timeLimitValue, stackingRule, noActionFinishRule });
+  };
+}
+if($('lobbyStackingToggle')) {
+  $('lobbyStackingToggle').onchange = () => {
+    if(!host) return;
+    syncTimerControlsUI(false);
+    saveHostSession();
+    sendHost({ type: 'SETTINGS', participantLimit, winningScore, timerMode, timeLimitValue, stackingRule, noActionFinishRule });
+  };
+}
+if($('lobbyNoActionFinishToggle')) {
+  $('lobbyNoActionFinishToggle').onchange = () => {
+    if(!host) return;
+    syncTimerControlsUI(false);
+    saveHostSession();
+    sendHost({ type: 'SETTINGS', participantLimit, winningScore, timerMode, timeLimitValue, stackingRule, noActionFinishRule });
+  };
+}
+if($('inGameRejoinBtn')) {
+<!-- ... existing code ... -->
+$('playerLimit').onchange = () => { if(!host)return; participantLimit=Number($('playerLimit').value)||4; saveHostSession(); lobbyBroadcast(); };
+$('winningScore').onchange = () => { if(!host)return; winningScore=Number($('winningScore').value)||200; saveHostSession(); sendHost({type:'SETTINGS',participantLimit,winningScore,timerMode,timeLimitValue,stackingRule,noActionFinishRule}); syncTimerControlsUI(false); };
+
+syncProfileUI();
+<!-- ... existing code ... -->
