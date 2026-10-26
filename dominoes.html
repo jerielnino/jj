@@ -366,9 +366,15 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 .tile::after { content: ''; position: absolute; left: 50%; top: 4px; bottom: 4px; width: 2px; background: #a89f91; margin-left: -1px; box-shadow: 1px 0 0 #fff; }
 .tile .half { width: 50%; height: 100%; display: grid; place-items: center; padding: 4px; box-sizing: border-box; overflow: hidden; }
 
-/* Hand tiles: vertical layout */
-.hand .tile::after { left: 4px; right: 4px; top: 50%; bottom: auto; width: auto; height: 2px; margin-top: -1px; margin-left: 0; }
+/* Hand tiles: vertical layout (bolder user tiles) */
+.hand .tile::after { left: 4px; right: 4px; top: 50%; bottom: auto; width: auto; height: 2.5px; background: #5c5245; margin-top: -1.25px; margin-left: 0; box-shadow: 0 1px 0 rgba(255,255,255,0.75); }
 .hand .tile .half { width: 100%; height: 50%; }
+.hand .pip {
+  width: 8.5px;
+  height: 8.5px;
+  border: 1.5px solid #0a0a0a;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.65), inset 0 1px 2px rgba(0,0,0,0.9);
+}
 
 /* Hand Area */
 .hand-area {
@@ -385,6 +391,8 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   height: 84px;
   left: auto;
   top: auto;
+  border: 2px solid #6e6250;
+  box-shadow: 0 7px 15px rgba(0,0,0,0.55), inset 0 2px 4px #fff;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   display: flex;
@@ -493,6 +501,8 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   .hand .tile {
     width: 28px;
     height: 56px;
+    border: 1.5px solid #6e6250;
+    box-shadow: 0 5px 12px rgba(0,0,0,0.55), inset 0 1.5px 3px #fff;
   }
   .tile {
     width: 56px;
@@ -506,10 +516,10 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
     gap: 0.5px !important;
   }
   .hand .pip {
-    width: 5px !important;
-    height: 5px !important;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.4), inset 0 1px 1px rgba(0,0,0,0.6) !important;
-    border: 1px solid #111 !important;
+    width: 5.6px !important;
+    height: 5.6px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.65), inset 0 1px 2px rgba(0,0,0,0.9) !important;
+    border: 1.25px solid #0a0a0a !important;
   }
   .main-header {
     padding: 4px 6px;
@@ -579,8 +589,9 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
     top: 50%;
     bottom: auto;
     width: auto;
-    height: 1px;
-    margin-top: 0;
+    height: 1.5px;
+    background: #5c5245;
+    margin-top: -0.75px;
     margin-left: 0;
   }
   .hand .tile .half {
