@@ -884,6 +884,154 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   100% { opacity: 0; transform: translateY(-12px) scale(0.92); }
 }
 
+
+/* === COMPACT ANIMATED SIDE PURCHASE BADGE (DOES NOT SPAN FULL BOARD) === */
+.purchase-side-badge {
+  position: absolute;
+  bottom: 18px;
+  left: 18px;
+  z-index: 260;
+  width: clamp(220px, 28vw, 285px);
+  background: linear-gradient(145deg, rgba(6, 78, 59, 0.96) 0%, rgba(4, 47, 46, 0.98) 100%);
+  border: 2px solid #34d399;
+  border-radius: 16px;
+  padding: 10px 14px;
+  color: #fff;
+  box-shadow: 0 14px 32px rgba(0,0,0,0.65), 0 0 22px rgba(52, 211, 153, 0.45);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  pointer-events: none;
+  transform-origin: bottom left;
+  animation: purchaseBadgePopIn 3.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  overflow: hidden;
+}
+.purchase-side-badge::before {
+  content: "";
+  position: absolute;
+  top: 0; left: -120%; width: 70%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+  transform: skewX(-25deg);
+  animation: purchaseBadgeShimmer 1.2s ease-out 0.2s forwards;
+}
+.psb-seal {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #6ee7b7, #10b981 65%, #047857);
+  border: 2px solid #fde047;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+  animation: sealSpinBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.psb-info {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+.psb-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(52, 211, 153, 0.22);
+  border: 1px solid #6ee7b7;
+  color: #a7f3d0;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  padding: 1px 7px;
+  border-radius: 99px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.psb-prop {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #fde047;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.psb-buyer {
+  font-size: 0.75rem;
+  color: #ecfdf5;
+  font-weight: 600;
+}
+@keyframes purchaseBadgePopIn {
+  0%   { opacity: 0; transform: translateX(-35px) scale(0.65) rotate(-6deg); }
+  12%  { opacity: 1; transform: translateX(0) scale(1.05) rotate(1.5deg); }
+  18%  { opacity: 1; transform: translateX(0) scale(1) rotate(0deg); }
+  84%  { opacity: 1; transform: translateX(0) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(14px) scale(0.88); }
+}
+@keyframes purchaseBadgeShimmer {
+  0%   { left: -120%; }
+  100% { left: 160%; }
+}
+@keyframes sealSpinBounce {
+  0%   { transform: scale(0) rotate(-90deg); }
+  70%  { transform: scale(1.2) rotate(12deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Highlight pulse on the board tile itself when purchased */
+.board-cell.just-purchased-cell {
+  animation: tilePurchasedGlow 1.8s ease-out;
+  z-index: 28;
+}
+@keyframes tilePurchasedGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.95), inset 0 0 0 3px #10b981; transform: scale(1.12); }
+  40%  { box-shadow: 0 0 22px 8px rgba(52, 211, 153, 0.65), inset 0 0 0 3px #fde047; transform: scale(1.06); }
+  100% { box-shadow: none; transform: scale(1); }
+}
+
+/* === STEP-BY-STEP TILE HOPPING ANIMATION FOR PLAYER AVATAR === */
+.board-token.hopping-step {
+  animation: tokenTileHop 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-color: #fde047;
+  box-shadow: 0 0 0 3px #0f172a, 0 0 24px 8px rgba(253, 224, 71, 0.98), 0 14px 22px rgba(0,0,0,0.9);
+  z-index: 60;
+}
+@keyframes tokenTileHop {
+  0%   { transform: scale(1.1) translateY(0); }
+  50%  { transform: scale(1.32) translateY(-18px) rotate(-6deg); }
+  100% { transform: scale(1.15) translateY(-4px) rotate(0deg); }
+}
+.board-cell.stepping-highlight {
+  box-shadow: inset 0 0 0 3px #fde047, 0 0 14px rgba(253, 224, 71, 0.85) !important;
+  background: #fef08a !important;
+  z-index: 22;
+}
+
+/* === COMPACT SIDE CHANCE & COMMUNITY CHEST POPOVER (DOES NOT COVER BOARD) === */
+.modal.compact-card-popover {
+  inset: auto 18px 62px auto;
+  background: transparent;
+  backdrop-filter: none;
+  padding: 0;
+  width: auto;
+  height: auto;
+  z-index: 270;
+  pointer-events: none;
+}
+.modal.compact-card-popover .modal-box {
+  pointer-events: auto;
+  width: clamp(235px, 28vw, 295px);
+  padding: 14px 16px;
+  border-radius: 16px;
+  box-shadow: 0 16px 38px rgba(0,0,0,0.78), 0 0 20px rgba(255, 214, 111, 0.3);
+  animation: compactCardFlipIn 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+  text-align: left;
+}
+@keyframes compactCardFlipIn {
+  0%   { opacity: 0; transform: translateX(40px) scale(0.75) rotateY(-35deg); }
+  100% { opacity: 1; transform: translateX(0) scale(1) rotateY(0deg); }
+}
+
 /* Modals */
 .modal {
   position: fixed; inset: 0; background: rgba(4, 9, 18, 0.84); backdrop-filter: blur(6px);
@@ -1334,6 +1482,7 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 
   <div class="game-core">
     <div id="drawToastContainer"></div>
+    <div id="purchaseBadgeContainer"></div>
 
     <!-- 11x11 World Edition Business Board -->
     <div class="monopoly-board" id="monopolyBoard">
@@ -1544,13 +1693,15 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   </div>
 </div>
 
-<!-- CARD DRAWN MODAL (Chance / Community Chest) -->
-<div id="cardDrawnModal" class="modal hidden">
-  <div class="modal-box" style="width: 390px;">
-    <div id="cardDrawnBadge" style="display:inline-block; padding:4px 14px; border-radius:99px; font-weight:900; font-size:0.85rem; margin-bottom:10px; align-self:center;">CHANCE</div>
-    <h2 id="cardDrawnTitle" style="font-size:1.45rem; margin-bottom:10px;">Card Drawn</h2>
-    <p id="cardDrawnDesc" style="font-size:1.02rem; color:#fff; background:rgba(0,0,0,0.3); padding:16px; border-radius:12px; margin:0 0 18px;"></p>
-    <button id="closeCardDrawnBtn" type="button" style="width:100%;">OK</button>
+<!-- COMPACT SIDE CARD DRAWN POPOVER (Chance / Community Chest — Does Not Cover Whole Board) -->
+<div id="cardDrawnModal" class="modal compact-card-popover hidden">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
+      <div id="cardDrawnBadge" style="display:inline-block; padding:2px 10px; border-radius:99px; font-weight:900; font-size:0.7rem; letter-spacing:0.6px;">CHANCE</div>
+      <button id="closeCardDrawnBtn" type="button" class="btn-alt" style="padding:2px 10px; font-size:0.72rem; border-radius:6px;">OK</button>
+    </div>
+    <h2 id="cardDrawnTitle" style="font-size:0.98rem; margin:0 0 6px; color:#ffe7a5;">Card Drawn</h2>
+    <p id="cardDrawnDesc" style="font-size:0.82rem; color:#fff; background:rgba(0,0,0,0.32); padding:9px 11px; border-radius:10px; margin:0; line-height:1.35;"></p>
   </div>
 </div>
 
@@ -1782,7 +1933,14 @@ const PRESET_EMOJIS = [
 let peer=null, host=false, solo=false, roomCode='', myId='', hostId='';
 let connections=new Map(), transportPlayers=new Map(), players=[], state=null;
 let revision=0, participantLimit=4, startingBalanceConfig=15000000, timerMode='untimed', timeLimitValue=15, gameClockInterval=null;
-let botActionRevision=-1, lastWinnerTracker=null, lastSeenEventId=0, lastSeenCardId=0, lastAnimatedRollSeq=0, diceAnimTimer=null;
+let botActionRevision=-1, lastWinnerTracker=null, lastSeenEventId=0, lastSeenCardId=0, lastSeenPurchaseId=0, lastAnimatedRollSeq=0, diceAnimTimer=null;
+let visualPositions = {};
+let steppingPlayerId = null;
+let steppingTileIdx = -1;
+let isAnimatingMove = false;
+let stepIntervalTimer = null;
+let cardAutoHideTimer = null;
+let recentlyPurchasedPropId = null;
 let inspectedSpaceIdx = 0;
 let inspectedPortfolioPlayerId = null;
 let currentHubTab = 'props';
@@ -2878,6 +3036,10 @@ function startGame() {
   lastWinnerTracker = null;
   botActionRevision = -1;
   inspectedSpaceIdx = 0;
+  visualPositions = Object.fromEntries(players.map(p => [p.id, 0]));
+  steppingPlayerId = null;
+  steppingTileIdx = -1;
+  isAnimatingMove = false;
   revision++;
   for (const [, c] of connections) {
     send(c, {
@@ -3107,6 +3269,15 @@ function finalizeAuction() {
     st.ownerId = winnerId;
     recordTransfer(winnerId, BANK, finalPrice, `Won Auction: ${def.name}`);
     const wName = playerById(winnerId)?.name || 'Player';
+    state.lastPurchase = {
+      id: (state.lastPurchase?.id || 0) + 1,
+      propId: def.id,
+      propName: def.name,
+      group: def.group,
+      price: finalPrice,
+      buyerId: winnerId,
+      mode: 'WON AUCTION'
+    };
     state.lastEventText = `🔨 ${wName} won ${def.name} at auction for ${fmt(finalPrice)}!`;
     state.lastEventId++;
   }
@@ -3315,6 +3486,15 @@ function handleAction(id, d) {
     } else {
       state.lastEventText = `📋 Assigned ${def.name} to ${(playerById(buyerId)?.name||'Player')} (Setup Mode)`;
     }
+    state.lastPurchase = {
+      id: (state.lastPurchase?.id || 0) + 1,
+      propId: def.id,
+      propName: def.name,
+      group: def.group,
+      price: (!state.setupMode && !d.free) ? def.price : 0,
+      buyerId,
+      mode: 'PURCHASED'
+    };
     state.lastEventId++;
     broadcastState('BUY');
     return;
@@ -3566,6 +3746,80 @@ function getGridPositionForSpace(idx) {
   return { row: 1 + (idx - 30), col: 11, side: 'right' };
 }
 
+
+function playStepHopSound(stepIndex) {
+  const baseFreq = 320 + (stepIndex % 8) * 28;
+  playTone(baseFreq, 'sine', 0.055, 0.13);
+}
+
+function showPurchaseSideBadge(purchase) {
+  if (!purchase) return;
+  const container = $('purchaseBadgeContainer');
+  if (!container) return;
+  const buyer = playerById(purchase.buyerId);
+  const buyerName = buyer ? buyer.name : 'Player';
+  const buyerAvatar = buyer ? (buyer.avatar || '🎩') : '🎩';
+  const col = GROUP_COLORS[purchase.group] || '#10b981';
+  const priceStr = purchase.price > 0 ? fmt(purchase.price) : 'Assigned';
+
+  recentlyPurchasedPropId = purchase.propId;
+  setTimeout(() => {
+    if (recentlyPurchasedPropId === purchase.propId) {
+      recentlyPurchasedPropId = null;
+      renderBoardDomOnly();
+    }
+  }, 1850);
+
+  container.innerHTML = `<div class="purchase-side-badge" style="border-left: 6px solid ${col};">
+    <div class="psb-seal">✓</div>
+    <div class="psb-info">
+      <div class="psb-tag"><span>✨</span> <span>${esc(purchase.mode || 'PURCHASED')}</span></div>
+      <div class="psb-prop">${esc(purchase.propName)} · ${esc(priceStr)}</div>
+      <div class="psb-buyer">${buyerAvatar} Owned by <b>${esc(buyerName)}</b></div>
+    </div>
+  </div>`;
+  renderBoardDomOnly();
+}
+
+function startTileByTileStepping(pid, targetPos, onDone) {
+  if (stepIntervalTimer) { clearInterval(stepIntervalTimer); stepIntervalTimer = null; }
+  let cur = visualPositions[pid];
+  if (cur === undefined || cur === targetPos) {
+    visualPositions[pid] = targetPos;
+    steppingPlayerId = null;
+    steppingTileIdx = -1;
+    isAnimatingMove = false;
+    if (onDone) onDone();
+    return;
+  }
+  isAnimatingMove = true;
+  steppingPlayerId = pid;
+  let stepCount = 0;
+  stepIntervalTimer = setInterval(() => {
+    if (!state) { clearInterval(stepIntervalTimer); stepIntervalTimer = null; isAnimatingMove = false; return; }
+    cur = (cur + 1) % 40;
+    visualPositions[pid] = cur;
+    steppingTileIdx = cur;
+    inspectedSpaceIdx = cur;
+    stepCount++;
+    playStepHopSound(stepCount);
+    renderBoardDomOnly();
+    if (cur === targetPos || stepCount > 42) {
+      clearInterval(stepIntervalTimer);
+      stepIntervalTimer = null;
+      visualPositions[pid] = targetPos;
+      setTimeout(() => {
+        steppingPlayerId = null;
+        steppingTileIdx = -1;
+        isAnimatingMove = false;
+        inspectedSpaceIdx = targetPos;
+        renderGame();
+        if (onDone) onDone();
+      }, 180);
+    }
+  }, 145);
+}
+
 function showEventToast(text) {
   const container = $('drawToastContainer');
   if (container && text) {
@@ -3700,60 +3954,42 @@ function runFullBoard3DDiceAnimation(finalD1, finalD2) {
         if (stg) stg.classList.add('hidden');
         const ph = board.querySelector('.center-play-hub');
         if (ph) ph.classList.remove('board-rolling-hide');
-      }, 950);
+        // Now step the moving player's avatar one tile at a time to their new board position!
+        const moverId = state?.players?.find(pid => visualPositions[pid] !== undefined && visualPositions[pid] !== (state.positions?.[pid] || 0));
+        if (moverId) {
+          startTileByTileStepping(moverId, state.positions[moverId] || 0);
+        } else {
+          isAnimatingMove = false;
+          renderGame();
+        }
+      }, 550);
     }
   }
 
   fullBoardDiceRAF = requestAnimationFrame(step);
 }
 
-function renderGame() {
-  if(!state) return;
-  ensurePropertyStateObj();
-  showPanel('gamePanel');
-  updateTimerBadgeUI();
+function showCompactCardPopover(c) {
+  if (!c) return;
+  $('cardDrawnBadge').textContent = c.deckType;
+  $('cardDrawnBadge').style.background = c.deckType === 'CHANCE' ? '#f59e0b' : '#0284c7';
+  $('cardDrawnTitle').textContent = `${c.title} (${c.playerName})`;
+  $('cardDrawnDesc').textContent = c.desc;
+  $('cardDrawnModal').classList.remove('hidden');
+  if (cardAutoHideTimer) clearTimeout(cardAutoHideTimer);
+  cardAutoHideTimer = setTimeout(() => {
+    $('cardDrawnModal').classList.add('hidden');
+  }, 5500);
+}
 
-  if (state.lastEventId && state.lastEventId !== lastSeenEventId) {
-    lastSeenEventId = state.lastEventId;
-    if (state.lastEventText) showEventToast(state.lastEventText);
-  }
-
-  if (state.lastCardEventId && state.lastCardEventId !== lastSeenCardId) {
-    lastSeenCardId = state.lastCardEventId;
-    const c = state.lastCardDrawn;
-    if (c) {
-      const showCardModal = () => {
-        $('cardDrawnBadge').textContent = c.deckType;
-        $('cardDrawnBadge').style.background = c.deckType === 'CHANCE' ? '#f59e0b' : '#0284c7';
-        $('cardDrawnTitle').textContent = `${c.title} (${c.playerName})`;
-        $('cardDrawnDesc').textContent = c.desc;
-        $('cardDrawnModal').classList.remove('hidden');
-      };
-      if (state.rollSeq && state.rollSeq !== lastAnimatedRollSeq) {
-        setTimeout(showCardModal, 1350);
-      } else {
-        showCardModal();
-      }
-    }
-  }
-
-  const bStats = bankStats();
-  if ($('hudBankNet')) $('hudBankNet').textContent = fmt(bStats.net);
-  $('hudHousesLeft').textContent = String(availableHouses());
-  $('hudHotelsLeft').textContent = String(availableHotels());
-
-  updatePlayers();
+function renderBoardDomOnly() {
+  if (!state) return;
+  const boardEl = $('monopolyBoard');
+  if (!boardEl) return;
   const myTurn = state.current === myId && !state.winner;
   const currP = playerById(state.current);
 
-  $('turnLabel').textContent = state.winner
-    ? '🏆 Match Complete'
-    : (currP ? (currP.id===myId ? `${currP.avatar||'🎩'} Your Turn` : `${currP.avatar||'🎩'} ${currP.name}'s Turn`) : 'In Progress');
-
-  // Render 11x11 Business Board
-  const boardEl = $('monopolyBoard');
   let cellsHTML = '';
-
   BOARD_SPACES.forEach(sp => {
     const pos = getGridPositionForSpace(sp.idx);
     const isCorner = (sp.idx % 10 === 0);
@@ -3762,6 +3998,8 @@ function renderGame() {
     const sideCls = isCorner ? 'corner-cell' : `side-${pos.side}`;
     const specialCls = sp.kind === 'cc' ? 'special-cc' : sp.kind === 'chance' ? 'special-chance' : sp.kind === 'tax' ? 'special-tax' : '';
     const selCls = (inspectedSpaceIdx === sp.idx) ? 'selected-cell' : '';
+    const stepHiCls = (steppingTileIdx === sp.idx) ? 'stepping-highlight' : '';
+    const justBoughtCls = (def && recentlyPurchasedPropId === def.id) ? 'just-purchased-cell' : '';
     const mortCls = (st && st.mortgaged) ? 'mortgaged-cell' : '';
 
     let bandHTML = '';
@@ -3787,8 +4025,12 @@ function renderGame() {
       ownerBadge = `<span class="cell-owner-badge" style="background:${oCol};" title="Owned by ${esc(oP?.name||'Player')}">${esc(oInitial)}</span>`;
     }
 
-    // Tokens on this space
-    const herePlayers = state.players.filter(pid => !state.bankrupt?.[pid] && (state.positions?.[pid] || 0) === sp.idx);
+    // Use visualPositions[pid] so tokens step one tile at a time!
+    const herePlayers = state.players.filter(pid => {
+      if (state.bankrupt?.[pid]) return false;
+      const vPos = visualPositions[pid] !== undefined ? visualPositions[pid] : (state.positions?.[pid] || 0);
+      return vPos === sp.idx;
+    });
     const hasTokCls = herePlayers.length ? 'has-tokens' : '';
     let tokensHTML = '';
     if (herePlayers.length) {
@@ -3796,12 +4038,13 @@ function renderGame() {
         const pObj = playerById(pid);
         const tCol = playerColor(pid);
         const actCls = (state.current === pid) ? 'active-token' : '';
+        const hopCls = (steppingPlayerId === pid) ? 'hopping-step' : '';
         const shortN = (pObj?.name || 'P').slice(0, 6);
-        return `<div class="board-token ${actCls}" style="--tcolor:${tCol};" title="${esc(pObj?.name||'Player')}"><span>${pObj?.avatar||'🎩'}</span><span class="token-name-tag">${esc(shortN)}</span></div>`;
+        return `<div class="board-token ${actCls} ${hopCls}" style="--tcolor:${tCol};" title="${esc(pObj?.name||'Player')}"><span>${pObj?.avatar||'🎩'}</span><span class="token-name-tag">${esc(shortN)}</span></div>`;
       }).join('') + `</div>`;
     }
 
-    cellsHTML += `<div class="board-cell ${sideCls} ${specialCls} ${selCls} ${mortCls} ${hasTokCls}" data-space-idx="${sp.idx}" style="grid-row:${pos.row}; grid-column:${pos.col};">
+    cellsHTML += `<div class="board-cell ${sideCls} ${specialCls} ${selCls} ${stepHiCls} ${justBoughtCls} ${mortCls} ${hasTokCls}" data-space-idx="${sp.idx}" style="grid-row:${pos.row}; grid-column:${pos.col};">
       ${bandHTML}
       <div class="cell-content">
         <div class="cell-name">${esc(titleTxt)}</div>
@@ -3814,21 +4057,21 @@ function renderGame() {
   });
 
   // Center 9x9 Play Hub HTML
-  const currPos = state.positions?.[state.current] || 0;
+  const currPos = visualPositions[state.current] !== undefined ? visualPositions[state.current] : (state.positions?.[state.current] || 0);
   const currSp = BOARD_SPACES[currPos];
   const currDef = currSp?.propId ? propDef(currSp.propId) : null;
   const currPropSt = (currDef && state.properties) ? state.properties[currDef.id] : null;
-  const DICE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
   const d1 = state.dice?.[0] || 1, d2 = state.dice?.[1] || 1;
 
-  // Check if there is a mandatory pending Buy-or-Auction decision
-  const pendingPropId = state.pendingDecision?.propId;
+  const pendingPropId = (!isAnimatingMove) ? state.pendingDecision?.propId : null;
   const pendingDef = pendingPropId ? propDef(pendingPropId) : null;
   const pendingSt = pendingPropId ? state.properties[pendingPropId] : null;
   const hasMandatoryDecision = !!(pendingDef && pendingSt && !pendingSt.ownerId);
 
   let spaceSummaryHTML = `<div><strong>${esc(currDef ? currDef.name : currSp?.name || 'GO')}</strong> ${currDef?.country ? `<span style="font-size:0.7rem;color:#cbd5e1;">(${esc(currDef.country)})</span>` : ''}</div>`;
-  if (currDef && currDef.type !== 'tax' && currPropSt) {
+  if (isAnimatingMove) {
+    spaceSummaryHTML += `<div style="color:#fde047; font-weight:700;">🚶 Moving tile by tile...</div>`;
+  } else if (currDef && currDef.type !== 'tax' && currPropSt) {
     if (!currPropSt.ownerId) {
       spaceSummaryHTML += `<div style="color:#fde047; font-weight:700;">Unowned · List Price: ${fmt(currDef.price)} · Base Rent: ${fmt(currDef.type==='property'?currDef.rent[0]:currDef.type==='transport'?currDef.rentByCount[0]:currDef.soloMultiplier*7)}</div>`;
     } else {
@@ -3840,11 +4083,11 @@ function renderGame() {
     spaceSummaryHTML += `<div style="color:#cbd5e1;">${esc(currSp.sub)}</div>`;
   }
 
-  const canRoll = myTurn && !hasMandatoryDecision && (!state.rolledThisTurn || state.canRollAgain);
-  const canBuy = myTurn && hasMandatoryDecision;
-  const canAuction = myTurn && hasMandatoryDecision;
-  const canEnd = myTurn && state.rolledThisTurn && !state.canRollAgain && !hasMandatoryDecision;
-  const canBail = myTurn && state.inJail?.[myId] && !state.rolledThisTurn;
+  const canRoll = myTurn && !isAnimatingMove && !hasMandatoryDecision && (!state.rolledThisTurn || state.canRollAgain);
+  const canBuy = myTurn && !isAnimatingMove && hasMandatoryDecision;
+  const canAuction = myTurn && !isAnimatingMove && hasMandatoryDecision;
+  const canEnd = myTurn && !isAnimatingMove && state.rolledThisTurn && !state.canRollAgain && !hasMandatoryDecision;
+  const canBail = myTurn && !isAnimatingMove && state.inJail?.[myId] && !state.rolledThisTurn;
 
   cellsHTML += `<div class="board-center">
     <div class="center-world-watermark"></div>
@@ -3901,18 +4144,88 @@ function renderGame() {
   </div>`;
   boardEl.innerHTML = cellsHTML;
 
-  // Trigger Full-Board 3D Dice Physics Throw Animation whenever rollSeq increments
-  if (state.rollSeq && state.rollSeq !== lastAnimatedRollSeq) {
-    lastAnimatedRollSeq = state.rollSeq;
-    runFullBoard3DDiceAnimation(d1, d2);
-  }
-
-  // Bind Center Hub Buttons
   if ($('hubRollBtn')) $('hubRollBtn').onclick = () => sendAct('ROLL');
   if ($('hubBuyBtn') && pendingDef) $('hubBuyBtn').onclick = () => sendAct('BUY_PROP', { propId: pendingDef.id, buyerId: myId });
   if ($('hubAuctionBtn') && pendingDef) $('hubAuctionBtn').onclick = () => sendAct('START_AUCTION', { propId: pendingDef.id, initiatorId: myId });
   if ($('hubEndTurnBtn')) $('hubEndTurnBtn').onclick = () => sendAct('END_TURN');
   if ($('hubBailBtn')) $('hubBailBtn').onclick = () => sendAct('PAY_BAIL');
+}
+
+function renderGame() {
+  if(!state) return;
+  ensurePropertyStateObj();
+  showPanel('gamePanel');
+  updateTimerBadgeUI();
+
+  // Initialize visualPositions for any newly added player
+  state.players.forEach(pid => {
+    if (visualPositions[pid] === undefined) {
+      visualPositions[pid] = state.positions?.[pid] || 0;
+    }
+  });
+
+  const isNewRoll = !!(state.rollSeq && state.rollSeq !== lastAnimatedRollSeq);
+  if (isNewRoll) {
+    isAnimatingMove = true;
+  }
+
+  // Trigger compact side Purchased Badge when a property is bought or won at auction
+  if (state.lastPurchase && state.lastPurchase.id !== lastSeenPurchaseId) {
+    lastSeenPurchaseId = state.lastPurchase.id;
+    showPurchaseSideBadge(state.lastPurchase);
+  }
+
+  if (state.lastEventId && state.lastEventId !== lastSeenEventId) {
+    lastSeenEventId = state.lastEventId;
+    if (state.lastEventText) {
+      if (isNewRoll) {
+        const txt = state.lastEventText;
+        setTimeout(() => showEventToast(txt), 1750);
+      } else {
+        showEventToast(state.lastEventText);
+      }
+    }
+  }
+
+  if (state.lastCardEventId && state.lastCardEventId !== lastSeenCardId) {
+    lastSeenCardId = state.lastCardEventId;
+    const c = state.lastCardDrawn;
+    if (c) {
+      if (isNewRoll) {
+        setTimeout(() => showCompactCardPopover(c), 1850);
+      } else {
+        showCompactCardPopover(c);
+      }
+    }
+  }
+
+  const bStats = bankStats();
+  if ($('hudBankNet')) $('hudBankNet').textContent = fmt(bStats.net);
+  $('hudHousesLeft').textContent = String(availableHouses());
+  $('hudHotelsLeft').textContent = String(availableHotels());
+
+  updatePlayers();
+  const myTurn = state.current === myId && !state.winner;
+  const currP = playerById(state.current);
+
+  $('turnLabel').textContent = state.winner
+    ? '🏆 Match Complete'
+    : (currP ? (currP.id===myId ? `${currP.avatar||'🎩'} Your Turn` : `${currP.avatar||'🎩'} ${currP.name}'s Turn`) : 'In Progress');
+
+  // Render 11x11 Business Board DOM
+  renderBoardDomOnly();
+
+  const d1 = state.dice?.[0] || 1, d2 = state.dice?.[1] || 1;
+  if (isNewRoll) {
+    lastAnimatedRollSeq = state.rollSeq;
+    runFullBoard3DDiceAnimation(d1, d2);
+  } else if (!isAnimatingMove) {
+    // Check if any player's position changed without a dice roll (e.g. card move)
+    const movedPid = state.players.find(pid => visualPositions[pid] !== undefined && visualPositions[pid] !== (state.positions?.[pid] || 0));
+    if (movedPid) {
+      startTileByTileStepping(movedPid, state.positions[movedPid] || 0);
+    }
+  }
 
   // Show/Refresh Live Auction Modal if an auction is active
   if (state.auction && state.auction.propId) {
@@ -3966,7 +4279,7 @@ function renderGame() {
         return;
       }
       handleAction(botId, { action: 'END_TURN', revision: expectedRev });
-    }, 850);
+    }, 2400);
   }
 
   // Winner Modal
