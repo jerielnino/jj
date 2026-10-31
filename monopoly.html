@@ -91,11 +91,14 @@ body[data-theme="wood"] {
   display: flex; flex-wrap: wrap; gap: 6px; align-items: center; flex: 1; min-width: 0;
 }
 .ts-player {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: rgba(255,255,255,0.09); padding: 4px 10px;
-  border-radius: 99px; font-size: 0.82rem; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.09); padding: 4px 11px;
+  border-radius: 99px; font-size: 0.84rem; white-space: nowrap;
   border: 1.5px solid rgba(255,255,255,0.15); transition: all 0.18s;
   cursor: pointer; position: relative;
+}
+.ts-player .ts-avatar {
+  font-size: 1.25rem; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6));
 }
 .ts-player:hover {
   background: rgba(255,255,255,0.18);
@@ -248,8 +251,8 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 
 /* 11x11 Monopoly Business Board Container */
 .monopoly-board {
-  width: min(95vw, calc(100dvh - 108px), 840px);
-  height: min(95vw, calc(100dvh - 108px), 840px);
+  width: min(93vw, calc(100dvh - 120px), 825px);
+  height: min(93vw, calc(100dvh - 120px), 825px);
   min-width: 340px;
   min-height: 340px;
   background: #cdebe0;
@@ -263,7 +266,8 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   user-select: none;
   color: #0f172a;
   flex-shrink: 0;
-  overflow: hidden;
+  overflow: visible;
+  margin: 10px;
 }
 
 /* Individual Board Space Cell */
@@ -278,10 +282,16 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   padding: 0;
   text-align: center;
   cursor: pointer;
-  overflow: hidden;
+  overflow: visible;
   transition: filter 0.14s, box-shadow 0.14s, transform 0.1s;
   min-width: 0;
   min-height: 0;
+}
+.board-cell.has-tokens {
+  z-index: 18;
+}
+.board-cell.has-tokens:hover {
+  z-index: 25;
 }
 .board-cell:hover {
   filter: brightness(0.97);
@@ -465,39 +475,78 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   left: 2px;
 }
 
-/* Player Tokens on Cell */
+/* Player Tokens on Cell — Large, 3D & Allowed to Overflow Tile Boundaries */
 .cell-tokens {
   position: absolute;
-  bottom: 1px;
-  left: 1px;
-  right: 1px;
+  inset: -12px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: 4px;
   pointer-events: none;
-  z-index: 8;
+  z-index: 30;
+}
+.board-cell.side-bottom .cell-tokens {
+  top: auto;
+  bottom: -11px;
+}
+.board-cell.side-top .cell-tokens {
+  bottom: auto;
+  top: -11px;
+}
+.board-cell.side-left .cell-tokens {
+  right: auto;
+  left: -11px;
+}
+.board-cell.side-right .cell-tokens {
+  left: auto;
+  right: -11px;
+}
+.board-cell.corner-cell .cell-tokens {
+  inset: -8px;
 }
 .board-token {
-  width: clamp(13px, 2.1vmin, 20px);
-  height: clamp(13px, 2.1vmin, 20px);
+  width: clamp(26px, 4.2vmin, 38px);
+  height: clamp(26px, 4.2vmin, 38px);
   border-radius: 50%;
-  background: var(--tcolor, #f0c93d);
-  border: 1.5px solid #fff;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.8);
+  background: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.48), rgba(255,255,255,0) 58%), var(--tcolor, #f0c93d);
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.85), 0 0 0 2px #0f172a;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(0.52rem, 1.15vmin, 0.8rem);
+  font-size: clamp(1.05rem, 2.3vmin, 1.55rem);
   line-height: 1;
-  transition: transform 0.25s;
+  transition: transform 0.25s, box-shadow 0.25s;
+  position: relative;
+}
+.board-token .token-name-tag {
+  position: absolute;
+  bottom: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172a;
+  color: #ffe7a5;
+  border: 1px solid rgba(255,255,255,0.45);
+  border-radius: 6px;
+  padding: 0 4px;
+  font-size: 0.48rem;
+  font-weight: 850;
+  white-space: nowrap;
+  line-height: 1.25;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.75);
 }
 .board-token.active-token {
   border-color: #fde047;
-  box-shadow: 0 0 8px #fde047, 0 2px 6px rgba(0,0,0,0.85);
-  transform: scale(1.16);
-  z-index: 9;
+  box-shadow: 0 0 0 3px #0f172a, 0 0 18px 4px rgba(253, 224, 71, 0.95), 0 8px 18px rgba(0,0,0,0.9);
+  transform: scale(1.18) translateY(-3px);
+  z-index: 35;
+  animation: tokenFloatPulse 1.6s ease-in-out infinite;
+}
+@keyframes tokenFloatPulse {
+  0%, 100% { transform: scale(1.18) translateY(-3px); }
+  50% { transform: scale(1.24) translateY(-6px); }
 }
 
 /* Center 9x9 Hub (Grid area 2 / 2 / 11 / 11) */
@@ -2095,7 +2144,7 @@ function updatePlayers() {
       const kickBtn = (host && pid !== myId) ? `<button class="kick-btn" data-kick="${esc(pid)}" type="button" title="Remove">✕</button>` : '';
       const jailTag = inJail ? `<span class="ts-jail-pill" title="Click to toggle Jail" data-toggle-jail="${esc(pid)}">⛓️ JAIL</span>` : '';
       sbHtml += `<div class="ts-player ${isCurr?'active':''} ${isBankrupt?'bankrupt':''}" style="border-left: 4px solid ${pColor};" data-portfolio-pid="${esc(pid)}" title="Click to view ${name}'s owned properties &amp; tracker controls">
-        <span>${avatar}</span>
+        <span class="ts-avatar">${avatar}</span>
         <strong class="ts-name">${name}</strong>
         <span style="color:${bal<0?'#fca5a5':'#86efac'};font-weight:800;">${fmt(bal)}</span>
         <span class="ts-prop-count" title="Click to inspect ${propCount} owned properties">🏠 ${propCount}</span>
@@ -3407,17 +3456,19 @@ function renderGame() {
 
     // Tokens on this space
     const herePlayers = state.players.filter(pid => !state.bankrupt?.[pid] && (state.positions?.[pid] || 0) === sp.idx);
+    const hasTokCls = herePlayers.length ? 'has-tokens' : '';
     let tokensHTML = '';
     if (herePlayers.length) {
       tokensHTML = `<div class="cell-tokens">` + herePlayers.map(pid => {
         const pObj = playerById(pid);
         const tCol = playerColor(pid);
         const actCls = (state.current === pid) ? 'active-token' : '';
-        return `<div class="board-token ${actCls}" style="--tcolor:${tCol};" title="${esc(pObj?.name||'Player')}">${pObj?.avatar||'🎩'}</div>`;
+        const shortN = (pObj?.name || 'P').slice(0, 6);
+        return `<div class="board-token ${actCls}" style="--tcolor:${tCol};" title="${esc(pObj?.name||'Player')}"><span>${pObj?.avatar||'🎩'}</span><span class="token-name-tag">${esc(shortN)}</span></div>`;
       }).join('') + `</div>`;
     }
 
-    cellsHTML += `<div class="board-cell ${sideCls} ${specialCls} ${selCls} ${mortCls}" data-space-idx="${sp.idx}" style="grid-row:${pos.row}; grid-column:${pos.col};">
+    cellsHTML += `<div class="board-cell ${sideCls} ${specialCls} ${selCls} ${mortCls} ${hasTokCls}" data-space-idx="${sp.idx}" style="grid-row:${pos.row}; grid-column:${pos.col};">
       ${bandHTML}
       <div class="cell-content">
         <div class="cell-name">${esc(titleTxt)}</div>
