@@ -3,34 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Monopoly World Edition</title>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<title>Monopoly World Edition &amp; Money Tracker</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 <style>
 :root {
-  --table-bg: #2874ba;
-  --board-bg: #cbead8;
-  --board-border: #1e293b;
-  --cell-bg: #e2f5ea;
+  --table-bg: #1e4f82;
+  --board-bg: #d4efe0;
+  --board-border: #0f172a;
+  --cell-bg: #ecf9f2;
   --brown: #8b5a2b;
-  --lightblue: #6ec6f0;
-  --purple: #b8338a;
-  --orange: #ea7317;
-  --red: #dc2626;
+  --lightblue: #38bdf8;
+  --purple: #a855f7;
+  --orange: #f97316;
+  --red: #ef4444;
   --yellow: #eab308;
   --green: #16a34a;
   --darkblue: #1d4ed8;
   --transport: #334155;
   --utility: #0d9488;
+  --good: #3ecf8e;
+  --bad: #ff6b6b;
+  --accent: #4f8cff;
 }
 
 * { box-sizing: border-box; }
 body {
   margin: 0;
   background-color: var(--table-bg);
-  background-image: radial-gradient(ellipse at center, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.42) 100%);
+  background-image: radial-gradient(ellipse at center, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.48) 100%);
   color: #fff;
-  font: 15px/1.38 system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font: 14px/1.38 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   height: 100vh;
   height: 100dvh;
   display: flex;
@@ -41,8 +44,8 @@ body {
 
 /* Themes (Table & Matching Popup Modals) */
 :root, body[data-theme="blue"] {
-  --table-bg: #2874ba;
-  --modal-bg: linear-gradient(145deg, #1b568c 0%, #0f3457 100%);
+  --table-bg: #1e5288;
+  --modal-bg: linear-gradient(145deg, #163e69 0%, #0c2540 100%);
   --modal-border: #62b0f5;
 }
 body[data-theme="green"] {
@@ -56,8 +59,8 @@ body[data-theme="red"] {
   --modal-border: #e05a5a;
 }
 body[data-theme="black"] {
-  --table-bg: #222524;
-  --modal-bg: linear-gradient(145deg, #2c302f 0%, #151817 100%);
+  --table-bg: #1a1f26;
+  --modal-bg: linear-gradient(145deg, #242b35 0%, #11151c 100%);
   --modal-border: #73807c;
 }
 body[data-theme="wood"] {
@@ -71,16 +74,16 @@ body[data-theme="wood"] {
 /* Header & Top Scoreboard */
 .main-header {
   display: flex; align-items: center; justify-content: space-between;
-  background: rgba(0, 0, 0, 0.78); backdrop-filter: blur(12px);
-  padding: 6px 14px; border-bottom: 1px solid rgba(255,255,255,0.15); z-index: 100;
+  background: rgba(8, 13, 23, 0.88); backdrop-filter: blur(12px);
+  padding: 6px 12px; border-bottom: 1px solid rgba(255,255,255,0.16); z-index: 100;
   gap: 8px;
 }
-.header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.header-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
 .icon-btn {
-  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.22);
   color: #fff; border-radius: 50%; width: 34px; height: 34px;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 1rem; transition: background 0.2s; padding: 0;
+  cursor: pointer; font-size: 0.98rem; transition: background 0.2s, transform 0.1s; padding: 0;
 }
 .icon-btn:hover { background: rgba(255,255,255,0.22); }
 
@@ -89,50 +92,55 @@ body[data-theme="wood"] {
 }
 .ts-player {
   display: inline-flex; align-items: center; gap: 5px;
-  background: rgba(255,255,255,0.1); padding: 4px 10px;
-  border-radius: 99px; font-size: 0.84rem; white-space: nowrap;
-  border: 1.5px solid rgba(255,255,255,0.12); transition: all 0.2s;
-  cursor: pointer;
+  background: rgba(255,255,255,0.09); padding: 4px 10px;
+  border-radius: 99px; font-size: 0.82rem; white-space: nowrap;
+  border: 1.5px solid rgba(255,255,255,0.15); transition: all 0.18s;
+  cursor: pointer; position: relative;
+}
+.ts-player:hover {
+  background: rgba(255,255,255,0.18);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
 }
 .ts-player.active {
-  background: rgba(255, 214, 111, 0.25); border-color: #ffd66f; color: #ffe7a5;
-  box-shadow: 0 0 12px rgba(255, 214, 111, 0.28);
+  background: rgba(255, 214, 111, 0.24); border-color: #ffd66f; color: #ffe7a5;
+  box-shadow: 0 0 12px rgba(255, 214, 111, 0.32);
 }
 .ts-player.bankrupt {
-  opacity: 0.45; text-decoration: line-through;
+  opacity: 0.48; text-decoration: line-through; border-style: dashed;
 }
-.ts-player strong { color: #ffd66f; }
+.ts-player strong { color: #ffe7a5; }
 .ts-player .ts-name {
-  display: inline-block; max-width: 90px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom;
+  display: inline-block; max-width: 96px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom;
 }
 .ts-jail-pill {
-  background: #ef4444; color: #fff; font-size: 0.65rem; font-weight: 800;
-  padding: 1px 5px; border-radius: 5px;
+  background: #ef4444; color: #fff; font-size: 0.64rem; font-weight: 800;
+  padding: 1px 5px; border-radius: 5px; cursor: pointer;
 }
 .ts-prop-count {
-  background: rgba(0,0,0,0.35); color: #cbd5e1; font-size: 0.72rem; font-weight: 700;
-  padding: 1px 5px; border-radius: 5px;
+  background: rgba(15, 23, 42, 0.65); color: #93c5fd; font-size: 0.72rem; font-weight: 800;
+  padding: 1px 6px; border-radius: 6px; border: 1px solid rgba(147, 197, 253, 0.3);
 }
 .kick-btn {
   background: #ef4444; color: #fff; border: none; border-radius: 50%; width: 18px; height: 18px;
   font-size: 10px; display: flex; align-items: center; justify-content: center;
-  padding: 0; cursor: pointer; margin-left: 3px; box-shadow: none;
+  padding: 0; cursor: pointer; margin-left: 2px; box-shadow: none;
 }
 
 /* Setup & Lobby */
-.wrap { max-width: 900px; margin: 0 auto; padding: 20px; flex: 1; display: flex; flex-direction: column; width: 100%; overflow-y: auto; }
-.panel { background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 28px; box-shadow: 0 16px 40px rgba(0,0,0,0.4); }
+.wrap { max-width: 900px; margin: 0 auto; padding: 18px; flex: 1; display: flex; flex-direction: column; width: 100%; overflow-y: auto; }
+.panel { background: rgba(8, 15, 28, 0.68); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.14); border-radius: 20px; padding: 24px; box-shadow: 0 16px 40px rgba(0,0,0,0.45); }
 .hidden { display: none !important; }
-.hero { text-align: center; margin-bottom: 20px; }
+.hero { text-align: center; margin-bottom: 18px; }
 
 /* Interactive Monopoly Hero Stage */
 .interactive-mono-stage {
-  position: relative; width: 220px; height: 195px; margin: 0 auto 10px;
+  position: relative; width: 220px; height: 185px; margin: 0 auto 8px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; user-select: none; perspective: 900px;
 }
 .hero-deed-card {
-  width: 118px; height: 154px; background: #fffdf9; color: #1e293b;
+  width: 118px; height: 150px; background: #fffdf9; color: #1e293b;
   border-radius: 12px; border: 3px solid #1e293b;
   box-shadow: 0 16px 30px rgba(0,0,0,0.55);
   display: flex; flex-direction: column; overflow: hidden;
@@ -140,7 +148,7 @@ body[data-theme="wood"] {
   z-index: 3;
 }
 .hero-deed-companion {
-  position: absolute; width: 108px; height: 142px; background: #f8fafc; color: #1e293b;
+  position: absolute; width: 108px; height: 138px; background: #f8fafc; color: #1e293b;
   border-radius: 12px; border: 2.5px solid #334155;
   box-shadow: 0 10px 20px rgba(0,0,0,0.45);
   display: flex; flex-direction: column; overflow: hidden;
@@ -168,38 +176,39 @@ body[data-theme="wood"] {
 }
 .hero-roll-hint {
   position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.72); border: 1px solid rgba(255, 214, 111, 0.45);
-  color: #ffe7a5; font-size: 0.78rem; font-weight: 600; padding: 4px 12px;
+  background: rgba(0, 0, 0, 0.76); border: 1px solid rgba(255, 214, 111, 0.45);
+  color: #ffe7a5; font-size: 0.76rem; font-weight: 600; padding: 4px 12px;
   border-radius: 20px; white-space: nowrap; z-index: 6;
 }
 
-h1 { font-family: Georgia, serif; font-size: 2.5rem; margin: 0 0 6px; color: #ffe7a5; letter-spacing: 1.5px; text-shadow: 0 4px 8px rgba(0,0,0,0.5); }
-.sub { font-size: 1rem; color: #c4e0d0; }
+h1 { font-family: Georgia, serif; font-size: 2.3rem; margin: 0 0 4px; color: #ffe7a5; letter-spacing: 1.5px; text-shadow: 0 4px 8px rgba(0,0,0,0.5); }
+.sub { font-size: 0.96rem; color: #c4e0d0; }
 
 /* Buttons & Inputs */
 .row { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
-button, input, select { font: inherit; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); padding: 10px 18px; outline: none; }
-button { background: linear-gradient(180deg, #ffe7a5, #e6b94e); color: #38280c; font-weight: 750; cursor: pointer; box-shadow: 0 4px 0 #9c7324; transition: transform 0.1s, filter 0.15s; }
-button:hover { filter: brightness(1.05); }
-button:active { transform: translateY(3px); box-shadow: 0 1px 0 #9c7324; }
-button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
-.btn-alt { background: linear-gradient(180deg, #4b665a, #2f4339); color: #fff; box-shadow: 0 4px 0 #1b2620; }
-.btn-danger { background: linear-gradient(180deg, #ef4444, #b91c1c); color: #fff; box-shadow: 0 4px 0 #7f1d1d; }
-.btn-good { background: linear-gradient(180deg, #22c55e, #15803d); color: #fff; box-shadow: 0 4px 0 #14532d; }
+button, input, select { font: inherit; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); padding: 9px 16px; outline: none; }
+button { background: linear-gradient(180deg, #ffe7a5, #e6b94e); color: #38280c; font-weight: 750; cursor: pointer; box-shadow: 0 3px 0 #9c7324; transition: transform 0.1s, filter 0.15s; }
+button:hover { filter: brightness(1.06); }
+button:active { transform: translateY(2px); box-shadow: 0 1px 0 #9c7324; }
+button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-alt { background: linear-gradient(180deg, #3b526b, #233447); color: #fff; box-shadow: 0 3px 0 #111a24; }
+.btn-danger { background: linear-gradient(180deg, #ef4444, #b91c1c); color: #fff; box-shadow: 0 3px 0 #7f1d1d; }
+.btn-good { background: linear-gradient(180deg, #22c55e, #15803d); color: #fff; box-shadow: 0 3px 0 #14532d; }
+.btn-auction { background: linear-gradient(180deg, #f97316, #c2410c); color: #fff; box-shadow: 0 3px 0 #7c2d12; }
 input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 
 /* Player Profile & Emoji Picker */
 .profile-card {
   background: rgba(0, 0, 0, 0.42); border: 1.5px solid rgba(255, 214, 111, 0.35);
-  border-radius: 16px; padding: 14px 18px; margin-bottom: 18px; width: 100%;
+  border-radius: 16px; padding: 14px 18px; margin-bottom: 16px; width: 100%;
 }
-.profile-card-title { font-size: 0.9rem; font-weight: 600; color: #aebdb4; margin-bottom: 8px; text-align: left; }
+.profile-card-title { font-size: 0.88rem; font-weight: 600; color: #aebdb4; margin-bottom: 8px; text-align: left; }
 .profile-card-hint { text-align: left; font-size: 0.78rem; color: #aebdb4; margin-top: 6px; opacity: 0.85; }
 .avatar-picker-row { display: flex; align-items: center; gap: 12px; width: 100%; }
 .avatar-select-btn {
-  width: 52px; height: 52px; border-radius: 14px; border: 2px solid #ffd66f;
+  width: 50px; height: 50px; border-radius: 14px; border: 2px solid #ffd66f;
   background: rgba(255, 214, 111, 0.18); display: flex; align-items: center; justify-content: center;
-  font-size: 1.85rem; cursor: pointer; position: relative; flex-shrink: 0; padding: 0;
+  font-size: 1.8rem; cursor: pointer; position: relative; flex-shrink: 0; padding: 0;
 }
 #userNameInput { flex: 1; min-width: 0; }
 .avatar-edit-badge {
@@ -224,94 +233,111 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 .controls-grid label { display: block; font-size: 0.82rem; color: #aebdb4; margin-bottom: 5px; }
 .controls-grid select, .controls-grid input { width: 100%; padding: 8px 10px; }
 
-/* === MAIN GAME LAYOUT & 11x11 WORLD EDITION BOARD === */
+/* === MAIN GAME LAYOUT & 11x11 WORLD EDITION BUSINESS BOARD === */
 .game-area {
   flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;
 }
 .status-strip {
-  padding: 4px 12px; background: rgba(0,0,0,0.42); border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 4px 12px; background: rgba(8, 13, 23, 0.62); border-bottom: 1px solid rgba(255,255,255,0.1);
   display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
 }
 .game-core {
   flex: 1; display: flex; align-items: center; justify-content: center;
-  overflow: auto; padding: 8px; position: relative; min-height: 0;
+  overflow: auto; padding: 6px; position: relative; min-height: 0;
 }
 
-/* 11x11 Monopoly Board Container matching uploaded World Edition image */
+/* 11x11 Monopoly Business Board Container */
 .monopoly-board {
-  width: min(94vw, calc(100dvh - 115px), 820px);
-  height: min(94vw, calc(100dvh - 115px), 820px);
+  width: min(95vw, calc(100dvh - 108px), 840px);
+  height: min(95vw, calc(100dvh - 108px), 840px);
   min-width: 340px;
   min-height: 340px;
-  background: var(--board-bg);
-  border: 4px solid #111827;
-  border-radius: 8px;
-  box-shadow: 0 18px 48px rgba(0,0,0,0.7), inset 0 0 0 2px #0f172a;
+  background: #cdebe0;
+  border: 5px solid #0f172a;
+  border-radius: 12px;
+  box-shadow: 0 22px 55px rgba(0,0,0,0.75), inset 0 0 0 2px #1e293b;
   display: grid;
-  grid-template-columns: 1.35fr repeat(9, 1fr) 1.35fr;
-  grid-template-rows: 1.35fr repeat(9, 1fr) 1.35fr;
+  grid-template-columns: 1.42fr repeat(9, 1fr) 1.42fr;
+  grid-template-rows: 1.42fr repeat(9, 1fr) 1.42fr;
   position: relative;
   user-select: none;
   color: #0f172a;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 /* Individual Board Space Cell */
 .board-cell {
   border: 1px solid #1e293b;
-  background: var(--cell-bg);
+  background: linear-gradient(180deg, #f4fbf7 0%, #e1f3e9 100%);
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
-  padding: 2px;
+  padding: 0;
   text-align: center;
   cursor: pointer;
   overflow: hidden;
-  transition: filter 0.15s, box-shadow 0.15s;
+  transition: filter 0.14s, box-shadow 0.14s, transform 0.1s;
+  min-width: 0;
+  min-height: 0;
 }
 .board-cell:hover {
-  filter: brightness(0.95);
-  z-index: 4;
-  box-shadow: inset 0 0 0 2px #f59e0b;
+  filter: brightness(0.97);
+  z-index: 6;
+  box-shadow: inset 0 0 0 2.5px #f59e0b;
 }
 .board-cell.selected-cell {
-  box-shadow: inset 0 0 0 2.5px #eab308, 0 0 10px rgba(234,179,8,0.65);
-  z-index: 5;
+  box-shadow: inset 0 0 0 3px #eab308, 0 0 12px rgba(234,179,8,0.75);
+  background: #fef9c3;
+  z-index: 7;
 }
 .board-cell.mortgaged-cell {
-  opacity: 0.65;
-  background: #cbd5e1;
+  background: repeating-linear-gradient(135deg, #cbd5e1 0px, #cbd5e1 5px, #e2e8f0 5px, #e2e8f0 10px);
+}
+.board-cell.mortgaged-cell .cell-name {
+  text-decoration: line-through;
+  color: #475569;
 }
 
-/* Color Band Positions matching physical board orientation */
+/* Color Band Positions matching physical board orientation (Fixed Direct Class Selectors!) */
 .cell-band {
   width: 100%;
   height: 22%;
-  min-height: 8px;
-  border-bottom: 1px solid #1e293b;
+  min-height: 9px;
+  border-bottom: 1.5px solid #0f172a;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1px;
-  font-size: 0.55rem;
+  font-size: clamp(0.45rem, 0.9vmin, 0.65rem);
   flex-shrink: 0;
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.35);
 }
-.side-top .board-cell { flex-direction: column-reverse; }
-.side-top .cell-band { border-bottom: none; border-top: 1px solid #1e293b; }
+.board-cell.side-bottom { flex-direction: column; }
+.board-cell.side-top { flex-direction: column-reverse; }
+.board-cell.side-top .cell-band { border-bottom: none; border-top: 1.5px solid #0f172a; }
 
-.side-left .board-cell { flex-direction: row-reverse; }
-.side-left .cell-band {
-  width: 22%; height: 100%; min-width: 8px;
-  border-bottom: none; border-left: 1px solid #1e293b;
+.board-cell.side-left { flex-direction: row-reverse; }
+.board-cell.side-left .cell-band {
+  width: 20%;
+  height: 100%;
+  min-width: 9px;
+  min-height: 0;
+  border-bottom: none;
+  border-left: 1.5px solid #0f172a;
   flex-direction: column;
 }
 
-.side-right .board-cell { flex-direction: row; }
-.side-right .cell-band {
-  width: 22%; height: 100%; min-width: 8px;
-  border-bottom: none; border-right: 1px solid #1e293b;
+.board-cell.side-right { flex-direction: row; }
+.board-cell.side-right .cell-band {
+  width: 20%;
+  height: 100%;
+  min-width: 9px;
+  min-height: 0;
+  border-bottom: none;
+  border-right: 1.5px solid #0f172a;
   flex-direction: column;
 }
 
@@ -321,85 +347,149 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
-  height: 100%;
-  padding: 1px 2px;
+  padding: 2px 2px;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
+  position: relative;
 }
+
+/* Side-left and side-right have wider horizontal room and tighter vertical height */
+.board-cell.side-left .cell-content,
+.board-cell.side-right .cell-content {
+  justify-content: center;
+  gap: 1px;
+  padding: 1px 3px;
+}
+
 .cell-name {
-  font-size: clamp(0.42rem, 0.92vmin, 0.66rem);
-  font-weight: 800;
-  line-height: 1.05;
+  font-size: clamp(0.43rem, 0.88vmin, 0.66rem);
+  font-weight: 850;
+  line-height: 1.04;
   color: #0f172a;
   text-transform: uppercase;
+  letter-spacing: -0.2px;
   word-break: break-word;
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  max-width: 100%;
+  flex-shrink: 0;
 }
+.board-cell.side-left .cell-name,
+.board-cell.side-right .cell-name {
+  font-size: clamp(0.42rem, 0.84vmin, 0.64rem);
+  line-height: 1.02;
+}
+
 .cell-icon {
-  font-size: clamp(0.65rem, 1.5vmin, 1.15rem);
+  font-size: clamp(0.62rem, 1.35vmin, 1.05rem);
   line-height: 1;
+  flex-shrink: 0;
 }
+.board-cell.side-left .cell-icon,
+.board-cell.side-right .cell-icon {
+  font-size: clamp(0.55rem, 1.15vmin, 0.9rem);
+}
+
 .cell-price {
-  font-size: clamp(0.38rem, 0.8vmin, 0.58rem);
+  font-size: clamp(0.39rem, 0.78vmin, 0.58rem);
   font-weight: 800;
-  color: #334155;
+  color: #1e293b;
+  background: rgba(15, 23, 42, 0.07);
+  padding: 0 3px;
+  border-radius: 3px;
   white-space: nowrap;
+  line-height: 1.15;
+  flex-shrink: 0;
+}
+
+/* Special Non-Property Cells (Chance, Community Chest, Tax) */
+.board-cell.special-cc {
+  background: linear-gradient(180deg, #e0f2fe 0%, #bae6fd 100%);
+}
+.board-cell.special-chance {
+  background: linear-gradient(180deg, #fef3c7 0%, #fde68a 100%);
+}
+.board-cell.special-tax {
+  background: linear-gradient(180deg, #f1f5f9 0%, #cbd5e1 100%);
 }
 
 /* Corner Cells */
-.corner-cell {
-  background: #bfe6d0;
+.board-cell.corner-cell {
+  background: radial-gradient(circle at center, #ffffff 0%, #bfe6d0 100%);
   font-weight: 900;
   justify-content: center;
+  align-items: center;
   gap: 2px;
   padding: 3px;
+  border-width: 1.5px;
 }
-.corner-cell .cell-name {
-  font-size: clamp(0.48rem, 1.05vmin, 0.74rem);
-  -webkit-line-clamp: 3;
+.board-cell.corner-cell .cell-content {
+  justify-content: center;
+  gap: 2px;
 }
-.corner-cell .cell-icon {
-  font-size: clamp(0.95rem, 2.2vmin, 1.65rem);
+.board-cell.corner-cell .cell-name {
+  font-size: clamp(0.5rem, 1.05vmin, 0.76rem);
+  color: #064e3b;
+}
+.board-cell.corner-cell .cell-icon {
+  font-size: clamp(0.95rem, 2.1vmin, 1.55rem);
+}
+.board-cell.corner-cell .cell-price {
+  background: #065f46;
+  color: #fde047;
+  padding: 1px 5px;
+  border-radius: 4px;
 }
 
-/* Owner Indicator Bar & Token Dots on Cell */
-.cell-owner-dot {
+/* Owner Indicator Ribbon & Dot on Cell */
+.cell-owner-badge {
   position: absolute;
   bottom: 2px;
   right: 2px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 1.5px solid #000;
-  z-index: 3;
+  height: 11px;
+  min-width: 11px;
+  padding: 0 3px;
+  border-radius: 99px;
+  border: 1.5px solid #0f172a;
+  font-size: 0.45rem;
+  font-weight: 900;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.45);
 }
+.board-cell.side-left .cell-owner-badge {
+  right: auto;
+  left: 2px;
+}
+
+/* Player Tokens on Cell */
 .cell-tokens {
   position: absolute;
-  inset: 0;
+  bottom: 1px;
+  left: 1px;
+  right: 1px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 1px;
   pointer-events: none;
-  z-index: 6;
-  padding: 2px;
+  z-index: 8;
 }
 .board-token {
-  width: clamp(14px, 2.3vmin, 22px);
-  height: clamp(14px, 2.3vmin, 22px);
+  width: clamp(13px, 2.1vmin, 20px);
+  height: clamp(13px, 2.1vmin, 20px);
   border-radius: 50%;
   background: var(--tcolor, #f0c93d);
-  border: 2px solid #fff;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.75);
+  border: 1.5px solid #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.8);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(0.55rem, 1.25vmin, 0.85rem);
+  font-size: clamp(0.52rem, 1.15vmin, 0.8rem);
   line-height: 1;
   transition: transform 0.25s;
 }
@@ -407,32 +497,45 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   border-color: #fde047;
   box-shadow: 0 0 8px #fde047, 0 2px 6px rgba(0,0,0,0.85);
   transform: scale(1.16);
-  z-index: 8;
+  z-index: 9;
 }
 
-/* Center 9x9 Hub (Grid area 2 / 2 / 11 / 11) matching the World Edition Board Image */
+/* Center 9x9 Hub (Grid area 2 / 2 / 11 / 11) */
 .board-center {
   grid-column: 2 / 11;
   grid-row: 2 / 11;
   position: relative;
   background:
-    radial-gradient(circle at 50% 42%, rgba(255,255,255,0.45) 0%, rgba(45, 149, 116, 0.28) 65%, rgba(18, 86, 64, 0.45) 100%),
-    repeating-linear-gradient(135deg, rgba(16, 95, 70, 0.08) 0px, rgba(16, 95, 70, 0.08) 8px, transparent 8px, transparent 16px),
-    linear-gradient(145deg, #c7eedb 0%, #7ecba7 50%, #52b088 100%);
-  border: 2px solid #1e293b;
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,0.52) 0%, rgba(45, 149, 116, 0.25) 62%, rgba(15, 76, 58, 0.5) 100%),
+    repeating-linear-gradient(135deg, rgba(16, 95, 70, 0.06) 0px, rgba(16, 95, 70, 0.06) 10px, transparent 10px, transparent 20px),
+    linear-gradient(145deg, #d1f4e3 0%, #8ed6b6 50%, #5cb892 100%);
+  border: 2px solid #0f172a;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: clamp(6px, 1.6vmin, 16px);
+  padding: clamp(6px, 1.5vmin, 14px);
   overflow: hidden;
 }
 
-/* Diagonal Card Slots in Center Corners (Community Chest Top-Left, Chance Bottom-Right) */
+/* Compass World Watermark in Center */
+.center-world-watermark {
+  position: absolute;
+  width: 68%;
+  height: 68%;
+  top: 16%;
+  left: 16%;
+  border-radius: 50%;
+  border: 2px dashed rgba(6, 78, 59, 0.14);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Diagonal Card Slots in Center Corners */
 .center-deck-slot {
   position: absolute;
   width: clamp(58px, 11vmin, 98px);
-  height: clamp(40px, 7.5vmin, 66px);
+  height: clamp(38px, 7.2vmin, 64px);
   border-radius: 8px;
   border: 2.5px solid #fff;
   box-shadow: 0 6px 14px rgba(0,0,0,0.38);
@@ -441,28 +544,28 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  font-size: clamp(0.45rem, 0.95vmin, 0.68rem);
+  font-size: clamp(0.44rem, 0.92vmin, 0.66rem);
   color: #fff;
   text-transform: uppercase;
   text-align: center;
   cursor: pointer;
   z-index: 2;
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 .center-deck-slot.cc-slot {
-  top: clamp(10px, 2.5vmin, 26px);
-  left: clamp(10px, 2.5vmin, 26px);
+  top: clamp(8px, 2.2vmin, 22px);
+  left: clamp(8px, 2.2vmin, 22px);
   background: linear-gradient(135deg, #0284c7, #0369a1);
-  transform: rotate(-38deg);
+  transform: rotate(-36deg);
 }
-.center-deck-slot.cc-slot:hover { transform: rotate(-38deg) scale(1.07); }
+.center-deck-slot.cc-slot:hover { transform: rotate(-36deg) scale(1.07); }
 .center-deck-slot.chance-slot {
-  bottom: clamp(10px, 2.5vmin, 26px);
-  right: clamp(10px, 2.5vmin, 26px);
+  bottom: clamp(8px, 2.2vmin, 22px);
+  right: clamp(8px, 2.2vmin, 22px);
   background: linear-gradient(135deg, #f59e0b, #d97706);
-  transform: rotate(-38deg);
+  transform: rotate(-36deg);
 }
-.center-deck-slot.chance-slot:hover { transform: rotate(-38deg) scale(1.07); }
+.center-deck-slot.chance-slot:hover { transform: rotate(-36deg) scale(1.07); }
 
 /* Center MONOPOLY Banner */
 .center-brand-banner {
@@ -470,7 +573,7 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   flex-direction: column;
   align-items: center;
   z-index: 3;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 .monopoly-red-logo {
   background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
@@ -478,48 +581,48 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   box-shadow: 0 5px 14px rgba(0,0,0,0.45);
   color: #fff;
   font-family: 'Arial Black', Impact, sans-serif;
-  font-size: clamp(0.95rem, 2.5vmin, 1.75rem);
+  font-size: clamp(0.9rem, 2.3vmin, 1.65rem);
   font-weight: 900;
-  letter-spacing: 2px;
-  padding: 2px 14px;
-  border-radius: 6px;
+  letter-spacing: 2.5px;
+  padding: 2px 16px;
+  border-radius: 7px;
   text-shadow: 1px 2px 0 #450a0a;
 }
 .monopoly-sub-logo {
-  font-size: clamp(0.48rem, 1vmin, 0.72rem);
+  font-size: clamp(0.46rem, 0.95vmin, 0.68rem);
   font-weight: 800;
   color: #064e3b;
   letter-spacing: 0.8px;
   margin-top: 2px;
 }
 
-/* Interactive Center Play Hub (Dice, Current Space Info, Action Buttons) */
+/* Interactive Center Play Hub */
 .center-play-hub {
   z-index: 4;
-  background: rgba(15, 23, 42, 0.86);
-  backdrop-filter: blur(8px);
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
   border-radius: 14px;
-  padding: clamp(6px, 1.4vmin, 14px);
-  width: 88%;
-  max-width: 390px;
+  padding: clamp(6px, 1.3vmin, 12px);
+  width: 90%;
+  max-width: 410px;
   color: #fff;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(4px, 1vmin, 8px);
-  box-shadow: 0 10px 26px rgba(0,0,0,0.48);
+  gap: clamp(4px, 0.9vmin, 8px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.52);
 }
 
 .dice-stage {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
 }
 .die-box {
-  width: clamp(32px, 5.5vmin, 46px);
-  height: clamp(32px, 5.5vmin, 46px);
+  width: clamp(30px, 5vmin, 44px);
+  height: clamp(30px, 5vmin, 44px);
   background: linear-gradient(145deg, #ffffff, #e2e8f0);
   color: #0f172a;
   border-radius: 9px;
@@ -528,27 +631,29 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(1.1rem, 2.4vmin, 1.55rem);
+  font-size: clamp(1.05rem, 2.3vmin, 1.5rem);
   font-weight: 900;
-}
-.die-box.rolling {
-  animation: dieShake 0.4s infinite;
-}
-@keyframes dieShake {
-  0% { transform: rotate(0deg) scale(1); }
-  25% { transform: rotate(-14deg) scale(1.08); }
-  75% { transform: rotate(14deg) scale(1.08); }
-  100% { transform: rotate(0deg) scale(1); }
 }
 
 .hub-space-card {
   width: 100%;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.18);
   border-radius: 10px;
   padding: 5px 10px;
   text-align: center;
-  font-size: clamp(0.68rem, 1.3vmin, 0.84rem);
+  font-size: clamp(0.66rem, 1.25vmin, 0.82rem);
+}
+.mandatory-banner {
+  background: rgba(249, 115, 22, 0.22);
+  border: 1px solid #fb923c;
+  color: #ffedd5;
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: clamp(0.6rem, 1.1vmin, 0.74rem);
+  font-weight: 700;
+  width: 100%;
+  text-align: center;
 }
 .hub-actions {
   display: flex;
@@ -558,26 +663,26 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   width: 100%;
 }
 .hub-actions button {
-  padding: clamp(5px, 1vmin, 8px) clamp(8px, 1.5vmin, 14px);
-  font-size: clamp(0.68rem, 1.25vmin, 0.84rem);
+  padding: clamp(5px, 0.9vmin, 8px) clamp(8px, 1.4vmin, 13px);
+  font-size: clamp(0.66rem, 1.2vmin, 0.82rem);
   border-radius: 8px;
 }
 
-/* Bottom Toolbar (Properties, Transfer, Ledger/Tracker, History) */
+/* Bottom Toolbar */
 .bottom-toolbar {
-  background: rgba(0,0,0,0.78);
+  background: rgba(8, 13, 23, 0.88);
   border-top: 1px solid rgba(255,255,255,0.15);
-  padding: 6px 12px;
+  padding: 6px 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   z-index: 20;
 }
 .bottom-toolbar button {
-  padding: 6px 12px;
-  font-size: 0.82rem;
+  padding: 6px 11px;
+  font-size: 0.8rem;
   border-radius: 8px;
 }
 
@@ -586,7 +691,7 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   display: inline-flex; align-items: center; gap: 4px;
   background: rgba(0, 0, 0, 0.55); border: 1.5px solid rgba(255, 214, 111, 0.55);
   color: #ffe7a5; padding: 2px 9px; border-radius: 99px;
-  font-family: monospace; font-size: 0.88rem; font-weight: 700;
+  font-family: monospace; font-size: 0.86rem; font-weight: 700;
 }
 .timer-badge.urgent {
   background: rgba(220, 38, 38, 0.45); border-color: #f87171; color: #fecaca;
@@ -595,63 +700,268 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 /* Toast Notification */
 .draw-toast {
   position: absolute; top: 10px; right: 14px; z-index: 250;
-  background: rgba(0, 0, 0, 0.88); border: 1.5px solid #ffd66f; color: #ffe7a5;
-  padding: 7px 14px; border-radius: 99px; font-size: 0.86rem; font-weight: 700;
+  background: rgba(8, 15, 28, 0.94); border: 1.5px solid #ffd66f; color: #ffe7a5;
+  padding: 7px 14px; border-radius: 99px; font-size: 0.84rem; font-weight: 700;
   display: flex; align-items: center; gap: 8px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.65); pointer-events: none;
-  animation: drawToastSlide 2.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation: drawToastSlide 2.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 @keyframes drawToastSlide {
   0% { opacity: 0; transform: translateX(30px) scale(0.85); }
-  15% { opacity: 1; transform: translateX(0) scale(1); }
-  82% { opacity: 1; transform: translateX(0) scale(1); }
+  12% { opacity: 1; transform: translateX(0) scale(1); }
+  85% { opacity: 1; transform: translateX(0) scale(1); }
   100% { opacity: 0; transform: translateY(-12px) scale(0.92); }
 }
 
 /* Modals */
 .modal {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.82); backdrop-filter: blur(6px);
+  position: fixed; inset: 0; background: rgba(4, 9, 18, 0.84); backdrop-filter: blur(6px);
   display: flex; align-items: center; justify-content: center; z-index: 1000;
+  padding: 10px;
 }
 .modal-box {
-  background: var(--modal-bg, #1b568c); border: 2px solid var(--modal-border, #62b0f5);
-  padding: 24px 22px; border-radius: 22px; text-align: center;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.75); max-width: 94%; width: 520px;
-  max-height: 90vh; overflow-y: auto; color: #fff;
+  background: var(--modal-bg, #163e69); border: 2px solid var(--modal-border, #62b0f5);
+  padding: 20px; border-radius: 20px; text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-width: 96%; width: 540px;
+  max-height: 92vh; display: flex; flex-direction: column; color: #fff;
+  overflow: hidden;
 }
-.modal-box h2 { margin: 0 0 14px; color: #ffe7a5; font-size: 1.75rem; }
-.score-list { background: rgba(0,0,0,0.32); border-radius: 12px; padding: 14px; margin-bottom: 16px; text-align: left; }
-.score-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.95rem; gap: 8px; }
+.modal-scroll-body {
+  overflow-y: auto; flex: 1; min-height: 0; padding-right: 2px;
+}
+.modal-box h2 { margin: 0 0 10px; color: #ffe7a5; font-size: 1.5rem; }
+.score-list { background: rgba(0,0,0,0.32); border-radius: 12px; padding: 12px; margin-bottom: 14px; text-align: left; }
+.score-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.9rem; gap: 8px; }
 .score-row:last-child { border: none; }
 
 /* Title Deed Card Inside Modal */
 .deed-modal-card {
   background: #fffdf9; color: #0f172a; border: 3px solid #0f172a;
-  border-radius: 14px; overflow: hidden; max-width: 320px; margin: 0 auto 14px;
+  border-radius: 14px; overflow: hidden; max-width: 340px; margin: 0 auto 12px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.45); text-align: center;
 }
 .deed-modal-header {
-  padding: 10px 12px; color: #fff; font-weight: 900; font-size: 1.1rem;
+  padding: 10px 12px; color: #fff; font-weight: 900; font-size: 1.08rem;
   text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 2px solid #0f172a;
   text-shadow: 0 1px 2px rgba(0,0,0,0.65);
 }
 .deed-modal-body {
-  padding: 12px 16px; font-size: 0.86rem; display: flex; flex-direction: column; gap: 5px;
+  padding: 10px 14px; font-size: 0.84rem; display: flex; flex-direction: column; gap: 4px;
 }
 .deed-rent-row {
   display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding: 2px 0;
 }
 
+/* Tracker Tabs Bar inside Modals */
+.tracker-tabs {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;
+  background: rgba(0,0,0,0.32); padding: 5px; border-radius: 12px;
+  flex-shrink: 0;
+}
+.tracker-tab-btn {
+  flex: 1; min-width: 110px; padding: 7px 10px; font-size: 0.8rem;
+  border-radius: 8px; background: transparent; color: #cbd5e1;
+  border: 1px solid transparent; box-shadow: none; font-weight: 700;
+}
+.tracker-tab-btn.active {
+  background: linear-gradient(180deg, #ffe7a5, #e6b94e);
+  color: #1e293b;
+  border-color: #fde047;
+}
+
+/* Rich Property Cards in Properties & Houses Tab */
+.group-block {
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+  background: rgba(15, 23, 42, 0.55);
+}
+.group-header-bar {
+  padding: 7px 12px;
+  font-weight: 850;
+  font-size: 0.84rem;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+}
+.group-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+  gap: 10px;
+  padding: 10px;
+}
+.tracker-prop-card {
+  background: rgba(255,255,255,0.07);
+  border: 1.5px solid rgba(255,255,255,0.16);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: left;
+  font-size: 0.78rem;
+  transition: border-color 0.15s;
+}
+.tracker-prop-card.owned {
+  border-color: rgba(79, 140, 255, 0.65);
+  background: rgba(30, 58, 138, 0.22);
+}
+.tracker-prop-card.mortgaged {
+  opacity: 0.68;
+  border-color: rgba(248, 113, 113, 0.6);
+}
+.tpc-top {
+  height: 6px;
+  width: 100%;
+}
+.tpc-body {
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  gap: 4px;
+}
+.tpc-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+}
+.tpc-name {
+  font-weight: 850;
+  font-size: 0.88rem;
+  color: #ffe7a5;
+}
+.tpc-price {
+  font-weight: 800;
+  color: #86efac;
+  font-size: 0.8rem;
+}
+.tpc-schedule {
+  background: rgba(0,0,0,0.28);
+  border-radius: 6px;
+  padding: 4px 7px;
+  font-size: 0.7rem;
+  color: #cbd5e1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 8px;
+  margin: 2px 0;
+}
+.tpc-controls {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.tpc-controls button, .tpc-controls select {
+  padding: 4px 8px;
+  font-size: 0.72rem;
+  border-radius: 6px;
+}
+
+/* ROI Badges & Payer Chips (From monopoly-tracker.html) */
+.roi-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 0.73rem;
+}
+.roi-badge.roi-profit {
+  background: rgba(62, 207, 142, 0.22);
+  color: #6ee7b7;
+  border: 1px solid rgba(62, 207, 142, 0.45);
+}
+.roi-badge.roi-partial {
+  background: rgba(79, 140, 255, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(79, 140, 255, 0.4);
+}
+.roi-badge.roi-zero {
+  color: #94a3b8;
+  background: rgba(255,255,255,0.06);
+}
+.payer-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.payer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.16);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+.payer-chip .payer-amt {
+  font-weight: 800;
+  color: #86efac;
+}
+
+/* Tracker Player & Bank Cards Grid */
+.tracker-players-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+  text-align: left;
+}
+.tracker-pcard {
+  background: rgba(0,0,0,0.35);
+  border: 1.5px solid rgba(255,255,255,0.16);
+  border-radius: 12px;
+  padding: 12px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tracker-pcard::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 5px;
+  background: var(--pcolor, #f0c93d);
+}
+.prop-mini-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.25);
+}
+
 /* Ledger Table in Modal */
-.ledger-table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
+.ledger-table { border-collapse: collapse; width: 100%; font-size: 0.78rem; }
 .ledger-table th, .ledger-table td { border: 1px solid rgba(255,255,255,0.18); padding: 6px 8px; text-align: center; }
-.ledger-table th { background: rgba(0,0,0,0.35); color: #ffe7a5; }
+.ledger-table th { background: rgba(0,0,0,0.4); color: #ffe7a5; font-weight: 800; }
 </style>
 </head>
 <body>
 
 <header class="main-header hidden" id="gameHeader">
-  <div id="topScoreboard" class="top-scoreboard"></div>
+  <div id="topScoreboard" class="top-scoreboard" title="Click any player to view their owned properties &amp; portfolio"></div>
   <div class="header-actions">
     <button id="hostManageBtn" class="icon-btn hidden" type="button" title="Add / Remove Players">👥</button>
     <button id="recenterBtn" class="icon-btn" type="button" title="Forfeit / End Game" style="border-color:rgba(248,113,113,0.5); background:rgba(239,68,68,0.2);">🎯</button>
@@ -688,7 +998,7 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
         </div>
       </div>
       <h1>MONOPOLY WORLD</h1>
-      <div class="sub">Here &amp; Now: World Edition Board · Tracker Rules · Multi-LAN PeerJS</div>
+      <div class="sub">Here &amp; Now: World Edition Board · Full Money Tracker · Auctions · Multi-LAN</div>
     </div>
 
     <!-- Player Profile -->
@@ -702,7 +1012,7 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
         <input id="userNameInput" type="text" placeholder="Your username..." maxlength="20">
       </div>
       <div class="profile-card-hint">
-        💡 Tap the emoji to pick your token avatar.
+        💡 Tap the emoji to pick your token avatar. Click any player in-game to inspect their portfolio.
       </div>
     </div>
 
@@ -751,7 +1061,7 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
       </div>
     </div>
     <div id="setupMsg" style="text-align:center; margin-top:14px; color:#ffe7a5; font-size:0.9rem;"></div>
-    <div style="text-align:center; margin-top: 22px;">
+    <div style="text-align:center; margin-top: 20px;">
       <label style="color:#aebdb4; font-size:0.92rem;">Table Theme:
         <select id="themeSelect" style="margin-left:8px; padding:7px 12px; background:#fff; color:#000; border-radius:6px;">
           <option value="blue" selected>Ocean Blue (Classic)</option>
@@ -766,7 +1076,7 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 
   <!-- WAITING ROOM LOBBY -->
   <section class="panel hidden" id="lobbyPanel" style="text-align:center;">
-    <h2 style="font-size:2.2rem; color:#ffe7a5; margin:0 0 8px;">Waiting Room</h2>
+    <h2 style="font-size:2.1rem; color:#ffe7a5; margin:0 0 8px;">Waiting Room</h2>
     <div style="margin-bottom:12px;">Room Code: <span class="roomcode" id="roomCodeLabel">—</span></div>
     <div id="lobbyRulesBadge" style="margin-bottom: 14px; font-size: 0.9rem; color: #c4e0d0; font-weight: 600;"></div>
 
@@ -803,7 +1113,7 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
     </div>
 
     <div id="hostControls" class="controls-grid hidden">
-      <div><label>Player Limit</label><select id="playerLimit"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option></select></div>
+      <div><label>Player Limit</label><select id="playerLimit"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
       <div><label>Starting Balance</label><select id="lobbyStartBalance"><option value="15000000" selected>$15M (World Standard)</option><option value="1500000">$1.5M (Tracker Classic)</option><option value="10000000">$10M</option><option value="20000000">$20M</option></select></div>
       <div>
         <label>Match Timer Mode</label>
@@ -838,11 +1148,13 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 <!-- GAME AREA -->
 <main class="game-area hidden" id="gamePanel">
   <div class="status-strip">
-    <div style="display:flex; align-items:center; gap:8px;">
-      <div id="turnLabel" style="font-size:0.94rem; font-weight:bold; color:#ffe7a5;">Waiting...</div>
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+      <div id="turnLabel" style="font-size:0.92rem; font-weight:800; color:#ffe7a5;">Waiting...</div>
       <div id="gameTimerBadge" class="timer-badge hidden">⏱️ --:--</div>
+      <span style="font-size:0.75rem; color:#93c5fd;">💡 Click any player above to view their properties</span>
     </div>
-    <div style="display:flex; align-items:center; gap:10px; font-size:0.8rem; color:#c4e0d0;">
+    <div style="display:flex; align-items:center; gap:10px; font-size:0.78rem; color:#c4e0d0;">
+      <span>🏦 Bank Net: <b id="hudBankNet">$0</b></span>
       <span>🏠 Houses Left: <b id="hudHousesLeft">32</b></span>
       <span>🏨 Hotels Left: <b id="hudHotelsLeft">12</b></span>
       <button id="inGameRejoinBtn" type="button" class="btn-alt hidden" style="padding:2px 8px; font-size:0.74rem;">🔄 Reconnect</button>
@@ -852,7 +1164,7 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   <div class="game-core">
     <div id="drawToastContainer"></div>
 
-    <!-- 11x11 World Edition Board -->
+    <!-- 11x11 World Edition Business Board -->
     <div class="monopoly-board" id="monopolyBoard">
       <!-- Populated dynamically with all 40 World Edition spaces + Center Play Hub -->
     </div>
@@ -861,104 +1173,202 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   <!-- Bottom Action & Tracker Toolbar -->
   <div class="bottom-toolbar">
     <button id="openPropsModalBtn" type="button" class="btn-alt">🏘️ Properties &amp; Build</button>
+    <button id="openPlayersTrackerBtn" type="button" class="btn-alt">👥 Players &amp; Bank Tracker</button>
+    <button id="openLandedResolverBtn" type="button" class="btn-alt">📍 Landed On Resolver</button>
     <button id="openTransferModalBtn" type="button" class="btn-alt">💸 Transfer Money</button>
     <button id="openLedgerModalBtn" type="button" class="btn-alt">📊 Who Gives Whom &amp; Log</button>
-    <button id="passGoQuickBtn" type="button" class="btn-alt" title="Quick Collect $2M Pass GO">+ $2M Pass GO</button>
+    <button id="passGoQuickBtn" type="button" class="btn-good" title="Quick Collect $2M Pass GO">+ $2M Pass GO</button>
   </div>
 </main>
 
+<!-- PLAYER PORTFOLIO MODAL (Triggered when clicking any player on Top Player Bar) -->
+<div id="playerPortfolioModal" class="modal hidden">
+  <div class="modal-box" style="width: 720px; max-width: 96%;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-shrink:0;">
+      <h2 id="portfolioTitle" style="margin:0; font-size:1.45rem;">🎩 Player Portfolio</h2>
+      <button id="closePortfolioModalBtn" class="icon-btn" type="button">✕</button>
+    </div>
+    <div class="modal-scroll-body" id="portfolioModalBody" style="text-align:left;"></div>
+  </div>
+</div>
+
+<!-- LIVE PROPERTY AUCTION MODAL (Mandatory when landing on unowned property and choosing Auction) -->
+<div id="auctionModal" class="modal hidden">
+  <div class="modal-box" style="width: 520px; max-width: 96%;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-shrink:0;">
+      <h2 style="margin:0; font-size:1.45rem; color:#fb923c;">🔨 Live Property Auction</h2>
+      <span id="auctionStatusPill" style="background:rgba(249,115,22,0.25); border:1px solid #fb923c; color:#ffedd5; font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:99px;">Bidding Open</span>
+    </div>
+    <div class="modal-scroll-body" id="auctionModalBody" style="text-align:left;"></div>
+  </div>
+</div>
+
 <!-- PROPERTY / TITLE DEED INSPECT & BUILD MODAL -->
 <div id="deedModal" class="modal hidden">
-  <div class="modal-box" style="width: 400px;">
-    <div id="deedModalContent"></div>
-    <div id="deedModalActions" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:10px;"></div>
-    <button id="closeDeedModalBtn" type="button" class="btn-alt" style="width:100%;">Close</button>
+  <div class="modal-box" style="width: 420px;">
+    <div class="modal-scroll-body">
+      <div id="deedModalContent"></div>
+      <div id="deedModalActions" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:10px;"></div>
+    </div>
+    <button id="closeDeedModalBtn" type="button" class="btn-alt" style="width:100%; flex-shrink:0;">Close</button>
   </div>
 </div>
 
-<!-- ALL PROPERTIES & SETUP MODE MODAL (From monopoly-tracker.html) -->
+<!-- ALL PROPERTIES, HOUSES, ROI OVERVIEW, PLAYERS TRACKER & LANDED ON HUB MODAL -->
 <div id="allPropsModal" class="modal hidden">
-  <div class="modal-box" style="width: 680px; max-width: 96%;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <h2 style="margin:0; font-size:1.45rem;">🏘️ All Properties &amp; Building</h2>
+  <div class="modal-box" style="width: 920px; max-width: 97%;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-shrink:0;">
+      <h2 id="trackerHubTitle" style="margin:0; font-size:1.4rem;">🏘️ Properties, Houses &amp; Monopoly Tracker</h2>
       <button id="closeAllPropsModalBtn" class="icon-btn" type="button">✕</button>
     </div>
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; font-size:0.84rem; color:#c4e0d0; background:rgba(0,0,0,0.28); padding:8px 12px; border-radius:10px;">
-      <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-        <input type="checkbox" id="setupModeCheckbox"> Setup Mode (assign/build without cash payment)
-      </label>
-      <span>🏠 Houses Left: <b id="modalHousesLeft">32</b> · 🏨 Hotels Left: <b id="modalHotelsLeft">12</b></span>
+
+    <!-- Multi-Tab Navigation integrating all monopoly-tracker.html panels -->
+    <div class="tracker-tabs" id="trackerHubTabs">
+      <button type="button" class="tracker-tab-btn active" data-hub-tab="props">🏘️ Properties &amp; Houses (28)</button>
+      <button type="button" class="tracker-tab-btn" data-hub-tab="overview">📈 All Properties ROI Overview</button>
+      <button type="button" class="tracker-tab-btn" data-hub-tab="players">👥 Players &amp; Bank Cards</button>
+      <button type="button" class="tracker-tab-btn" data-hub-tab="landed">📍 Landed On Resolver</button>
     </div>
-    <div id="allPropsContainer" style="display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow-y:auto; text-align:left;"></div>
+
+    <!-- TAB 1: PROPERTIES & HOUSES -->
+    <div id="hubTabProps" class="modal-scroll-body">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px; font-size:0.82rem; color:#c4e0d0; background:rgba(0,0,0,0.32); padding:8px 12px; border-radius:10px;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:700; color:#ffe7a5;">
+            <input type="checkbox" id="setupModeCheckbox"> Setup Mode (assign/build free)
+          </label>
+          <input type="text" id="propSearchInput" placeholder="🔍 Search city / property..." style="padding:5px 10px; font-size:0.78rem; width:175px;">
+          <select id="propFilterSelect" style="padding:5px 8px; font-size:0.78rem;">
+            <option value="all">All 28 Properties</option>
+            <option value="unowned">Unowned Only</option>
+            <option value="owned">Owned Only</option>
+            <option value="buildable">Monopoly / Buildable</option>
+            <option value="mortgaged">Mortgaged Only</option>
+          </select>
+        </div>
+        <span>🏠 Houses Left: <b id="modalHousesLeft">32</b> · 🏨 Hotels Left: <b id="modalHotelsLeft">12</b></span>
+      </div>
+      <div id="allPropsContainer"></div>
+    </div>
+
+    <!-- TAB 2: ALL PROPERTIES OVERVIEW (ROI & PAYER BREAKDOWN) -->
+    <div id="hubTabOverview" class="modal-scroll-body hidden">
+      <div style="overflow-x:auto; background:rgba(0,0,0,0.28); border-radius:12px; padding:8px;">
+        <table class="ledger-table" id="overviewTable"></table>
+      </div>
+      <p style="color:#cbd5e1; font-size:0.76rem; margin:8px 0 0; text-align:left;">
+        💡 <b>Rent Collected</b> is a running lifetime total for the whole game (it survives Clear History and resets only on New Game); <b>% of Price</b> shows how much of its purchase price the property has earned back.
+      </p>
+    </div>
+
+    <!-- TAB 3: PLAYERS & BANK CARDS (From monopoly-tracker.html) -->
+    <div id="hubTabPlayers" class="modal-scroll-body hidden">
+      <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; background:rgba(0,0,0,0.28); padding:8px 12px; border-radius:10px;">
+        <div style="font-size:0.82rem; color:#ffe7a5; font-weight:700;">⚡ Quick Pass GO (+$2M):</div>
+        <div id="hubQuickPassGoRow" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
+      </div>
+      <div id="trackerPlayersGrid" class="tracker-players-grid"></div>
+    </div>
+
+    <!-- TAB 4: LANDED ON RESOLVER (From monopoly-tracker.html) -->
+    <div id="hubTabLanded" class="modal-scroll-body hidden" style="text-align:left;">
+      <div style="background:rgba(0,0,0,0.32); border:1px solid rgba(255,255,255,0.14); border-radius:14px; padding:16px;">
+        <h3 style="margin:0 0 10px; color:#ffe7a5; font-size:1.1rem;">📍 Resolve Any Space Landing</h3>
+        <p style="margin:0 0 14px; font-size:0.82rem; color:#cbd5e1;">
+          Select a player and any property, transport, utility, or tax space to immediately Buy, Auction, Pay Rent (with automatic 2× monopoly, utility dice multiplier, and 50% owner-in-jail rules), or Pay Tax.
+        </p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+          <div style="flex:1; min-width:160px;">
+            <label style="display:block; font-size:0.76rem; color:#cbd5e1; margin-bottom:4px;">Player</label>
+            <select id="landResolverPlayer" style="width:100%; padding:8px 10px;"></select>
+          </div>
+          <div style="flex:1.4; min-width:210px;">
+            <label style="display:block; font-size:0.76rem; color:#cbd5e1; margin-bottom:4px;">Landed On Space</label>
+            <select id="landResolverProp" style="width:100%; padding:8px 10px;"></select>
+          </div>
+          <div id="landResolverDiceWrap" style="width:110px;" class="hidden">
+            <label style="display:block; font-size:0.76rem; color:#cbd5e1; margin-bottom:4px;">Dice Roll (2-12)</label>
+            <input type="number" id="landResolverDice" min="2" max="12" value="7" style="width:100%; padding:8px 10px; text-align:center;">
+          </div>
+        </div>
+        <div id="landResolverInfo" style="margin-top:12px; padding:10px 12px; background:rgba(255,255,255,0.06); border-radius:10px; font-size:0.86rem; color:#ffe7a5;"></div>
+        <div id="landResolverActions" style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;"></div>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- TRANSFER MONEY & QUICK AMOUNTS MODAL (From monopoly-tracker.html) -->
+<!-- TRANSFER MONEY & QUICK AMOUNTS MODAL -->
 <div id="transferModal" class="modal hidden">
   <div class="modal-box" style="width: 440px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-shrink:0;">
       <h2 style="margin:0; font-size:1.5rem;">💸 Transfer Money</h2>
       <button id="closeTransferModalBtn" class="icon-btn" type="button">✕</button>
     </div>
-    <div style="display:flex; flex-direction:column; gap:10px; text-align:left; background:rgba(0,0,0,0.3); padding:14px; border-radius:12px; margin-bottom:14px;">
-      <div style="display:flex; gap:8px; align-items:center;">
-        <div style="flex:1;">
-          <label style="font-size:0.78rem; color:#c4e0d0;">From</label>
-          <select id="transferFromSelect" style="width:100%; padding:8px;"></select>
+    <div class="modal-scroll-body" style="text-align:left;">
+      <div style="display:flex; flex-direction:column; gap:10px; background:rgba(0,0,0,0.3); padding:14px; border-radius:12px;">
+        <div style="display:flex; gap:8px; align-items:center;">
+          <div style="flex:1;">
+            <label style="font-size:0.78rem; color:#c4e0d0;">From</label>
+            <select id="transferFromSelect" style="width:100%; padding:8px;"></select>
+          </div>
+          <button id="swapTransferBtn" type="button" class="btn-alt" style="margin-top:16px; padding:8px 12px;">⇄</button>
+          <div style="flex:1;">
+            <label style="font-size:0.78rem; color:#c4e0d0;">To</label>
+            <select id="transferToSelect" style="width:100%; padding:8px;"></select>
+          </div>
         </div>
-        <button id="swapTransferBtn" type="button" class="btn-alt" style="margin-top:16px; padding:8px 12px;">⇄</button>
-        <div style="flex:1;">
-          <label style="font-size:0.78rem; color:#c4e0d0;">To</label>
-          <select id="transferToSelect" style="width:100%; padding:8px;"></select>
+        <div>
+          <label style="font-size:0.78rem; color:#c4e0d0;">Amount (e.g. 250k, 1.5m)</label>
+          <input id="transferAmountInput" type="text" placeholder="e.g. 500k or 2m" style="width:100%; padding:9px;">
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;" id="quickAmtBtns">
+            <button type="button" class="btn-alt" style="padding:4px 8px; font-size:0.75rem;" data-qamt="10000">+10k</button>
+            <button type="button" class="btn-alt" style="padding:4px 8px; font-size:0.75rem;" data-qamt="50000">+50k</button>
+            <button type="button" class="btn-alt" style="padding:4px 8px; font-size:0.75rem;" data-qamt="100000">+100k</button>
+            <button type="button" class="btn-alt" style="padding:4px 8px; font-size:0.75rem;" data-qamt="500000">+500k</button>
+            <button type="button" class="btn-alt" style="padding:4px 8px; font-size:0.75rem;" data-qamt="1000000">+1M</button>
+            <button type="button" class="btn-alt" style="padding:4px 8px; font-size:0.75rem;" data-qamt="5000000">+5M</button>
+            <button type="button" class="btn-danger" style="padding:4px 8px; font-size:0.75rem;" data-qamt="clear">Clear</button>
+          </div>
         </div>
-      </div>
-      <div>
-        <label style="font-size:0.78rem; color:#c4e0d0;">Amount (e.g. 250k, 1.5m)</label>
-        <input id="transferAmountInput" type="text" placeholder="e.g. 500k or 2m" style="width:100%; padding:9px;">
-        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;" id="quickAmtBtns">
-          <button type="button" class="btn-alt" style="padding:4px 8px; font-size:0.75rem;" data-qamt="10000">+10k</button>
-          <button type="button" class="btn-alt" style="padding:4px 8px; font-size:0.75rem;" data-qamt="50000">+50k</button>
-          <button type="button" class="btn-alt" style="padding:4px 8px; font-size:0.75rem;" data-qamt="100000">+100k</button>
-          <button type="button" class="btn-alt" style="padding:4px 8px; font-size:0.75rem;" data-qamt="500000">+500k</button>
-          <button type="button" class="btn-alt" style="padding:4px 8px; font-size:0.75rem;" data-qamt="1000000">+1M</button>
-          <button type="button" class="btn-alt" style="padding:4px 8px; font-size:0.75rem;" data-qamt="5000000">+5M</button>
-          <button type="button" class="btn-danger" style="padding:4px 8px; font-size:0.75rem;" data-qamt="clear">Clear</button>
+        <div>
+          <label style="font-size:0.78rem; color:#c4e0d0;">Note (optional)</label>
+          <input id="transferNoteInput" type="text" placeholder="e.g. Trade deal, Rent" style="width:100%; padding:9px;">
         </div>
+        <button id="submitTransferBtn" type="button" style="width:100%; margin-top:4px;">Send Transfer</button>
       </div>
-      <div>
-        <label style="font-size:0.78rem; color:#c4e0d0;">Note (optional)</label>
-        <input id="transferNoteInput" type="text" placeholder="e.g. Trade deal, Rent" style="width:100%; padding:9px;">
-      </div>
-      <button id="submitTransferBtn" type="button" style="width:100%; margin-top:4px;">Send Transfer</button>
     </div>
   </div>
 </div>
 
 <!-- WHO GIVES WHOM, SIMPLIFIED SETTLEMENT & TRANSACTION HISTORY MODAL -->
 <div id="ledgerModal" class="modal hidden">
-  <div class="modal-box" style="width: 660px; max-width: 96%;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+  <div class="modal-box" style="width: 700px; max-width: 96%;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-shrink:0;">
       <h2 style="margin:0; font-size:1.45rem;">📊 Tracker Ledger &amp; History</h2>
       <button id="closeLedgerModalBtn" class="icon-btn" type="button">✕</button>
     </div>
-    <div style="text-align:left; margin-bottom:14px;">
-      <div style="font-size:0.85rem; font-weight:700; color:#ffe7a5; margin-bottom:6px;">Who Gives Whom (Net Direct Flows)</div>
-      <div style="overflow-x:auto; background:rgba(0,0,0,0.28); border-radius:10px; padding:8px;">
-        <table class="ledger-table" id="modalLedgerTable"></table>
-      </div>
-    </div>
-    <div style="text-align:left; margin-bottom:14px;">
-      <div style="font-size:0.85rem; font-weight:700; color:#ffe7a5; margin-bottom:6px;">Simplified Settlement (Fewest Payments)</div>
-      <div id="modalSettlementList" class="score-list" style="margin-bottom:0; max-height:120px; overflow-y:auto;"></div>
-    </div>
-    <div style="text-align:left;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <span style="font-size:0.85rem; font-weight:700; color:#ffe7a5;">Transaction History</span>
-        <div style="display:flex; gap:6px;">
-          <button id="undoTxBtn" type="button" class="btn-alt" style="padding:4px 10px; font-size:0.75rem;">↩ Undo Last</button>
+    <div class="modal-scroll-body" style="text-align:left;">
+      <div style="margin-bottom:14px;">
+        <div style="font-size:0.85rem; font-weight:700; color:#ffe7a5; margin-bottom:6px;">Who Gives Whom (Net Direct Flows — Row gives Column)</div>
+        <div style="overflow-x:auto; background:rgba(0,0,0,0.28); border-radius:10px; padding:8px;">
+          <table class="ledger-table" id="modalLedgerTable"></table>
         </div>
       </div>
-      <div id="modalHistoryList" class="score-list" style="margin-bottom:0; max-height:180px; overflow-y:auto;"></div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:0.85rem; font-weight:700; color:#ffe7a5; margin-bottom:6px;">Simplified Settlement (Fewest Direct Payments)</div>
+        <div id="modalSettlementList" class="score-list" style="margin-bottom:0; max-height:130px; overflow-y:auto;"></div>
+      </div>
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+          <span style="font-size:0.85rem; font-weight:700; color:#ffe7a5;">Transaction History</span>
+          <div style="display:flex; gap:6px;">
+            <button id="undoTxBtn" type="button" class="btn-alt" style="padding:4px 10px; font-size:0.75rem;">↩ Undo Last</button>
+            <button id="clearHistoryModalBtn" type="button" class="btn-danger" style="padding:4px 10px; font-size:0.75rem;">🧹 Clear History (New Round)</button>
+          </div>
+        </div>
+        <div id="modalHistoryList" class="score-list" style="margin-bottom:0; max-height:200px; overflow-y:auto;"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -966,9 +1376,9 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 <!-- CARD DRAWN MODAL (Chance / Community Chest) -->
 <div id="cardDrawnModal" class="modal hidden">
   <div class="modal-box" style="width: 390px;">
-    <div id="cardDrawnBadge" style="display:inline-block; padding:4px 14px; border-radius:99px; font-weight:900; font-size:0.85rem; margin-bottom:10px;">CHANCE</div>
-    <h2 id="cardDrawnTitle" style="font-size:1.5rem; margin-bottom:10px;">Card Drawn</h2>
-    <p id="cardDrawnDesc" style="font-size:1.05rem; color:#fff; background:rgba(0,0,0,0.3); padding:16px; border-radius:12px; margin:0 0 18px;"></p>
+    <div id="cardDrawnBadge" style="display:inline-block; padding:4px 14px; border-radius:99px; font-weight:900; font-size:0.85rem; margin-bottom:10px; align-self:center;">CHANCE</div>
+    <h2 id="cardDrawnTitle" style="font-size:1.45rem; margin-bottom:10px;">Card Drawn</h2>
+    <p id="cardDrawnDesc" style="font-size:1.02rem; color:#fff; background:rgba(0,0,0,0.3); padding:16px; border-radius:12px; margin:0 0 18px;"></p>
     <button id="closeCardDrawnBtn" type="button" style="width:100%;">OK</button>
   </div>
 </div>
@@ -978,7 +1388,7 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   <div class="modal-box">
     <h2 id="winTitle">Game Over!</h2>
     <div id="winSubStatus" style="color:#ffe7a5; font-size:0.95rem; margin-bottom:12px; font-weight:600;"></div>
-    <div class="score-list" id="winScores"></div>
+    <div class="score-list modal-scroll-body" id="winScores"></div>
     <button id="nextRoundBtn" type="button" class="hidden" style="width:100%; font-size:1.15rem;">Start New Game</button>
     <div id="winWaitMsg" class="hidden" style="color:#c4e0d0; margin-top:12px; font-size:0.92rem;">Waiting for host to start a new game...</div>
   </div>
@@ -987,8 +1397,8 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 <!-- FORFEIT / END GAME MODAL -->
 <div id="forfeitModal" class="modal hidden">
   <div class="modal-box" style="width: 380px;">
-    <h2 style="font-size:1.75rem; margin-bottom:10px;">Game Menu</h2>
-    <p style="color:#c4e0d0; font-size:0.94rem; margin:0 0 18px;">End the match and crown the richest tycoon by total Net Worth (Cash + Properties + Buildings), or forfeit your seat.</p>
+    <h2 style="font-size:1.65rem; margin-bottom:10px;">Game Menu</h2>
+    <p style="color:#c4e0d0; font-size:0.92rem; margin:0 0 18px;">End the match and crown the richest tycoon by total Net Worth (Cash + Properties + Buildings), or declare bankruptcy.</p>
     <div style="display:flex; flex-direction:column; gap:10px;">
       <button id="finishByNetWorthBtn" type="button" class="btn-good">🏆 End &amp; Crown Richest Player</button>
       <button id="confirmForfeitBtn" type="button" class="btn-danger">🏳️ Forfeit / Declare Bankruptcy</button>
@@ -1004,7 +1414,7 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
       <h3 style="margin:0; color:#ffe7a5; font-size:1.4rem;">👥 Manage Players</h3>
       <button id="closeManageModalBtn" class="icon-btn" type="button">✕</button>
     </div>
-    <div id="managePlayersList" class="score-list" style="margin-bottom:14px;"></div>
+    <div id="managePlayersList" class="score-list modal-scroll-body" style="margin-bottom:14px;"></div>
     <div style="display:flex; gap:8px; margin-bottom:14px;">
       <input id="modalAddPlayerInput" type="text" placeholder="Bot / Player name..." maxlength="18" style="flex:1; padding:10px 12px;">
       <button id="modalAddBotBtn" type="button" style="padding:10px 16px;">+ Add</button>
@@ -1045,7 +1455,7 @@ const $ = id => document.getElementById(id);
 
 // === CONSTANTS & EXACT DEFINITIONS FROM monopoly-tracker.html ===
 const BANK = '__BANK__';
-const PLAYER_COLORS = ['#f0c93d', '#e05d5d', '#a06bf0', '#4f8cff', '#3ecf8e', '#f2a93b'];
+const PLAYER_COLORS = ['#f0c93d', '#e05d5d', '#a06bf0', '#4f8cff', '#3ecf8e', '#f2a93b', '#ff6bb5', '#2dd4bf'];
 const BANK_COLOR = '#c9a24b';
 const PASS_GO_AMOUNT = 2000000;
 const HOUSE_POOL = 32;
@@ -1058,66 +1468,66 @@ const GROUP_LABELS = {
   transport: 'Transport', utility: 'Utility'
 };
 const GROUP_COLORS = {
-  brown: '#8b5a2b', lightblue: '#4cc9f0', purple: '#b5179e', orange: '#f77f00',
-  red: '#e63946', yellow: '#eab308', green: '#2a9d8f', darkblue: '#1d4ed8',
-  transport: '#475569', utility: '#0d9488'
+  brown: '#8b5a2b', lightblue: '#0284c7', purple: '#9333ea', orange: '#ea580c',
+  red: '#dc2626', yellow: '#ca8a04', green: '#16a34a', darkblue: '#1d4ed8',
+  transport: '#334155', utility: '#0d9488'
 };
 
 // Exact 28 ownable properties + 2 taxes from monopoly-tracker.html
 const PROPERTIES = [
-  { type: 'property', id: 'gdynia', name: 'Gdynia', group: 'brown', price: 600000, houseCost: 500000, rent: [20000, 100000, 300000, 900000, 1600000, 2500000], mortgageValue: 300000, unmortgageValue: 330000 },
-  { type: 'property', id: 'taipei', name: 'Taipei', group: 'brown', price: 600000, houseCost: 500000, rent: [40000, 200000, 600000, 1800000, 3200000, 4500000], mortgageValue: 300000, unmortgageValue: 330000 },
+  { type: 'property', id: 'gdynia', name: 'Gdynia', country: 'Poland', group: 'brown', price: 600000, houseCost: 500000, rent: [20000, 100000, 300000, 900000, 1600000, 2500000], mortgageValue: 300000, unmortgageValue: 330000 },
+  { type: 'property', id: 'taipei', name: 'Taipei', country: 'Taiwan', group: 'brown', price: 600000, houseCost: 500000, rent: [40000, 200000, 600000, 1800000, 3200000, 4500000], mortgageValue: 300000, unmortgageValue: 330000 },
 
-  { type: 'property', id: 'tokyo', name: 'Tokyo', group: 'lightblue', price: 1000000, houseCost: 500000, rent: [60000, 300000, 900000, 2700000, 4000000, 5500000], mortgageValue: 500000, unmortgageValue: 550000 },
-  { type: 'property', id: 'barcelona', name: 'Barcelona', group: 'lightblue', price: 1000000, houseCost: 500000, rent: [60000, 300000, 900000, 2700000, 4000000, 5500000], mortgageValue: 500000, unmortgageValue: 550000 },
-  { type: 'property', id: 'athens', name: 'Athens', group: 'lightblue', price: 1200000, houseCost: 500000, rent: [80000, 400000, 1000000, 3000000, 4500000, 6000000], mortgageValue: 600000, unmortgageValue: 660000 },
+  { type: 'property', id: 'tokyo', name: 'Tokyo', country: 'Japan', group: 'lightblue', price: 1000000, houseCost: 500000, rent: [60000, 300000, 900000, 2700000, 4000000, 5500000], mortgageValue: 500000, unmortgageValue: 550000 },
+  { type: 'property', id: 'barcelona', name: 'Barcelona', country: 'Spain', group: 'lightblue', price: 1000000, houseCost: 500000, rent: [60000, 300000, 900000, 2700000, 4000000, 5500000], mortgageValue: 500000, unmortgageValue: 550000 },
+  { type: 'property', id: 'athens', name: 'Athens', country: 'Greece', group: 'lightblue', price: 1200000, houseCost: 500000, rent: [80000, 400000, 1000000, 3000000, 4500000, 6000000], mortgageValue: 600000, unmortgageValue: 660000 },
 
-  { type: 'property', id: 'istanbul', name: 'Istanbul', group: 'purple', price: 1400000, houseCost: 1000000, rent: [100000, 500000, 1500000, 4500000, 6250000, 7000000], mortgageValue: 700000, unmortgageValue: 770000 },
-  { type: 'property', id: 'kyiv', name: 'Kyiv', group: 'purple', price: 1400000, houseCost: 1000000, rent: [100000, 500000, 1500000, 4500000, 6250000, 7000000], mortgageValue: 700000, unmortgageValue: 770000 },
-  { type: 'property', id: 'toronto', name: 'Toronto', group: 'purple', price: 1600000, houseCost: 1000000, rent: [120000, 600000, 1800000, 5000000, 7000000, 9000000], mortgageValue: 800000, unmortgageValue: 880000 },
+  { type: 'property', id: 'istanbul', name: 'Istanbul', country: 'Turkey', group: 'purple', price: 1400000, houseCost: 1000000, rent: [100000, 500000, 1500000, 4500000, 6250000, 7000000], mortgageValue: 700000, unmortgageValue: 770000 },
+  { type: 'property', id: 'kyiv', name: 'Kyiv', country: 'Ukraine', group: 'purple', price: 1400000, houseCost: 1000000, rent: [100000, 500000, 1500000, 4500000, 6250000, 7000000], mortgageValue: 700000, unmortgageValue: 770000 },
+  { type: 'property', id: 'toronto', name: 'Toronto', country: 'Canada', group: 'purple', price: 1600000, houseCost: 1000000, rent: [120000, 600000, 1800000, 5000000, 7000000, 9000000], mortgageValue: 800000, unmortgageValue: 880000 },
 
-  { type: 'property', id: 'rome', name: 'Rome', group: 'orange', price: 1800000, houseCost: 1000000, rent: [140000, 700000, 2000000, 5500000, 7500000, 9500000], mortgageValue: 900000, unmortgageValue: 990000 },
-  { type: 'property', id: 'shanghai', name: 'Shanghai', group: 'orange', price: 1800000, houseCost: 1000000, rent: [140000, 700000, 2000000, 5500000, 7500000, 9500000], mortgageValue: 900000, unmortgageValue: 990000 },
-  { type: 'property', id: 'vancouver', name: 'Vancouver', group: 'orange', price: 2000000, houseCost: 1000000, rent: [160000, 800000, 2200000, 6000000, 8000000, 10000000], mortgageValue: 1000000, unmortgageValue: 1100000 },
+  { type: 'property', id: 'rome', name: 'Rome', country: 'Italy', group: 'orange', price: 1800000, houseCost: 1000000, rent: [140000, 700000, 2000000, 5500000, 7500000, 9500000], mortgageValue: 900000, unmortgageValue: 990000 },
+  { type: 'property', id: 'shanghai', name: 'Shanghai', country: 'China', group: 'orange', price: 1800000, houseCost: 1000000, rent: [140000, 700000, 2000000, 5500000, 7500000, 9500000], mortgageValue: 900000, unmortgageValue: 990000 },
+  { type: 'property', id: 'vancouver', name: 'Vancouver', country: 'Canada', group: 'orange', price: 2000000, houseCost: 1000000, rent: [160000, 800000, 2200000, 6000000, 8000000, 10000000], mortgageValue: 1000000, unmortgageValue: 1100000 },
 
-  { type: 'property', id: 'sydney', name: 'Sydney', group: 'red', price: 2200000, houseCost: 1500000, rent: [180000, 900000, 2500000, 7000000, 8750000, 10500000], mortgageValue: 1100000, unmortgageValue: 1210000 },
-  { type: 'property', id: 'newyork', name: 'New York', group: 'red', price: 2200000, houseCost: 1500000, rent: [180000, 900000, 2500000, 7000000, 8750000, 10500000], mortgageValue: 1100000, unmortgageValue: 1210000 },
-  { type: 'property', id: 'london', name: 'London', group: 'red', price: 2400000, houseCost: 1500000, rent: [200000, 1000000, 3000000, 7500000, 9250000, 11000000], mortgageValue: 1200000, unmortgageValue: 1320000 },
+  { type: 'property', id: 'sydney', name: 'Sydney', country: 'Australia', group: 'red', price: 2200000, houseCost: 1500000, rent: [180000, 900000, 2500000, 7000000, 8750000, 10500000], mortgageValue: 1100000, unmortgageValue: 1210000 },
+  { type: 'property', id: 'newyork', name: 'New York', country: 'USA', group: 'red', price: 2200000, houseCost: 1500000, rent: [180000, 900000, 2500000, 7000000, 8750000, 10500000], mortgageValue: 1100000, unmortgageValue: 1210000 },
+  { type: 'property', id: 'london', name: 'London', country: 'UK', group: 'red', price: 2400000, houseCost: 1500000, rent: [200000, 1000000, 3000000, 7500000, 9250000, 11000000], mortgageValue: 1200000, unmortgageValue: 1320000 },
 
-  { type: 'property', id: 'beijing', name: 'Beijing', group: 'yellow', price: 2600000, houseCost: 1500000, rent: [220000, 1100000, 3300000, 8000000, 9750000, 11500000], mortgageValue: 1300000, unmortgageValue: 1430000 },
-  { type: 'property', id: 'hongkong', name: 'Hong Kong', group: 'yellow', price: 2600000, houseCost: 1500000, rent: [220000, 1100000, 3300000, 8000000, 9750000, 11500000], mortgageValue: 1300000, unmortgageValue: 1430000 },
-  { type: 'property', id: 'jerusalem', name: 'Jerusalem', group: 'yellow', price: 2800000, houseCost: 1500000, rent: [240000, 1200000, 3600000, 8500000, 10250000, 12000000], mortgageValue: 1400000, unmortgageValue: 1540000 },
+  { type: 'property', id: 'beijing', name: 'Beijing', country: 'China', group: 'yellow', price: 2600000, houseCost: 1500000, rent: [220000, 1100000, 3300000, 8000000, 9750000, 11500000], mortgageValue: 1300000, unmortgageValue: 1430000 },
+  { type: 'property', id: 'hongkong', name: 'Hong Kong', country: 'China', group: 'yellow', price: 2600000, houseCost: 1500000, rent: [220000, 1100000, 3300000, 8000000, 9750000, 11500000], mortgageValue: 1300000, unmortgageValue: 1430000 },
+  { type: 'property', id: 'jerusalem', name: 'Jerusalem', country: 'Israel', group: 'yellow', price: 2800000, houseCost: 1500000, rent: [240000, 1200000, 3600000, 8500000, 10250000, 12000000], mortgageValue: 1400000, unmortgageValue: 1540000 },
 
-  { type: 'property', id: 'paris', name: 'Paris', group: 'green', price: 3000000, houseCost: 2000000, rent: [260000, 1300000, 3900000, 9000000, 11000000, 12750000], mortgageValue: 1500000, unmortgageValue: 1650000 },
-  { type: 'property', id: 'belgrade', name: 'Belgrade', group: 'green', price: 3000000, houseCost: 2000000, rent: [260000, 1300000, 3900000, 9000000, 11000000, 12750000], mortgageValue: 1500000, unmortgageValue: 1650000 },
-  { type: 'property', id: 'capetown', name: 'Cape Town', group: 'green', price: 3200000, houseCost: 2000000, rent: [280000, 1500000, 4500000, 10000000, 12000000, 14000000], mortgageValue: 1600000, unmortgageValue: 1760000 },
+  { type: 'property', id: 'paris', name: 'Paris', country: 'France', group: 'green', price: 3000000, houseCost: 2000000, rent: [260000, 1300000, 3900000, 9000000, 11000000, 12750000], mortgageValue: 1500000, unmortgageValue: 1650000 },
+  { type: 'property', id: 'belgrade', name: 'Belgrade', country: 'Serbia', group: 'green', price: 3000000, houseCost: 2000000, rent: [260000, 1300000, 3900000, 9000000, 11000000, 12750000], mortgageValue: 1500000, unmortgageValue: 1650000 },
+  { type: 'property', id: 'capetown', name: 'Cape Town', country: 'South Africa', group: 'green', price: 3200000, houseCost: 2000000, rent: [280000, 1500000, 4500000, 10000000, 12000000, 14000000], mortgageValue: 1600000, unmortgageValue: 1760000 },
 
-  { type: 'property', id: 'riga', name: 'Riga', group: 'darkblue', price: 3500000, houseCost: 2000000, rent: [350000, 1750000, 5000000, 11000000, 13000000, 15000000], mortgageValue: 1750000, unmortgageValue: 1930000 },
-  { type: 'property', id: 'montreal', name: 'Montreal', group: 'darkblue', price: 4000000, houseCost: 2000000, rent: [500000, 2000000, 6000000, 14000000, 17000000, 20000000], mortgageValue: 2000000, unmortgageValue: 2200000 },
+  { type: 'property', id: 'riga', name: 'Riga', country: 'Latvia', group: 'darkblue', price: 3500000, houseCost: 2000000, rent: [350000, 1750000, 5000000, 11000000, 13000000, 15000000], mortgageValue: 1750000, unmortgageValue: 1930000 },
+  { type: 'property', id: 'montreal', name: 'Montreal', country: 'Canada', group: 'darkblue', price: 4000000, houseCost: 2000000, rent: [500000, 2000000, 6000000, 14000000, 17000000, 20000000], mortgageValue: 2000000, unmortgageValue: 2200000 },
 
-  { type: 'transport', id: 'air', name: 'Monopoly Air', group: 'transport', price: 2000000, rentByCount: [250000, 500000, 1000000, 2000000], mortgageValue: 1000000, unmortgageValue: 1100000 },
-  { type: 'transport', id: 'rail', name: 'Monopoly Rail', group: 'transport', price: 2000000, rentByCount: [250000, 500000, 1000000, 2000000], mortgageValue: 1000000, unmortgageValue: 1100000 },
-  { type: 'transport', id: 'cruise', name: 'Monopoly Cruise', group: 'transport', price: 2000000, rentByCount: [250000, 500000, 1000000, 2000000], mortgageValue: 1000000, unmortgageValue: 1100000 },
-  { type: 'transport', id: 'space', name: 'Monopoly Space', group: 'transport', price: 2000000, rentByCount: [250000, 500000, 1000000, 2000000], mortgageValue: 1000000, unmortgageValue: 1100000 },
+  { type: 'transport', id: 'air', name: 'Monopoly Air', country: 'Aviation', group: 'transport', price: 2000000, rentByCount: [250000, 500000, 1000000, 2000000], mortgageValue: 1000000, unmortgageValue: 1100000 },
+  { type: 'transport', id: 'rail', name: 'Monopoly Rail', country: 'Express', group: 'transport', price: 2000000, rentByCount: [250000, 500000, 1000000, 2000000], mortgageValue: 1000000, unmortgageValue: 1100000 },
+  { type: 'transport', id: 'cruise', name: 'Monopoly Cruise', country: 'Maritime', group: 'transport', price: 2000000, rentByCount: [250000, 500000, 1000000, 2000000], mortgageValue: 1000000, unmortgageValue: 1100000 },
+  { type: 'transport', id: 'space', name: 'Monopoly Space', country: 'Orbital', group: 'transport', price: 2000000, rentByCount: [250000, 500000, 1000000, 2000000], mortgageValue: 1000000, unmortgageValue: 1100000 },
 
-  { type: 'utility', id: 'solar', name: 'Solar Energy', group: 'utility', price: 1500000, soloMultiplier: 40000, groupMultiplier: 100000, mortgageValue: 750000, unmortgageValue: 830000 },
-  { type: 'utility', id: 'wind', name: 'Wind Energy', group: 'utility', price: 1500000, soloMultiplier: 40000, groupMultiplier: 100000, mortgageValue: 750000, unmortgageValue: 830000 },
+  { type: 'utility', id: 'solar', name: 'Solar Energy', country: 'Clean Power', group: 'utility', price: 1500000, soloMultiplier: 40000, groupMultiplier: 100000, mortgageValue: 750000, unmortgageValue: 830000 },
+  { type: 'utility', id: 'wind', name: 'Wind Energy', country: 'Clean Power', group: 'utility', price: 1500000, soloMultiplier: 40000, groupMultiplier: 100000, mortgageValue: 750000, unmortgageValue: 830000 },
 
   { type: 'tax', id: 'supertax', name: 'Super Tax', amount: 1000000 },
   { type: 'tax', id: 'incometax', name: 'Income Tax', amount: 2000000 }
 ];
 
-// Exact 40-Space Board Layout matching the uploaded World Edition board photo
+// Complete 40-Space Board Layout matching the World Edition Business Board
 const BOARD_SPACES = [
   // Bottom Row (0 to 10, Right to Left)
   { idx: 0, kind: 'go', name: 'GO', sub: 'Collect $2M', icon: '⬅️' },
   { idx: 1, kind: 'prop', propId: 'gdynia', icon: '🏘️' },
-  { idx: 2, kind: 'cc', name: 'Community Chest', icon: '📦' },
+  { idx: 2, kind: 'cc', name: 'Community Chest', sub: 'Draw Card', icon: '📦' },
   { idx: 3, kind: 'prop', propId: 'taipei', icon: '🏙️' },
   { idx: 4, kind: 'tax', propId: 'incometax', name: 'Income Tax', sub: 'Pay $2M', icon: '💠' },
   { idx: 5, kind: 'prop', propId: 'rail', icon: '🚆' },
   { idx: 6, kind: 'prop', propId: 'tokyo', icon: '🗼' },
-  { idx: 7, kind: 'chance', name: 'Chance', icon: '❓' },
+  { idx: 7, kind: 'chance', name: 'Chance', sub: 'Draw Card', icon: '❓' },
   { idx: 8, kind: 'prop', propId: 'barcelona', icon: '⛪' },
   { idx: 9, kind: 'prop', propId: 'athens', icon: '🏛️' },
   { idx: 10, kind: 'jail', name: 'In Jail', sub: 'Just Visiting', icon: '⛓️' },
@@ -1129,14 +1539,14 @@ const BOARD_SPACES = [
   { idx: 14, kind: 'prop', propId: 'toronto', icon: '🗼' },
   { idx: 15, kind: 'prop', propId: 'air', icon: '✈️' },
   { idx: 16, kind: 'prop', propId: 'rome', icon: '🏟️' },
-  { idx: 17, kind: 'cc', name: 'Community Chest', icon: '📦' },
+  { idx: 17, kind: 'cc', name: 'Community Chest', sub: 'Draw Card', icon: '📦' },
   { idx: 18, kind: 'prop', propId: 'shanghai', icon: '🌆' },
   { idx: 19, kind: 'prop', propId: 'vancouver', icon: '🏔️' },
   { idx: 20, kind: 'parking', name: 'Free Parking', sub: 'Rest Stop', icon: '🚗' },
 
   // Top Row (21 to 30, Left to Right)
   { idx: 21, kind: 'prop', propId: 'sydney', icon: '⛵' },
-  { idx: 22, kind: 'chance', name: 'Chance', icon: '❓' },
+  { idx: 22, kind: 'chance', name: 'Chance', sub: 'Draw Card', icon: '❓' },
   { idx: 23, kind: 'prop', propId: 'newyork', icon: '🗽' },
   { idx: 24, kind: 'prop', propId: 'london', icon: '🎡' },
   { idx: 25, kind: 'prop', propId: 'cruise', icon: '🛳️' },
@@ -1149,10 +1559,10 @@ const BOARD_SPACES = [
   // Right Column (31 to 39, Top to Bottom)
   { idx: 31, kind: 'prop', propId: 'paris', icon: '🗼' },
   { idx: 32, kind: 'prop', propId: 'belgrade', icon: '🏰' },
-  { idx: 33, kind: 'cc', name: 'Community Chest', icon: '📦' },
+  { idx: 33, kind: 'cc', name: 'Community Chest', sub: 'Draw Card', icon: '📦' },
   { idx: 34, kind: 'prop', propId: 'capetown', icon: '⛰️' },
   { idx: 35, kind: 'prop', propId: 'space', icon: '🚀' },
-  { idx: 36, kind: 'chance', name: 'Chance', icon: '❓' },
+  { idx: 36, kind: 'chance', name: 'Chance', sub: 'Draw Card', icon: '❓' },
   { idx: 37, kind: 'prop', propId: 'riga', icon: '🕰️' },
   { idx: 38, kind: 'tax', propId: 'supertax', name: 'Super Tax', sub: 'Pay $1M', icon: '💍' },
   { idx: 39, kind: 'prop', propId: 'montreal', icon: '🍁' }
@@ -1203,6 +1613,9 @@ let connections=new Map(), transportPlayers=new Map(), players=[], state=null;
 let revision=0, participantLimit=4, startingBalanceConfig=15000000, timerMode='untimed', timeLimitValue=15, gameClockInterval=null;
 let botActionRevision=-1, lastWinnerTracker=null, lastSeenEventId=0, lastSeenCardId=0;
 let inspectedSpaceIdx = 0;
+let inspectedPortfolioPlayerId = null;
+let currentHubTab = 'props';
+let selectedAuctionBidderId = null;
 
 function safeGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
 function safeSet(k, v) { try { localStorage.setItem(k, v); } catch(e) {} }
@@ -1249,6 +1662,11 @@ function propDef(id) { return PROPERTIES.find(p => p.id === id); }
 function ownableDefs() { return PROPERTIES.filter(p => p.type !== 'tax'); }
 function groupProps(group) { return PROPERTIES.filter(p => p.group === group); }
 function playerById(id) { return players.find(p => p.id === id); }
+function playerColor(id) {
+  if (id === BANK) return BANK_COLOR;
+  const idx = state?.players ? state.players.indexOf(id) : players.findIndex(p => p.id === id);
+  return PLAYER_COLORS[(idx >= 0 ? idx : 0) % PLAYER_COLORS.length];
+}
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // === SOUND ENGINE ===
@@ -1285,6 +1703,10 @@ function playDiceSound() {
 function playCashSound() {
   playTone(587.33, 'sine', 0.09, 0.15);
   setTimeout(() => playTone(880, 'sine', 0.16, 0.16), 80);
+}
+function playGavelSound() {
+  playTone(190, 'square', 0.08, 0.14);
+  setTimeout(() => playTone(160, 'square', 0.12, 0.16), 90);
 }
 function playWin() {
   if(!soundEnabled || !audioCtx) return;
@@ -1414,7 +1836,10 @@ function startGameClock() {
         broadcastState('TIMEOUT');
       } else if (state.timerMode === 'turn') {
         const currId = state.current;
-        if (!state.rolledThisTurn) {
+        if (state.pendingDecision && state.pendingDecision.propId) {
+          // If time expires while deciding on an unowned property, auto-buy or auto-award via auction
+          handleAction(currId, { action: 'BUY_PROP', propId: state.pendingDecision.propId, buyerId: currId, revision });
+        } else if (!state.rolledThisTurn) {
           handleAction(currId, { action: 'ROLL', revision });
         } else {
           handleAction(currId, { action: 'END_TURN', revision });
@@ -1519,6 +1944,21 @@ function getStableId() {
 }
 
 // === MONOPOLY TRACKER & BOARD ENGINE ===
+function ensurePropertyStateObj() {
+  if (!state) return;
+  if (!state.properties) state.properties = {};
+  ownableDefs().forEach(def => {
+    if (!state.properties[def.id]) {
+      state.properties[def.id] = { ownerId: null, houses: 0, mortgaged: false, rentCollected: 0, rentByPlayer: {} };
+    } else {
+      const st = state.properties[def.id];
+      if (typeof st.mortgaged !== 'boolean') st.mortgaged = false;
+      if (typeof st.rentCollected !== 'number') st.rentCollected = 0;
+      if (!st.rentByPlayer || typeof st.rentByPlayer !== 'object') st.rentByPlayer = {};
+    }
+  });
+}
+
 function ownsFullGroup(playerId, group) {
   if (!playerId || !state) return false;
   const props = groupProps(group).filter(p => p.type === 'property');
@@ -1539,7 +1979,7 @@ function currentRent(id, diceRoll) {
     return def.rent[0] * (ownsFullGroup(st.ownerId, def.group) ? 2 : 1);
   }
   if (def.type === 'transport') {
-    const count = ownedCountInGroup(st.ownerId, 'transport');
+    const count = Math.max(1, ownedCountInGroup(st.ownerId, 'transport'));
     return def.rentByCount[Math.max(0, count - 1)];
   }
   if (def.type === 'utility') {
@@ -1566,6 +2006,15 @@ function ownedPropsFor(playerId) {
   return ownableDefs().filter(def => state.properties[def.id]?.ownerId === playerId);
 }
 
+function bankStats() {
+  let paidIn = 0, paidOut = 0;
+  (state?.history || []).forEach(h => {
+    if (h.to === BANK) paidIn += h.amount;
+    if (h.from === BANK) paidOut += h.amount;
+  });
+  return { paidIn, paidOut, net: paidIn - paidOut };
+}
+
 function computePlayerNetWorth(pid) {
   if (!state) return 0;
   let total = state.balances?.[pid] || 0;
@@ -1581,16 +2030,19 @@ function computePlayerNetWorth(pid) {
   return total;
 }
 
-function recordTransfer(fromId, toId, amount, note) {
-  if (!state || amount <= 0) return;
-  if (fromId !== BANK) state.balances[fromId] = (state.balances[fromId] || 0) - amount;
-  if (toId !== BANK) state.balances[toId] = (state.balances[toId] || 0) + amount;
+function recordTransfer(fromId, toId, amount, note, extra={}) {
+  if (!state || amount < 0) return;
+  if (amount > 0) {
+    if (fromId !== BANK) state.balances[fromId] = (state.balances[fromId] || 0) - amount;
+    if (toId !== BANK) state.balances[toId] = (state.balances[toId] || 0) + amount;
+  }
   state.history.push({
     from: fromId,
     to: toId,
     amount,
     note: note || '',
-    ts: Date.now()
+    ts: Date.now(),
+    ...extra
   });
 }
 
@@ -1642,11 +2094,11 @@ function updatePlayers() {
       const avatar = p?.avatar || '🎩';
       const kickBtn = (host && pid !== myId) ? `<button class="kick-btn" data-kick="${esc(pid)}" type="button" title="Remove">✕</button>` : '';
       const jailTag = inJail ? `<span class="ts-jail-pill" title="Click to toggle Jail" data-toggle-jail="${esc(pid)}">⛓️ JAIL</span>` : '';
-      sbHtml += `<div class="ts-player ${isCurr?'active':''} ${isBankrupt?'bankrupt':''}" style="border-left: 4px solid ${pColor};" data-pid="${esc(pid)}" title="${name}: ${fmt(bal)} (${propCount} properties)">
+      sbHtml += `<div class="ts-player ${isCurr?'active':''} ${isBankrupt?'bankrupt':''}" style="border-left: 4px solid ${pColor};" data-portfolio-pid="${esc(pid)}" title="Click to view ${name}'s owned properties &amp; tracker controls">
         <span>${avatar}</span>
         <strong class="ts-name">${name}</strong>
         <span style="color:${bal<0?'#fca5a5':'#86efac'};font-weight:800;">${fmt(bal)}</span>
-        <span class="ts-prop-count" title="Properties Owned">🏠${propCount}</span>
+        <span class="ts-prop-count" title="Click to inspect ${propCount} owned properties">🏠 ${propCount}</span>
         ${jailTag}
         ${kickBtn}
       </div>`;
@@ -1851,6 +2303,7 @@ function openClientToHostConn() {
 
 function initClientPeer() {
   if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+  if (typeof Peer === 'undefined') { msg('PeerJS library not loaded (offline mode). Use Play Solo vs AI.'); return; }
   peer = new Peer(null, PEER_OPTS);
   peer.on('open', () => openClientToHostConn());
   peer.on('disconnected', () => { if (peer && !peer.destroyed) { try { peer.reconnect(); } catch(e){} } });
@@ -1878,6 +2331,7 @@ function resumeHostSession(saved) {
   host = true; solo = false; hasJoinedRoom = true;
   players = (saved.players || []).map(p => p.id === hostId ? { ...p, name: myName, avatar: myAvatar, connected: true } : { ...p, connected: !!p.isBot });
   state = saved.state || null;
+  ensurePropertyStateObj();
   revision = saved.revision || 0;
   participantLimit = saved.participantLimit || 4;
   startingBalanceConfig = saved.startingBalanceConfig || 15000000;
@@ -1887,6 +2341,7 @@ function resumeHostSession(saved) {
 
   msg('Resuming room ' + roomCode + '...');
   if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+  if (typeof Peer === 'undefined') { msg('PeerJS unavailable offline.'); return false; }
   peer = new Peer(hostPeerId, PEER_OPTS);
   peer.on('open', id => {
     myId = id; hostId = id;
@@ -1912,6 +2367,16 @@ function createHost() {
   hostId = hostPeerId; myId = hostPeerId;
   host = true; solo = false; state = null; players = [];
   connections.clear(); transportPlayers.clear();
+
+  if (typeof Peer === 'undefined') {
+    msg('Network library offline — starting local host room.');
+    players = [{ id: myId, name: myName, avatar: myAvatar, connected: true }];
+    syncProfileUI(); syncTimerControlsUI(true);
+    $('roomCodeLabel').textContent = roomCode;
+    showPanel('lobbyPanel');
+    lobbyBroadcast();
+    return;
+  }
 
   msg('Opening room ' + roomCode + '...');
   if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
@@ -1985,7 +2450,7 @@ function handleClientMessage(data) {
     if(data.timeLimitValue) timeLimitValue = data.timeLimitValue;
     syncTimerControlsUI(false);
     $('roomCodeLabel').textContent = roomCode; makeQr(); updatePlayers();
-    if(data.state) { state = data.state; renderGame(); }
+    if(data.state) { state = data.state; ensurePropertyStateObj(); renderGame(); }
     else { state = null; showPanel('lobbyPanel'); }
     msg('');
   } else if(data.type === 'STATE' || data.type === 'STARTED') {
@@ -1993,8 +2458,9 @@ function handleClientMessage(data) {
     if ($('inGameRejoinBtn')) $('inGameRejoinBtn').classList.add('hidden');
     if(data.actionFired === 'ROLL') playDiceSound();
     else if(data.actionFired === 'BUY' || data.actionFired === 'CASH') playCashSound();
+    else if(data.actionFired === 'AUCTION') playGavelSound();
     if(data.players) players = data.players;
-    state = data.state; revision = data.revision; renderGame();
+    state = data.state; ensurePropertyStateObj(); revision = data.revision; renderGame();
   } else if(data.type === 'KICKED') {
     hasJoinedRoom = false; state = null;
     if (window._hostConn) { try { window._hostConn.close(); } catch(e){} window._hostConn = null; }
@@ -2049,12 +2515,12 @@ function recreateHostRoom() {
 function addBotPlayer(customName) {
   if (!host) return;
   if (players.length >= participantLimit) {
-    participantLimit = Math.min(6, players.length + 1);
+    participantLimit = Math.min(8, players.length + 1);
     if ($('playerLimit')) $('playerLimit').value = String(participantLimit);
   }
   const botNum = players.filter(p => p.isBot || p.id === 'AI').length + 1;
   const botId = 'BOT-' + Math.random().toString(36).slice(2, 7).toUpperCase();
-  const botAvatars = ['🤖', '🎩', '🏎️', '✈️', '🛳️', '🚀'];
+  const botAvatars = ['🤖', '🎩', '🏎️', '✈️', '🛳️', '🚀', '🦁', '👑'];
   const avatar = botAvatars[(botNum - 1) % botAvatars.length];
   const name = (customName && customName.trim()) ? customName.trim().slice(0, 18) : ('Tycoon Bot ' + botNum);
   players.push({ id: botId, name, avatar, connected: true, isBot: true });
@@ -2087,6 +2553,9 @@ function removePlayerById(id) {
     Object.values(state.properties || {}).forEach(st => {
       if (st.ownerId === id) { st.ownerId = null; st.houses = 0; st.mortgaged = false; }
     });
+    if (state.pendingDecision && state.pendingDecision.playerId === id) {
+      state.pendingDecision = null;
+    }
     if (state.players.length < 2 && !state.winner) {
       state.winner = state.players[0] || myId;
     } else if (wasCurrent && !state.winner) {
@@ -2126,7 +2595,7 @@ function startGame() {
 
   const propsMap = {};
   ownableDefs().forEach(def => {
-    propsMap[def.id] = { ownerId: null, houses: 0, mortgaged: false };
+    propsMap[def.id] = { ownerId: null, houses: 0, mortgaged: false, rentCollected: 0, rentByPlayer: {} };
   });
 
   const totalLimitSecs = (timerMode === 'match')
@@ -2152,6 +2621,8 @@ function startGame() {
     doublesCount: 0,
     rolledThisTurn: false,
     canRollAgain: false,
+    pendingDecision: null, // { propId, playerId } when landing on unowned property (must Buy or Auction!)
+    auction: null,         // { propId, initiatorId, highBid, highBidderId, passedIds: [], minIncrement: 50000 }
     setupMode: false,
     winner: null,
     timedOut: false,
@@ -2190,6 +2661,7 @@ function broadcastState(actionType='STATE') {
   }
   if(actionType === 'ROLL') playDiceSound();
   else if(actionType === 'BUY' || actionType === 'CASH') playCashSound();
+  else if(actionType === 'AUCTION') playGavelSound();
   renderGame();
 }
 
@@ -2214,6 +2686,7 @@ function resolveSpaceLanding(playerId, spaceIdx, diceSum) {
     state.inJail[playerId] = true;
     state.jailTurns[playerId] = 0;
     state.canRollAgain = false;
+    state.pendingDecision = null;
     state.lastEventText = `👮 ${pName} was sent to Jail!`;
     state.lastEventId++;
   } else if (sp.kind === 'tax') {
@@ -2232,11 +2705,16 @@ function resolveSpaceLanding(playerId, spaceIdx, diceSum) {
       // Exact rule from monopoly-tracker.html: owner in jail halves the rent!
       const rent = ownerInJail ? Math.floor(base / 2) : base;
       const ownerP = playerById(st.ownerId);
-      recordTransfer(playerId, st.ownerId, rent, `Rent: ${def.name}${ownerInJail ? ' (owner in jail)' : ''}`);
+      st.rentCollected = (st.rentCollected || 0) + rent;
+      if (!st.rentByPlayer) st.rentByPlayer = {};
+      st.rentByPlayer[playerId] = (st.rentByPlayer[playerId] || 0) + rent;
+      recordTransfer(playerId, st.ownerId, rent, `Rent: ${def.name}${ownerInJail ? ' (owner in jail)' : ''}`, { propId: def.id });
       state.lastEventText = `🏠 ${pName} paid ${fmt(rent)} rent to ${ownerP?.name||'Owner'} for ${def.name}${ownerInJail ? ' (50% Jail rule)' : ''}`;
       state.lastEventId++;
     } else if (def && st && !st.ownerId) {
-      state.lastEventText = `📍 ${pName} landed on unowned ${def.name} (${fmt(def.price)})`;
+      // Mandatory Buy or Auction rule: cannot leave an unowned property unowned!
+      state.pendingDecision = { propId: def.id, playerId };
+      state.lastEventText = `📍 ${pName} landed on unowned ${def.name} (${fmt(def.price)}) — Must Buy or Auction!`;
       state.lastEventId++;
     }
   } else if (sp.kind === 'chance' || sp.kind === 'cc') {
@@ -2273,17 +2751,20 @@ function applyDrawnCardEffect(playerId, card, diceSum) {
       recordTransfer(BANK, playerId, PASS_GO_AMOUNT, 'Landed on GO');
     }
     state.positions[playerId] = newPos;
+    inspectedSpaceIdx = newPos;
     resolveSpaceLanding(playerId, newPos, diceSum);
   } else if (card.action === 'MOVE_REL') {
     const oldPos = state.positions[playerId] || 0;
     const newPos = (oldPos + card.delta + 40) % 40;
     state.positions[playerId] = newPos;
+    inspectedSpaceIdx = newPos;
     resolveSpaceLanding(playerId, newPos, diceSum);
   } else if (card.action === 'GOTO_JAIL') {
     state.positions[playerId] = 10;
     state.inJail[playerId] = true;
     state.jailTurns[playerId] = 0;
     state.canRollAgain = false;
+    state.pendingDecision = null;
     state.lastEventText = `👮 ${pName} drew Go To Jail!`;
     state.lastEventId++;
   } else if (card.action === 'JAIL_FREE') {
@@ -2321,6 +2802,80 @@ function applyDrawnCardEffect(playerId, card, diceSum) {
   }
 }
 
+// === AUCTION ENGINE (Mandatory Buy-or-Auction when landing on unowned property) ===
+function startPropertyAuction(propId, initiatorId) {
+  const def = propDef(propId);
+  const st = state?.properties?.[propId];
+  if (!def || !st || st.ownerId) return;
+  const startBid = 50000;
+  state.auction = {
+    propId,
+    initiatorId: initiatorId || state.current,
+    highBid: startBid,
+    highBidderId: initiatorId || state.current,
+    passedIds: [],
+    history: [
+      { bidderId: initiatorId || state.current, amount: startBid, note: 'Opening floor bid' }
+    ]
+  };
+  selectedAuctionBidderId = myId;
+  state.lastEventText = `🔨 Auction started for ${def.name}! Opening bid: ${fmt(startBid)}`;
+  state.lastEventId++;
+  runBotAuctionBidsIfNeeded();
+}
+
+function runBotAuctionBidsIfNeeded() {
+  if (!host || !state || !state.auction) return;
+  const auc = state.auction;
+  const def = propDef(auc.propId);
+  if (!def) return;
+
+  // Evaluate whether any AI bot wants to raise the bid
+  const activeBots = state.players.filter(pid => {
+    if (state.bankrupt?.[pid]) return false;
+    if (auc.passedIds.includes(pid)) return false;
+    const p = playerById(pid);
+    return p && (p.isBot || p.id === 'AI');
+  });
+
+  activeBots.forEach(botId => {
+    if (auc.highBidderId === botId) return;
+    const bal = state.balances[botId] || 0;
+    // Bot values property up to 85% of list price, or 110% if it already owns a property in the same group
+    const groupOwned = def.group ? ownedCountInGroup(botId, def.group) : 0;
+    const maxWilling = Math.min(bal - 200000, Math.floor(def.price * (groupOwned > 0 ? 1.05 : 0.8)));
+    const nextBid = auc.highBid + 100000;
+    if (nextBid <= maxWilling && nextBid > 0) {
+      auc.highBid = nextBid;
+      auc.highBidderId = botId;
+      auc.history.push({ bidderId: botId, amount: nextBid, note: 'AI Bid' });
+    } else {
+      if (!auc.passedIds.includes(botId)) auc.passedIds.push(botId);
+    }
+  });
+}
+
+function finalizeAuction() {
+  if (!state || !state.auction) return;
+  const auc = state.auction;
+  const def = propDef(auc.propId);
+  const st = state.properties[auc.propId];
+  const winnerId = auc.highBidderId || auc.initiatorId || state.current;
+  const finalPrice = Math.max(10000, Number(auc.highBid) || 50000);
+
+  if (def && st) {
+    st.ownerId = winnerId;
+    recordTransfer(winnerId, BANK, finalPrice, `Won Auction: ${def.name}`);
+    const wName = playerById(winnerId)?.name || 'Player';
+    state.lastEventText = `🔨 ${wName} won ${def.name} at auction for ${fmt(finalPrice)}!`;
+    state.lastEventId++;
+  }
+  if (state.pendingDecision && state.pendingDecision.propId === auc.propId) {
+    state.pendingDecision = null;
+  }
+  state.auction = null;
+}
+
 function finishMatchByNetWorth(timedOut=false) {
   if (!state) return;
   const active = state.players.filter(pid => !state.bankrupt?.[pid]);
@@ -2343,20 +2898,29 @@ function handleAction(id, d) {
     return;
   }
 
-  // Forfeit / Bankruptcy
-  if(d.action === 'FORFEIT') {
-    state.bankrupt[id] = true;
-    Object.values(state.properties).forEach(st => {
-      if (st.ownerId === id) { st.ownerId = null; st.houses = 0; st.mortgaged = false; }
+  // Eliminate / Bankruptcy (Supports any player from Tracker or self forfeit)
+  if(d.action === 'FORFEIT' || d.action === 'ELIMINATE_PLAYER') {
+    const targetId = d.targetId || id;
+    const tName = playerById(targetId)?.name || 'Player';
+    const owned = ownedPropsFor(targetId);
+    owned.forEach(def => {
+      const pst = state.properties[def.id];
+      if (pst) { pst.ownerId = null; pst.houses = 0; pst.mortgaged = false; }
     });
-    state.lastEventText = `🏳️ ${pName} declared bankruptcy!`;
+    state.bankrupt[targetId] = true;
+    state.inJail[targetId] = false;
+    if (state.pendingDecision && state.pendingDecision.playerId === targetId) {
+      state.pendingDecision = null;
+    }
+    recordTransfer(targetId, BANK, 0, `Eliminated / Bankrupt — ${owned.length} properties returned to Bank`);
+    state.lastEventText = `🏳️ ${tName} eliminated (${owned.length} properties returned to Bank)`;
     state.lastEventId++;
     const active = state.players.filter(pid => !state.bankrupt?.[pid]);
     if (active.length <= 1) {
       state.winner = active[0] || state.players[0];
       stopGameClock();
-    } else if (state.current === id) {
-      state.current = getNextActivePlayer(id);
+    } else if (state.current === targetId) {
+      state.current = getNextActivePlayer(targetId);
       state.rolledThisTurn = false;
       state.canRollAgain = false;
       botActionRevision = -1;
@@ -2365,7 +2929,34 @@ function handleAction(id, d) {
     return;
   }
 
-  // Tracker Actions (Transfer, Pass GO, Toggle Jail, Setup Mode, Undo, Buy/Build/Mortgage)
+  // Restore Eliminated Player (From monopoly-tracker.html)
+  if(d.action === 'RESTORE_PLAYER') {
+    const targetId = d.targetId || id;
+    if (!state.bankrupt?.[targetId]) return;
+    delete state.bankrupt[targetId];
+    if ((state.balances[targetId] || 0) <= 0) {
+      state.balances[targetId] = state.startingBalance || startingBalanceConfig;
+    }
+    state.lastEventText = `✨ ${(playerById(targetId)?.name||'Player')} restored to the game!`;
+    state.lastEventId++;
+    broadcastState('CASH');
+    return;
+  }
+
+  // Rename Player (From Tracker card / Portfolio)
+  if(d.action === 'RENAME_PLAYER') {
+    const targetId = d.targetId || id;
+    const newName = String(d.name || '').trim().slice(0, 20);
+    const tp = playerById(targetId);
+    if (tp && newName) {
+      tp.name = newName;
+      if (targetId === myId) { myName = newName; safeSet('monName', myName); }
+      broadcastState('STATE');
+    }
+    return;
+  }
+
+  // Tracker Actions (Transfer, Pass GO, Pay Rent manual, Pay Tax manual, Toggle Jail, Setup Mode, Undo, Clear History)
   if(d.action === 'TRANSFER') {
     const amt = Number(d.amount) || 0;
     if (amt > 0 && d.from && d.to && d.from !== d.to) {
@@ -2381,6 +2972,37 @@ function handleAction(id, d) {
     const targetId = d.targetId || id;
     recordTransfer(BANK, targetId, PASS_GO_AMOUNT, 'Passed GO');
     state.lastEventText = `💰 ${(playerById(targetId)?.name||'Player')} collected ${fmt(PASS_GO_AMOUNT)} (Pass GO)`;
+    state.lastEventId++;
+    broadcastState('CASH');
+    return;
+  }
+
+  if(d.action === 'MANUAL_PAY_RENT') {
+    const propId = d.propId;
+    const visitorId = d.visitorId || id;
+    const diceRoll = Number(d.diceRoll) || 7;
+    const def = propDef(propId);
+    const st = state.properties[propId];
+    if (!def || !st || !st.ownerId || st.ownerId === visitorId || st.mortgaged) return;
+    const base = currentRent(propId, diceRoll);
+    const ownerInJail = !!state.inJail[st.ownerId];
+    const rent = ownerInJail ? Math.floor(base / 2) : base;
+    st.rentCollected = (st.rentCollected || 0) + rent;
+    if (!st.rentByPlayer) st.rentByPlayer = {};
+    st.rentByPlayer[visitorId] = (st.rentByPlayer[visitorId] || 0) + rent;
+    recordTransfer(visitorId, st.ownerId, rent, `Rent: ${def.name}${ownerInJail ? ' (owner in jail)' : ''}`, { propId: def.id });
+    state.lastEventText = `🏠 ${(playerById(visitorId)?.name||'Player')} paid ${fmt(rent)} rent to ${(playerById(st.ownerId)?.name||'Owner')} for ${def.name}`;
+    state.lastEventId++;
+    broadcastState('CASH');
+    return;
+  }
+
+  if(d.action === 'MANUAL_PAY_TAX') {
+    const def = propDef(d.propId);
+    const payerId = d.payerId || id;
+    if (!def || def.type !== 'tax') return;
+    recordTransfer(payerId, BANK, def.amount, `Tax: ${def.name}`);
+    state.lastEventText = `💸 ${(playerById(payerId)?.name||'Player')} paid ${fmt(def.amount)} (${def.name})`;
     state.lastEventId++;
     broadcastState('CASH');
     return;
@@ -2407,6 +3029,17 @@ function handleAction(id, d) {
     if (last) {
       if (last.from !== BANK) state.balances[last.from] = (state.balances[last.from] || 0) + last.amount;
       if (last.to !== BANK) state.balances[last.to] = (state.balances[last.to] || 0) - last.amount;
+      const rPropId = last.propId || (last.note && last.note.startsWith('Rent: ')
+        ? (ownableDefs().find(def => last.note.includes(def.name)) || {}).id
+        : null);
+      if (rPropId && state.properties[rPropId]) {
+        const pst = state.properties[rPropId];
+        pst.rentCollected = Math.max(0, (pst.rentCollected || 0) - last.amount);
+        if (pst.rentByPlayer && pst.rentByPlayer[last.from]) {
+          pst.rentByPlayer[last.from] = Math.max(0, pst.rentByPlayer[last.from] - last.amount);
+          if (pst.rentByPlayer[last.from] <= 0) delete pst.rentByPlayer[last.from];
+        }
+      }
       state.lastEventText = `↩ Undid last transaction (${fmt(last.amount)})`;
       state.lastEventId++;
       broadcastState('STATE');
@@ -2414,6 +3047,15 @@ function handleAction(id, d) {
     return;
   }
 
+  if(d.action === 'CLEAR_HISTORY') {
+    state.history = [];
+    state.lastEventText = `🧹 Cleared round transaction history (balances & lifetime ROI kept)`;
+    state.lastEventId++;
+    broadcastState('STATE');
+    return;
+  }
+
+  // Buy / Assign Property
   if(d.action === 'BUY_PROP') {
     const propId = d.propId;
     const buyerId = d.buyerId || id;
@@ -2421,11 +3063,69 @@ function handleAction(id, d) {
     const st = state.properties[propId];
     if (!def || !st || st.ownerId) return;
     st.ownerId = buyerId;
+    if (state.pendingDecision && state.pendingDecision.propId === propId) {
+      state.pendingDecision = null;
+    }
+    if (state.auction && state.auction.propId === propId) {
+      state.auction = null;
+    }
     if (!state.setupMode && !d.free) {
       recordTransfer(buyerId, BANK, def.price, 'Bought ' + def.name);
+      state.lastEventText = `🎉 ${(playerById(buyerId)?.name||'Player')} bought ${def.name} for ${fmt(def.price)}!`;
+    } else {
+      state.lastEventText = `📋 Assigned ${def.name} to ${(playerById(buyerId)?.name||'Player')} (Setup Mode)`;
     }
-    state.lastEventText = `🎉 ${(playerById(buyerId)?.name||'Player')} acquired ${def.name}!`;
     state.lastEventId++;
+    broadcastState('BUY');
+    return;
+  }
+
+  // Auction Actions
+  if(d.action === 'START_AUCTION') {
+    const propId = d.propId || state.pendingDecision?.propId;
+    if (!propId) return;
+    startPropertyAuction(propId, d.initiatorId || id);
+    broadcastState('AUCTION');
+    return;
+  }
+
+  if(d.action === 'AUCTION_BID') {
+    if (!state.auction) return;
+    const bidderId = d.bidderId || id;
+    const bidAmt = Number(d.amount) || 0;
+    if (bidAmt <= state.auction.highBid) return;
+    state.auction.highBid = bidAmt;
+    state.auction.highBidderId = bidderId;
+    state.auction.passedIds = (state.auction.passedIds || []).filter(x => x !== bidderId);
+    state.auction.history.push({ bidderId, amount: bidAmt, note: 'Bid' });
+    runBotAuctionBidsIfNeeded();
+    // Check if all other active players have passed
+    const activeOthers = state.players.filter(pid => !state.bankrupt?.[pid] && pid !== state.auction.highBidderId);
+    if (activeOthers.length > 0 && activeOthers.every(pid => state.auction.passedIds.includes(pid))) {
+      finalizeAuction();
+    }
+    broadcastState('AUCTION');
+    return;
+  }
+
+  if(d.action === 'AUCTION_PASS') {
+    if (!state.auction) return;
+    const passerId = d.passerId || id;
+    if (!state.auction.passedIds.includes(passerId)) {
+      state.auction.passedIds.push(passerId);
+    }
+    runBotAuctionBidsIfNeeded();
+    const activeRemaining = state.players.filter(pid => !state.bankrupt?.[pid] && !state.auction.passedIds.includes(pid));
+    if (activeRemaining.length <= 1) {
+      finalizeAuction();
+    }
+    broadcastState('AUCTION');
+    return;
+  }
+
+  if(d.action === 'AUCTION_FINALIZE') {
+    if (!state.auction) return;
+    finalizeAuction();
     broadcastState('BUY');
     return;
   }
@@ -2522,6 +3222,8 @@ function handleAction(id, d) {
   }
 
   if(d.action === 'ROLL') {
+    // Cannot roll again if player hasn't resolved Buy-or-Auction on current unowned property!
+    if (state.pendingDecision && state.pendingDecision.propId) return;
     if (state.rolledThisTurn && !state.canRollAgain) return;
     const d1 = Math.floor(Math.random() * 6) + 1;
     const d2 = Math.floor(Math.random() * 6) + 1;
@@ -2561,6 +3263,7 @@ function handleAction(id, d) {
           state.jailTurns[id] = 0;
           state.doublesCount = 0;
           state.canRollAgain = false;
+          state.pendingDecision = null;
           state.lastEventText = `👮 ${pName} rolled 3 doubles in a row — sent to Jail!`;
           state.lastEventId++;
           broadcastState('ROLL');
@@ -2588,6 +3291,8 @@ function handleAction(id, d) {
 
   if(d.action === 'END_TURN') {
     if (!state.rolledThisTurn) return;
+    // Enforce rule: Cannot end turn while an unowned property decision (Buy or Auction) is pending!
+    if (state.pendingDecision && state.pendingDecision.propId) return;
     state.current = getNextActivePlayer(id);
     state.rolledThisTurn = false;
     state.canRollAgain = false;
@@ -2629,6 +3334,7 @@ function showEventToast(text) {
 
 function renderGame() {
   if(!state) return;
+  ensurePropertyStateObj();
   showPanel('gamePanel');
   updateTimerBadgeUI();
 
@@ -2649,6 +3355,8 @@ function renderGame() {
     }
   }
 
+  const bStats = bankStats();
+  if ($('hudBankNet')) $('hudBankNet').textContent = fmt(bStats.net);
   $('hudHousesLeft').textContent = String(availableHouses());
   $('hudHotelsLeft').textContent = String(availableHotels());
 
@@ -2660,7 +3368,7 @@ function renderGame() {
     ? '🏆 Match Complete'
     : (currP ? (currP.id===myId ? `${currP.avatar||'🎩'} Your Turn` : `${currP.avatar||'🎩'} ${currP.name}'s Turn`) : 'In Progress');
 
-  // Render 11x11 Board
+  // Render 11x11 Business Board
   const boardEl = $('monopolyBoard');
   let cellsHTML = '';
 
@@ -2670,6 +3378,7 @@ function renderGame() {
     const def = sp.propId ? propDef(sp.propId) : null;
     const st = (def && state.properties) ? state.properties[def.id] : null;
     const sideCls = isCorner ? 'corner-cell' : `side-${pos.side}`;
+    const specialCls = sp.kind === 'cc' ? 'special-cc' : sp.kind === 'chance' ? 'special-chance' : sp.kind === 'tax' ? 'special-tax' : '';
     const selCls = (inspectedSpaceIdx === sp.idx) ? 'selected-cell' : '';
     const mortCls = (st && st.mortgaged) ? 'mortgaged-cell' : '';
 
@@ -2685,14 +3394,15 @@ function renderGame() {
 
     const titleTxt = def ? def.name : (sp.name || '');
     const priceTxt = def
-      ? (def.type === 'tax' ? `Pay ${shortLabel(def.amount)}` : `M${shortLabel(def.price)}`)
+      ? (def.type === 'tax' ? `Pay ${shortLabel(def.amount)}` : `$${shortLabel(def.price)}`)
       : (sp.sub || '');
 
-    let ownerDot = '';
+    let ownerBadge = '';
     if (st && st.ownerId) {
-      const ownerIdx = state.players.indexOf(st.ownerId);
-      const oCol = PLAYER_COLORS[(ownerIdx >= 0 ? ownerIdx : 0) % PLAYER_COLORS.length];
-      ownerDot = `<span class="cell-owner-dot" style="background:${oCol};" title="Owned by ${esc(playerById(st.ownerId)?.name||'Player')}"></span>`;
+      const oCol = playerColor(st.ownerId);
+      const oP = playerById(st.ownerId);
+      const oInitial = (oP?.name || 'P').slice(0, 2).toUpperCase();
+      ownerBadge = `<span class="cell-owner-badge" style="background:${oCol};" title="Owned by ${esc(oP?.name||'Player')}">${esc(oInitial)}</span>`;
     }
 
     // Tokens on this space
@@ -2701,21 +3411,20 @@ function renderGame() {
     if (herePlayers.length) {
       tokensHTML = `<div class="cell-tokens">` + herePlayers.map(pid => {
         const pObj = playerById(pid);
-        const pIdx = state.players.indexOf(pid);
-        const tCol = PLAYER_COLORS[(pIdx >= 0 ? pIdx : 0) % PLAYER_COLORS.length];
+        const tCol = playerColor(pid);
         const actCls = (state.current === pid) ? 'active-token' : '';
         return `<div class="board-token ${actCls}" style="--tcolor:${tCol};" title="${esc(pObj?.name||'Player')}">${pObj?.avatar||'🎩'}</div>`;
       }).join('') + `</div>`;
     }
 
-    cellsHTML += `<div class="board-cell ${sideCls} ${selCls} ${mortCls}" data-space-idx="${sp.idx}" style="grid-row:${pos.row}; grid-column:${pos.col};">
+    cellsHTML += `<div class="board-cell ${sideCls} ${specialCls} ${selCls} ${mortCls}" data-space-idx="${sp.idx}" style="grid-row:${pos.row}; grid-column:${pos.col};">
       ${bandHTML}
       <div class="cell-content">
         <div class="cell-name">${esc(titleTxt)}</div>
         <div class="cell-icon">${sp.icon || ''}</div>
         <div class="cell-price">${esc(priceTxt)}</div>
       </div>
-      ${ownerDot}
+      ${ownerBadge}
       ${tokensHTML}
     </div>`;
   });
@@ -2728,64 +3437,76 @@ function renderGame() {
   const DICE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
   const d1 = state.dice?.[0] || 1, d2 = state.dice?.[1] || 1;
 
-  let spaceSummaryHTML = `<div><strong>${esc(currDef ? currDef.name : currSp?.name || 'GO')}</strong></div>`;
+  // Check if there is a mandatory pending Buy-or-Auction decision
+  const pendingPropId = state.pendingDecision?.propId;
+  const pendingDef = pendingPropId ? propDef(pendingPropId) : null;
+  const pendingSt = pendingPropId ? state.properties[pendingPropId] : null;
+  const hasMandatoryDecision = !!(pendingDef && pendingSt && !pendingSt.ownerId);
+
+  let spaceSummaryHTML = `<div><strong>${esc(currDef ? currDef.name : currSp?.name || 'GO')}</strong> ${currDef?.country ? `<span style="font-size:0.7rem;color:#cbd5e1;">(${esc(currDef.country)})</span>` : ''}</div>`;
   if (currDef && currDef.type !== 'tax' && currPropSt) {
     if (!currPropSt.ownerId) {
-      spaceSummaryHTML += `<div style="color:#fde047;">Unowned · Price: ${fmt(currDef.price)}</div>`;
+      spaceSummaryHTML += `<div style="color:#fde047; font-weight:700;">Unowned · List Price: ${fmt(currDef.price)} · Base Rent: ${fmt(currDef.type==='property'?currDef.rent[0]:currDef.type==='transport'?currDef.rentByCount[0]:currDef.soloMultiplier*7)}</div>`;
     } else {
       const oName = playerById(currPropSt.ownerId)?.name || 'Player';
       const rNow = currentRent(currDef.id, d1 + d2);
-      spaceSummaryHTML += `<div style="color:#93c5fd;">Owner: ${esc(oName)} · Rent: ${fmt(rNow)}</div>`;
+      spaceSummaryHTML += `<div style="color:#93c5fd;">Owner: <b>${esc(oName)}</b> · Current Rent: <b>${fmt(rNow)}</b></div>`;
     }
   } else if (currSp?.sub) {
     spaceSummaryHTML += `<div style="color:#cbd5e1;">${esc(currSp.sub)}</div>`;
   }
 
-  const canRoll = myTurn && (!state.rolledThisTurn || state.canRollAgain);
-  const canBuy = myTurn && state.rolledThisTurn && currDef && currDef.type !== 'tax' && currPropSt && !currPropSt.ownerId;
-  const canEnd = myTurn && state.rolledThisTurn && !state.canRollAgain;
+  const canRoll = myTurn && !hasMandatoryDecision && (!state.rolledThisTurn || state.canRollAgain);
+  const canBuy = myTurn && hasMandatoryDecision;
+  const canAuction = myTurn && hasMandatoryDecision;
+  const canEnd = myTurn && state.rolledThisTurn && !state.canRollAgain && !hasMandatoryDecision;
   const canBail = myTurn && state.inJail?.[myId] && !state.rolledThisTurn;
 
   cellsHTML += `<div class="board-center">
+    <div class="center-world-watermark"></div>
+
     <!-- Top-Left Community Chest Deck -->
-    <div class="center-deck-slot cc-slot" id="centerCCSlot" title="Community Chest Deck">
+    <div class="center-deck-slot cc-slot" id="centerCCSlot" title="Click to view Community Chest info">
       <span style="font-size:1.3em;">📦</span>
       <span>Community Chest</span>
     </div>
 
     <!-- Bottom-Right Chance Deck -->
-    <div class="center-deck-slot chance-slot" id="centerChanceSlot" title="Chance Deck">
+    <div class="center-deck-slot chance-slot" id="centerChanceSlot" title="Click to view Chance info">
       <span style="font-size:1.3em;">❓</span>
       <span>Chance</span>
     </div>
 
     <div class="center-brand-banner">
       <div class="monopoly-red-logo">MONOPOLY</div>
-      <div class="monopoly-sub-logo">HERE &amp; NOW · THE WORLD EDITION · 大富翁</div>
+      <div class="monopoly-sub-logo">HERE &amp; NOW · THE WORLD EDITION · BUSINESS BOARD</div>
     </div>
 
     <div class="center-play-hub">
       <div class="dice-stage">
         <div class="die-box" id="dieBox1">${DICE_FACES[d1-1] || d1}</div>
         <div class="die-box" id="dieBox2">${DICE_FACES[d2-1] || d2}</div>
-        <div style="text-align:left; font-size:0.8rem;">
+        <div style="text-align:left; font-size:0.78rem;">
           <div style="font-weight:800; color:#ffe7a5;">Roll: ${d1 + d2} ${d1===d2 ? '⚡(Doubles)' : ''}</div>
-          <div style="color:#cbd5e1; font-size:0.72rem;">Click any board space to inspect deed</div>
+          <div style="color:#cbd5e1; font-size:0.7rem;">Click any board space to inspect deed</div>
         </div>
       </div>
 
       <div class="hub-space-card">${spaceSummaryHTML}</div>
 
+      ${hasMandatoryDecision ? `<div class="mandatory-banner">⚠️ Mandatory Rule: ${esc(currP?.name||'Player')} must <b>Buy</b> or <b>Auction</b> ${esc(pendingDef.name)} — cannot leave it unowned!</div>` : ''}
+
       <div class="hub-actions">
         ${canBail ? `<button type="button" id="hubBailBtn" class="btn-alt">🔓 ${(state.jailFreeCards?.[myId]>0)?'Use Jail Pass':'Pay $500k Bail'}</button>` : ''}
         <button type="button" id="hubRollBtn" ${canRoll?'':'disabled'}>🎲 ${state.canRollAgain ? 'Roll Doubles Again!' : 'Roll Dice'}</button>
-        ${canBuy ? `<button type="button" id="hubBuyBtn" class="btn-good">🏠 Buy ${esc(currDef.name)} (${fmt(currDef.price)})</button>` : ''}
+        ${canBuy ? `<button type="button" id="hubBuyBtn" class="btn-good">🏠 Buy ${esc(pendingDef.name)} (${fmt(pendingDef.price)})</button>` : ''}
+        ${canAuction ? `<button type="button" id="hubAuctionBtn" class="btn-auction">🔨 Auction ${esc(pendingDef.name)}</button>` : ''}
         <button type="button" id="hubEndTurnBtn" class="btn-alt" ${canEnd?'':'disabled'}>✅ End Turn</button>
       </div>
     </div>
 
-    <div style="font-size:0.68rem; color:#064e3b; font-weight:700; z-index:3;">
-      Owner in Jail = 50% Rent · Full Color Group = 2× Base Rent &amp; Houses
+    <div style="font-size:0.64rem; color:#064e3b; font-weight:800; z-index:3; text-align:center; max-width:64%; line-height:1.2;">
+      Unowned Landing = Buy or Auction · Owner in Jail = 50% Rent · Full Group = 2× Base Rent &amp; Houses
     </div>
   </div>`;
 
@@ -2793,17 +3514,29 @@ function renderGame() {
 
   // Bind Center Hub Buttons
   if ($('hubRollBtn')) $('hubRollBtn').onclick = () => sendAct('ROLL');
-  if ($('hubBuyBtn')) $('hubBuyBtn').onclick = () => sendAct('BUY_PROP', { propId: currDef.id, buyerId: myId });
+  if ($('hubBuyBtn') && pendingDef) $('hubBuyBtn').onclick = () => sendAct('BUY_PROP', { propId: pendingDef.id, buyerId: myId });
+  if ($('hubAuctionBtn') && pendingDef) $('hubAuctionBtn').onclick = () => sendAct('START_AUCTION', { propId: pendingDef.id, initiatorId: myId });
   if ($('hubEndTurnBtn')) $('hubEndTurnBtn').onclick = () => sendAct('END_TURN');
   if ($('hubBailBtn')) $('hubBailBtn').onclick = () => sendAct('PAY_BAIL');
 
+  // Show/Refresh Live Auction Modal if an auction is active
+  if (state.auction && state.auction.propId) {
+    renderAuctionModalContent();
+    $('auctionModal').classList.remove('hidden');
+  } else {
+    $('auctionModal').classList.add('hidden');
+  }
+
   // Refresh open modals if visible
-  if (!$('allPropsModal').classList.contains('hidden')) renderAllPropsModalContent();
+  if (!$('allPropsModal').classList.contains('hidden')) renderTrackerHubModal();
   if (!$('ledgerModal').classList.contains('hidden')) renderLedgerModalContent();
+  if (!$('playerPortfolioModal').classList.contains('hidden') && inspectedPortfolioPlayerId) {
+    renderPlayerPortfolioModal(inspectedPortfolioPlayerId);
+  }
 
   // Bot AI Turn Logic
   const isCurrentBot = host && !state.winner && currP && (currP.id === 'AI' || currP.isBot);
-  if (isCurrentBot && botActionRevision !== revision) {
+  if (isCurrentBot && !state.auction && botActionRevision !== revision) {
     botActionRevision = revision;
     const expectedRev = revision;
     const botId = state.current;
@@ -2813,17 +3546,22 @@ function renderGame() {
         handleAction(botId, { action: 'PAY_BAIL', revision: expectedRev });
         return;
       }
+      // If bot has a mandatory Buy or Auction decision on an unowned property:
+      if (state.pendingDecision && state.pendingDecision.propId) {
+        const pDef = propDef(state.pendingDecision.propId);
+        const pSt = pDef ? state.properties[pDef.id] : null;
+        if (pDef && pSt && !pSt.ownerId) {
+          if ((state.balances[botId] || 0) >= pDef.price) {
+            handleAction(botId, { action: 'BUY_PROP', propId: pDef.id, buyerId: botId, revision: expectedRev });
+          } else {
+            // Bot cannot afford full price -> starts Auction!
+            handleAction(botId, { action: 'START_AUCTION', propId: pDef.id, initiatorId: botId, revision: expectedRev });
+          }
+          return;
+        }
+      }
       if (!state.rolledThisTurn || state.canRollAgain) {
         handleAction(botId, { action: 'ROLL', revision: expectedRev });
-        return;
-      }
-      // If bot landed on unowned property and can afford it, buy it!
-      const bPos = state.positions[botId] || 0;
-      const bSp = BOARD_SPACES[bPos];
-      const bDef = bSp?.propId ? propDef(bSp.propId) : null;
-      const bSt = bDef ? state.properties[bDef.id] : null;
-      if (bDef && bDef.type !== 'tax' && bSt && !bSt.ownerId && (state.balances[botId] || 0) >= bDef.price) {
-        handleAction(botId, { action: 'BUY_PROP', propId: bDef.id, buyerId: botId, revision: expectedRev });
         return;
       }
       // Try building a house if bot owns a full color group and has spare cash
@@ -2833,7 +3571,7 @@ function renderGame() {
         return;
       }
       handleAction(botId, { action: 'END_TURN', revision: expectedRev });
-    }, 950);
+    }, 850);
   }
 
   // Winner Modal
@@ -2868,8 +3606,286 @@ function renderGame() {
   }
 }
 
+// === LIVE PROPERTY AUCTION MODAL RENDERING ===
+function renderAuctionModalContent() {
+  if (!state || !state.auction) return;
+  const auc = state.auction;
+  const def = propDef(auc.propId);
+  if (!def) return;
+  const col = GROUP_COLORS[def.group] || '#334155';
+  const highBidder = playerById(auc.highBidderId);
+  const activePlayersList = state.players.filter(pid => !state.bankrupt?.[pid]);
+  if (!selectedAuctionBidderId || !activePlayersList.includes(selectedAuctionBidderId)) {
+    selectedAuctionBidderId = activePlayersList.includes(myId) ? myId : activePlayersList[0];
+  }
+
+  const bidderOpts = activePlayersList.map(pid => {
+    const pObj = playerById(pid);
+    const passed = auc.passedIds.includes(pid);
+    return `<option value="${esc(pid)}" ${pid===selectedAuctionBidderId?'selected':''}>${esc(pObj?.name||'Player')} (${fmt(state.balances[pid]||0)})${passed?' [Passed]':''}</option>`;
+  }).join('');
+
+  const standingsRows = activePlayersList.map(pid => {
+    const pObj = playerById(pid);
+    const isHigh = pid === auc.highBidderId;
+    const isPassed = auc.passedIds.includes(pid);
+    const statusBadge = isHigh
+      ? `<span style="background:#16a34a;color:#fff;padding:2px 8px;border-radius:99px;font-size:0.72rem;font-weight:800;">👑 Highest Bidder (${fmt(auc.highBid)})</span>`
+      : isPassed
+        ? `<span style="background:#64748b;color:#fff;padding:2px 8px;border-radius:99px;font-size:0.72rem;">🏳️ Passed</span>`
+        : `<span style="background:rgba(255,255,255,0.12);color:#cbd5e1;padding:2px 8px;border-radius:99px;font-size:0.72rem;">Active</span>`;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(0,0,0,0.25);border-radius:8px;margin-bottom:4px;border-left:4px solid ${playerColor(pid)};">
+      <span>${pObj?.avatar||'🎩'} <b>${esc(pObj?.name||'Player')}</b> <small style="color:#86efac;">(${fmt(state.balances[pid]||0)})</small></span>
+      ${statusBadge}
+    </div>`;
+  }).join('');
+
+  $('auctionModalBody').innerHTML = `
+    <div class="deed-modal-card" style="margin-bottom:12px;">
+      <div class="deed-modal-header" style="background:${col};">${esc(def.name)} (${esc(GROUP_LABELS[def.group]||'Property')})</div>
+      <div class="deed-modal-body">
+        <div class="deed-rent-row"><span>Original List Price</span><strong>${fmt(def.price)}</strong></div>
+        <div class="deed-rent-row"><span>Base Rent</span><strong>${fmt(def.type==='property'?def.rent[0]:def.type==='transport'?def.rentByCount[0]:def.soloMultiplier*7)}</strong></div>
+        <div class="deed-rent-row"><span>Mortgage Value</span><strong>${fmt(def.mortgageValue)}</strong></div>
+      </div>
+    </div>
+
+    <div style="background:rgba(249,115,22,0.16); border:1.5px solid #fb923c; border-radius:12px; padding:10px 14px; text-align:center; margin-bottom:12px;">
+      <div style="font-size:0.78rem; color:#fed7aa; text-transform:uppercase; font-weight:800;">Current Highest Bid</div>
+      <div style="font-size:1.65rem; font-weight:900; color:#fde047;">${fmt(auc.highBid)}</div>
+      <div style="font-size:0.86rem; color:#fff;">Held by: <b>${esc(highBidder?.name||'Player')}</b></div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <div style="font-size:0.78rem; color:#cbd5e1; font-weight:700; margin-bottom:4px;">Bidders Status:</div>
+      ${standingsRows}
+    </div>
+
+    <div style="background:rgba(0,0,0,0.32); border-radius:12px; padding:12px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <label style="font-size:0.78rem; color:#cbd5e1; white-space:nowrap;">Bidding As:</label>
+        <select id="auctionBidderSelect" style="flex:1; padding:6px 10px; font-size:0.84rem;">${bidderOpts}</select>
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+        <button type="button" class="btn-good" data-auc-inc="50000" style="flex:1; padding:7px 8px; font-size:0.78rem;">+$50k (${fmt(auc.highBid+50000)})</button>
+        <button type="button" class="btn-good" data-auc-inc="100000" style="flex:1; padding:7px 8px; font-size:0.78rem;">+$100k (${fmt(auc.highBid+100000)})</button>
+        <button type="button" class="btn-good" data-auc-inc="250000" style="flex:1; padding:7px 8px; font-size:0.78rem;">+$250k (${fmt(auc.highBid+250000)})</button>
+        <button type="button" class="btn-good" data-auc-inc="500000" style="flex:1; padding:7px 8px; font-size:0.78rem;">+$500k (${fmt(auc.highBid+500000)})</button>
+      </div>
+      <div style="display:flex; gap:6px; margin-bottom:10px;">
+        <input type="text" id="auctionCustomBidInput" placeholder="Custom bid (e.g. 1.2m)" style="flex:1; padding:7px 10px; font-size:0.82rem;">
+        <button type="button" id="auctionCustomBidBtn" class="btn-alt" style="padding:7px 12px; font-size:0.8rem;">Place Custom Bid</button>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" id="auctionPassBtn" class="btn-alt" style="flex:1; padding:8px;">🏳️ Pass / Fold Selected Bidder</button>
+        <button type="button" id="auctionAwardBtn" class="btn-auction" style="flex:1.2; padding:8px;">🔨 Hammer Down &amp; Award (${fmt(auc.highBid)})</button>
+      </div>
+    </div>
+  `;
+
+  const sel = $('auctionBidderSelect');
+  if (sel) sel.onchange = e => { selectedAuctionBidderId = e.target.value; };
+
+  $('auctionModalBody').querySelectorAll('[data-auc-inc]').forEach(btn => {
+    btn.onclick = () => {
+      const inc = Number(btn.dataset.aucInc) || 50000;
+      const bidder = $('auctionBidderSelect')?.value || myId;
+      sendAct('AUCTION_BID', { bidderId: bidder, amount: auc.highBid + inc });
+    };
+  });
+
+  if ($('auctionCustomBidBtn')) {
+    $('auctionCustomBidBtn').onclick = () => {
+      const amt = parseAmount($('auctionCustomBidInput')?.value);
+      const bidder = $('auctionBidderSelect')?.value || myId;
+      if (amt && amt > auc.highBid) {
+        sendAct('AUCTION_BID', { bidderId: bidder, amount: amt });
+      }
+    };
+  }
+  if ($('auctionPassBtn')) {
+    $('auctionPassBtn').onclick = () => {
+      const bidder = $('auctionBidderSelect')?.value || myId;
+      sendAct('AUCTION_PASS', { passerId: bidder });
+    };
+  }
+  if ($('auctionAwardBtn')) {
+    $('auctionAwardBtn').onclick = () => sendAct('AUCTION_FINALIZE');
+  }
+}
+
+// === PLAYER PORTFOLIO MODAL (Triggered when clicking top player bar!) ===
+function openPlayerPortfolioModal(pid) {
+  if (!state || !pid) return;
+  inspectedPortfolioPlayerId = pid;
+  renderPlayerPortfolioModal(pid);
+  $('playerPortfolioModal').classList.remove('hidden');
+}
+
+function renderPlayerPortfolioModal(pid) {
+  const p = playerById(pid);
+  if (!p || !state) return;
+  const pCol = playerColor(pid);
+  const cash = state.balances?.[pid] || 0;
+  const nw = computePlayerNetWorth(pid);
+  const owned = ownedPropsFor(pid);
+  const inJail = !!state.inJail?.[pid];
+  const isElim = !!state.bankrupt?.[pid];
+  const totalHouses = owned.reduce((s, d) => s + (state.properties[d.id]?.houses >= 1 && state.properties[d.id]?.houses <= 4 ? state.properties[d.id].houses : 0), 0);
+  const totalHotels = owned.filter(d => state.properties[d.id]?.houses === 5).length;
+  const lifetimeRent = owned.reduce((s, d) => s + (state.properties[d.id]?.rentCollected || 0), 0);
+
+  $('portfolioTitle').innerHTML = `<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${pCol};margin-right:6px;"></span>${p.avatar||'🎩'} ${esc(p.name)}'s Portfolio &amp; Properties`;
+
+  let propsSectionHTML = '';
+  if (owned.length === 0) {
+    propsSectionHTML = `<div style="background:rgba(0,0,0,0.28); border:1px dashed rgba(255,255,255,0.2); border-radius:12px; padding:20px; text-align:center; color:#cbd5e1;">
+      <div style="font-size:1.8rem; margin-bottom:6px;">🏘️</div>
+      <div><b>${esc(p.name)}</b> does not own any properties yet.</div>
+      <button type="button" id="portfolioOpenAllPropsBtn" class="btn-alt" style="margin-top:10px; font-size:0.8rem;">Browse All 28 Properties &amp; Assign/Buy</button>
+    </div>`;
+  } else {
+    propsSectionHTML = `<div class="group-cards-grid" style="padding:0;">` + owned.map(def => {
+      const st = state.properties[def.id];
+      const gCol = GROUP_COLORS[def.group] || '#334155';
+      const fullSet = def.type === 'property' && ownsFullGroup(pid, def.group);
+      const rNow = currentRent(def.id, 7);
+      const hText = def.type === 'property'
+        ? (st.houses === 5 ? '🏨 Hotel' : st.houses > 0 ? `🏠 ×${st.houses}` : '0 houses')
+        : (def.type === 'transport' ? `${ownedCountInGroup(pid, 'transport')}/4 Transports` : `${ownedCountInGroup(pid, 'utility')}/2 Utilities`);
+      const rec = st.rentCollected || 0;
+      const pct = def.price > 0 ? Math.round((rec / def.price) * 100) : 0;
+      const roiCls = pct >= 100 ? 'roi-profit' : pct > 0 ? 'roi-partial' : 'roi-zero';
+
+      return `<div class="tracker-prop-card owned ${st.mortgaged?'mortgaged':''}">
+        <div class="tpc-top" style="background:${gCol};"></div>
+        <div class="tpc-body">
+          <div class="tpc-title-row">
+            <span class="tpc-name">${esc(def.name)}</span>
+            <span class="tpc-price">${fmt(def.price)}</span>
+          </div>
+          <div style="font-size:0.72rem; color:#cbd5e1;">
+            Group: <b>${esc(GROUP_LABELS[def.group])}</b> ${fullSet ? '<span style="color:#fde047;font-weight:800;">★ Full Set (2×)</span>' : ''}
+          </div>
+          <div style="font-size:0.76rem; color:#93c5fd;">
+            Current Rent: <b>${st.mortgaged ? '— (Mortgaged)' : fmt(rNow)}</b> · <b>${hText}</b>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:#cbd5e1;">
+            <span>Rent Earned: <b style="color:#86efac;">${fmt(rec)}</b></span>
+            <span class="roi-badge ${roiCls}">ROI ${pct}%</span>
+          </div>
+          <div class="tpc-controls">
+            ${def.type === 'property' ? `
+              <button type="button" class="btn-good" data-pf-build="${def.id}" ${(st.mortgaged || st.houses >= 5 || (!fullSet && !state.setupMode)) ? 'disabled' : ''}>+🏠 (${fmt(def.houseCost)})</button>
+              <button type="button" class="btn-alt" data-pf-sell="${def.id}" ${st.houses <= 0 ? 'disabled' : ''}>−🏠</button>
+            ` : ''}
+            ${st.houses === 0 ? `<button type="button" class="btn-alt" data-pf-mort="${def.id}">${st.mortgaged ? 'Unmortgage ' + fmt(def.unmortgageValue) : 'Mortgage +' + fmt(def.mortgageValue)}</button>` : ''}
+            <button type="button" class="btn-alt" data-pf-deed="${def.id}">📜 Deed</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('') + `</div>`;
+  }
+
+  $('portfolioModalBody').innerHTML = `
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(135px, 1fr)); gap:8px; margin-bottom:12px;">
+      <div style="background:rgba(0,0,0,0.32); padding:10px 12px; border-radius:10px; border-left:4px solid ${pCol};">
+        <div style="font-size:0.72rem; color:#cbd5e1;">Cash Balance</div>
+        <div style="font-size:1.25rem; font-weight:900; color:${cash<0?'#fca5a5':'#86efac'};">${fmt(cash)}</div>
+      </div>
+      <div style="background:rgba(0,0,0,0.32); padding:10px 12px; border-radius:10px;">
+        <div style="font-size:0.72rem; color:#cbd5e1;">Total Net Worth</div>
+        <div style="font-size:1.25rem; font-weight:900; color:#ffe7a5;">${fmt(nw)}</div>
+      </div>
+      <div style="background:rgba(0,0,0,0.32); padding:10px 12px; border-radius:10px;">
+        <div style="font-size:0.72rem; color:#cbd5e1;">Properties &amp; Buildings</div>
+        <div style="font-size:1.05rem; font-weight:800; color:#93c5fd;">${owned.length} Props · 🏠${totalHouses} · 🏨${totalHotels}</div>
+      </div>
+      <div style="background:rgba(0,0,0,0.32); padding:10px 12px; border-radius:10px;">
+        <div style="font-size:0.72rem; color:#cbd5e1;">Lifetime Rent Earned</div>
+        <div style="font-size:1.15rem; font-weight:800; color:#6ee7b7;">${fmt(lifetimeRent)}</div>
+      </div>
+    </div>
+
+    <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:10px 12px; margin-bottom:14px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between;">
+      <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+        <button type="button" class="btn-good" id="pfPassGoBtn" style="padding:6px 10px; font-size:0.76rem;">+ $2M Pass GO</button>
+        <button type="button" class="btn-alt" id="pfToggleJailBtn" style="padding:6px 10px; font-size:0.76rem;">${inJail ? '🔓 Release from Jail' : '⛓️ Send to Jail'}</button>
+        ${isElim
+          ? `<button type="button" class="btn-good" id="pfRestoreBtn" style="padding:6px 10px; font-size:0.76rem;">✨ Restore Player</button>`
+          : `<button type="button" class="btn-danger" id="pfEliminateBtn" style="padding:6px 10px; font-size:0.76rem;">🏳️ Eliminate / Out</button>`
+        }
+      </div>
+      <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+        <input type="text" id="pfBankAmtInput" placeholder="Amt (e.g. 200k)" style="width:115px; padding:5px 8px; font-size:0.76rem;">
+        <button type="button" class="btn-alt" id="pfPayBankBtn" style="padding:5px 9px; font-size:0.75rem;">Pay Bank</button>
+        <button type="button" class="btn-good" id="pfReceiveBankBtn" style="padding:5px 9px; font-size:0.75rem;">Receive</button>
+      </div>
+    </div>
+
+    <h3 style="margin:0 0 8px; font-size:0.95rem; color:#ffe7a5;">🏘️ Properties Owned by ${esc(p.name)} (${owned.length})</h3>
+    ${propsSectionHTML}
+  `;
+
+  if ($('pfPassGoBtn')) $('pfPassGoBtn').onclick = () => sendAct('PASS_GO', { targetId: pid });
+  if ($('pfToggleJailBtn')) $('pfToggleJailBtn').onclick = () => sendAct('TOGGLE_JAIL', { targetId: pid });
+  if ($('pfEliminateBtn')) $('pfEliminateBtn').onclick = () => sendAct('ELIMINATE_PLAYER', { targetId: pid });
+  if ($('pfRestoreBtn')) $('pfRestoreBtn').onclick = () => sendAct('RESTORE_PLAYER', { targetId: pid });
+  if ($('pfPayBankBtn')) {
+    $('pfPayBankBtn').onclick = () => {
+      const amt = parseAmount($('pfBankAmtInput')?.value);
+      if (amt && amt > 0) sendAct('TRANSFER', { from: pid, to: BANK, amount: amt, note: 'Paid Bank' });
+    };
+  }
+  if ($('pfReceiveBankBtn')) {
+    $('pfReceiveBankBtn').onclick = () => {
+      const amt = parseAmount($('pfBankAmtInput')?.value);
+      if (amt && amt > 0) sendAct('TRANSFER', { from: BANK, to: pid, amount: amt, note: 'Received from Bank' });
+    };
+  }
+  if ($('portfolioOpenAllPropsBtn')) {
+    $('portfolioOpenAllPropsBtn').onclick = () => {
+      $('playerPortfolioModal').classList.add('hidden');
+      switchTrackerHubTab('props');
+      $('allPropsModal').classList.remove('hidden');
+    };
+  }
+
+  $('portfolioModalBody').querySelectorAll('[data-pf-build]').forEach(btn => {
+    btn.onclick = () => sendAct('BUILD_HOUSE', { propId: btn.dataset.pfBuild });
+  });
+  $('portfolioModalBody').querySelectorAll('[data-pf-sell]').forEach(btn => {
+    btn.onclick = () => sendAct('SELL_HOUSE', { propId: btn.dataset.pfSell });
+  });
+  $('portfolioModalBody').querySelectorAll('[data-pf-mort]').forEach(btn => {
+    const propId = btn.dataset.pfMort;
+    const isM = state.properties[propId]?.mortgaged;
+    btn.onclick = () => sendAct(isM ? 'UNMORTGAGE_PROP' : 'MORTGAGE_PROP', { propId });
+  });
+  $('portfolioModalBody').querySelectorAll('[data-pf-deed]').forEach(btn => {
+    btn.onclick = () => {
+      const propId = btn.dataset.pfDeed;
+      const sp = BOARD_SPACES.find(s => s.propId === propId);
+      if (sp) openDeedInspectModal(sp.idx);
+    };
+  });
+}
+
+$('closePortfolioModalBtn').onclick = () => $('playerPortfolioModal').classList.add('hidden');
+$('playerPortfolioModal').onclick = e => { if (e.target === $('playerPortfolioModal')) $('playerPortfolioModal').classList.add('hidden'); };
+
 // === INSPECT BOARD SPACE / TITLE DEED MODAL ===
 $('monopolyBoard').addEventListener('click', e => {
+  const ccSlot = e.target.closest('#centerCCSlot');
+  if (ccSlot) {
+    showEventToast('📦 Community Chest: Land on a Community Chest space to draw!');
+    return;
+  }
+  const chSlot = e.target.closest('#centerChanceSlot');
+  if (chSlot) {
+    showEventToast('❓ Chance: Land on a Chance space to draw!');
+    return;
+  }
   const cell = e.target.closest('[data-space-idx]');
   if (!cell || !state) return;
   const idx = Number(cell.dataset.spaceIdx);
@@ -2900,7 +3916,13 @@ function openDeedInspectModal(idx) {
 
   const col = GROUP_COLORS[def.group] || '#334155';
   const ownerName = st?.ownerId ? (playerById(st.ownerId)?.name || 'Player') : 'Unowned (Bank)';
-  let bodyRows = `<div class="deed-rent-row"><span>Purchase Price</span><strong>${fmt(def.price)}</strong></div>`;
+  const rec = st?.rentCollected || 0;
+  const pct = def.price > 0 ? Math.round((rec / def.price) * 100) : 0;
+
+  let bodyRows = `
+    <div class="deed-rent-row"><span>Group / Region</span><strong>${esc(GROUP_LABELS[def.group])} ${def.country ? '· ' + esc(def.country) : ''}</strong></div>
+    <div class="deed-rent-row"><span>Purchase Price</span><strong>${fmt(def.price)}</strong></div>
+  `;
 
   if (def.type === 'property') {
     bodyRows += `
@@ -2930,6 +3952,7 @@ function openDeedInspectModal(idx) {
   bodyRows += `
     <div class="deed-rent-row"><span>Mortgage Value</span><strong>${fmt(def.mortgageValue)}</strong></div>
     <div class="deed-rent-row"><span>Unmortgage Cost</span><strong>${fmt(def.unmortgageValue)}</strong></div>
+    <div class="deed-rent-row"><span>Lifetime Rent Collected</span><strong style="color:#15803d;">${fmt(rec)} (${pct}% ROI)</strong></div>
     <div style="margin-top:6px; font-weight:800; color:#1e293b;">Owner: ${esc(ownerName)} ${st?.mortgaged ? '(MORTGAGED)' : ''}</div>
   `;
 
@@ -2937,6 +3960,23 @@ function openDeedInspectModal(idx) {
     <div class="deed-modal-header" style="background:${col};">${esc(def.name)}</div>
     <div class="deed-modal-body">${bodyRows}</div>
   </div>`;
+
+  // Action buttons if unowned
+  if (st && !st.ownerId) {
+    const buyBtn = document.createElement('button');
+    buyBtn.type = 'button';
+    buyBtn.className = 'btn-good';
+    buyBtn.textContent = `🏠 Buy (${fmt(def.price)})`;
+    buyBtn.onclick = () => { sendAct('BUY_PROP', { propId: def.id, buyerId: myId }); $('deedModal').classList.add('hidden'); };
+    actions.appendChild(buyBtn);
+
+    const aucBtn = document.createElement('button');
+    aucBtn.type = 'button';
+    aucBtn.className = 'btn-auction';
+    aucBtn.textContent = `🔨 Auction ${def.name}`;
+    aucBtn.onclick = () => { $('deedModal').classList.add('hidden'); sendAct('START_AUCTION', { propId: def.id, initiatorId: myId }); };
+    actions.appendChild(aucBtn);
+  }
 
   // Action buttons if owned by current user or if in Setup Mode
   if (st && (st.ownerId === myId || state.setupMode)) {
@@ -2953,7 +3993,7 @@ function openDeedInspectModal(idx) {
         const bMinus = document.createElement('button');
         bMinus.type = 'button';
         bMinus.className = 'btn-alt';
-        bMinus.textContent = `- Sell Building`;
+        bMinus.textContent = `− Sell Building`;
         bMinus.onclick = () => { sendAct('SELL_HOUSE', { propId: def.id }); $('deedModal').classList.add('hidden'); };
         actions.appendChild(bMinus);
       }
@@ -2977,44 +4017,419 @@ function openDeedInspectModal(idx) {
 $('closeDeedModalBtn').onclick = () => $('deedModal').classList.add('hidden');
 $('deedModal').onclick = e => { if (e.target === $('deedModal')) $('deedModal').classList.add('hidden'); };
 
-// === ALL PROPERTIES & SETUP MODE MODAL (From monopoly-tracker.html) ===
+// === MULTI-TAB TRACKER HUB MODAL (Properties & Houses, ROI Overview, Players & Bank, Landed On Resolver) ===
+function switchTrackerHubTab(tabName) {
+  currentHubTab = tabName || 'props';
+  $('trackerHubTabs').querySelectorAll('[data-hub-tab]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.hubTab === currentHubTab);
+  });
+  $('hubTabProps').classList.toggle('hidden', currentHubTab !== 'props');
+  $('hubTabOverview').classList.toggle('hidden', currentHubTab !== 'overview');
+  $('hubTabPlayers').classList.toggle('hidden', currentHubTab !== 'players');
+  $('hubTabLanded').classList.toggle('hidden', currentHubTab !== 'landed');
+  renderTrackerHubModal();
+}
+
+$('trackerHubTabs').addEventListener('click', e => {
+  const btn = e.target.closest('[data-hub-tab]');
+  if (btn) switchTrackerHubTab(btn.dataset.hubTab);
+});
+
+function renderTrackerHubModal() {
+  if (!state) return;
+  ensurePropertyStateObj();
+  if (currentHubTab === 'props') renderAllPropsModalContent();
+  else if (currentHubTab === 'overview') renderOverviewTableContent();
+  else if (currentHubTab === 'players') renderPlayersTrackerTabContent();
+  else if (currentHubTab === 'landed') renderLandedResolverTabContent();
+}
+
 function renderAllPropsModalContent() {
   if (!state) return;
   $('setupModeCheckbox').checked = !!state.setupMode;
   $('modalHousesLeft').textContent = String(availableHouses());
   $('modalHotelsLeft').textContent = String(availableHotels());
 
+  const query = ($('propSearchInput')?.value || '').trim().toLowerCase();
+  const filterMode = $('propFilterSelect')?.value || 'all';
+  const activePlayersList = state.players.filter(pid => !state.bankrupt?.[pid]);
+  const playerListForSelect = activePlayersList.length ? activePlayersList : state.players;
+
   const container = $('allPropsContainer');
   let html = '';
+
   GROUP_ORDER.forEach(group => {
-    const defs = groupProps(group);
+    const defs = groupProps(group).filter(def => {
+      const st = state.properties[def.id] || {};
+      if (query && !def.name.toLowerCase().includes(query) && !(def.country||'').toLowerCase().includes(query) && !GROUP_LABELS[group].toLowerCase().includes(query)) {
+        return false;
+      }
+      if (filterMode === 'unowned' && st.ownerId) return false;
+      if (filterMode === 'owned' && !st.ownerId) return false;
+      if (filterMode === 'mortgaged' && !st.mortgaged) return false;
+      if (filterMode === 'buildable' && !(def.type === 'property' && st.ownerId && ownsFullGroup(st.ownerId, def.group))) return false;
+      return true;
+    });
+    if (!defs.length) return;
+
     const col = GROUP_COLORS[group] || '#334155';
-    html += `<div style="border:1px solid rgba(255,255,255,0.18); border-radius:10px; overflow:hidden;">
-      <div style="background:${col}; color:#fff; font-weight:800; padding:5px 12px; font-size:0.82rem; text-transform:uppercase;">${esc(GROUP_LABELS[group])}</div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(195px, 1fr)); gap:8px; padding:8px; background:rgba(0,0,0,0.25);">`;
+    const totalInGroup = groupProps(group).length;
+    html += `<div class="group-block">
+      <div class="group-header-bar" style="background:${col};">
+        <span>${esc(GROUP_LABELS[group])} (${defs.length}/${totalInGroup})</span>
+        <span style="font-size:0.74rem; opacity:0.92;">${defs[0].type === 'property' ? 'House/Hotel Cost: ' + fmt(defs[0].houseCost) : defs[0].type === 'transport' ? 'Rent scales 1–4 owned' : 'Rent = 40k× / 100k× Dice'}</span>
+      </div>
+      <div class="group-cards-grid">`;
+
     defs.forEach(def => {
-      const st = state.properties[def.id] || { ownerId: null, houses: 0, mortgaged: false };
-      const oName = st.ownerId ? (playerById(st.ownerId)?.name || 'Player') : 'Bank';
-      const hLabel = def.type === 'property' ? (st.houses === 5 ? '🏨 Hotel' : st.houses > 0 ? '🏠'.repeat(st.houses) : '0 houses') : '';
-      const playerOpts = state.players.map(pid => `<option value="${esc(pid)}" ${pid===myId?'selected':''}>${esc(playerById(pid)?.name||'Player')}</option>`).join('');
-      html += `<div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:8px; font-size:0.78rem; display:flex; flex-direction:column; gap:4px;">
-        <div style="font-weight:800; color:#ffe7a5;">${esc(def.name)} <span style="color:#cbd5e1;font-weight:600;">(${fmt(def.price)})</span></div>
-        <div>Owner: <b>${esc(oName)}</b> ${st.mortgaged ? '<span style="color:#fca5a5;">[Mortgaged]</span>' : ''} ${hLabel}</div>
-        <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:2px;">
-          ${!st.ownerId ? `<select data-assign-sel="${def.id}" style="padding:3px 5px; font-size:0.72rem; flex:1;">${playerOpts}</select><button type="button" data-buy-prop="${def.id}" style="padding:3px 8px; font-size:0.72rem;">${state.setupMode ? 'Assign' : 'Buy'}</button>` : ''}
-          ${(st.ownerId && def.type==='property') ? `<button type="button" class="btn-alt" data-build-prop="${def.id}" style="padding:3px 7px; font-size:0.72rem;">+🏠</button><button type="button" class="btn-alt" data-sell-prop="${def.id}" style="padding:3px 7px; font-size:0.72rem;">-🏠</button>` : ''}
-          ${(st.ownerId && st.houses===0) ? `<button type="button" class="btn-alt" data-mort-prop="${def.id}" style="padding:3px 7px; font-size:0.72rem;">${st.mortgaged ? 'Unmortgage' : 'Mortgage'}</button>` : ''}
-          ${(st.ownerId && state.setupMode) ? `<button type="button" class="btn-danger" data-unassign-prop="${def.id}" style="padding:3px 7px; font-size:0.72rem;">Reset</button>` : ''}
+      const st = state.properties[def.id] || { ownerId: null, houses: 0, mortgaged: false, rentCollected: 0, rentByPlayer: {} };
+      const oName = st.ownerId ? (playerById(st.ownerId)?.name || 'Player') : 'Bank (Unowned)';
+      const oColor = st.ownerId ? playerColor(st.ownerId) : '#94a3b8';
+      const fullSet = def.type === 'property' && st.ownerId && ownsFullGroup(st.ownerId, def.group);
+      const rNow = st.ownerId ? currentRent(def.id, 7) : (def.type === 'property' ? def.rent[0] : def.type === 'transport' ? def.rentByCount[0] : def.soloMultiplier * 7);
+
+      let scheduleHTML = '';
+      if (def.type === 'property') {
+        scheduleHTML = `<div class="tpc-schedule">
+          <span>Base: <b>${fmt(def.rent[0])}</b></span>
+          <span>Set (2×): <b>${fmt(def.rent[0]*2)}</b></span>
+          <span>1🏠: <b>${fmt(def.rent[1])}</b></span>
+          <span>2🏠: <b>${fmt(def.rent[2])}</b></span>
+          <span>3🏠: <b>${fmt(def.rent[3])}</b></span>
+          <span>4🏠: <b>${fmt(def.rent[4])}</b></span>
+          <span>🏨 Hotel: <b style="color:#86efac;">${fmt(def.rent[5])}</b></span>
+          <span>Build: <b>${fmt(def.houseCost)}</b></span>
+        </div>`;
+      } else if (def.type === 'transport') {
+        scheduleHTML = `<div class="tpc-schedule">
+          <span>1 Owned: <b>${fmt(def.rentByCount[0])}</b></span>
+          <span>2 Owned: <b>${fmt(def.rentByCount[1])}</b></span>
+          <span>3 Owned: <b>${fmt(def.rentByCount[2])}</b></span>
+          <span>4 Owned: <b style="color:#86efac;">${fmt(def.rentByCount[3])}</b></span>
+        </div>`;
+      } else if (def.type === 'utility') {
+        scheduleHTML = `<div class="tpc-schedule">
+          <span>1 Utility: <b>${fmt(def.soloMultiplier)}×Dice</b></span>
+          <span>Both: <b style="color:#86efac;">${fmt(def.groupMultiplier)}×Dice</b></span>
+        </div>`;
+      }
+
+      const hLabel = def.type === 'property'
+        ? (st.houses === 5 ? '🏨 Hotel' : st.houses > 0 ? '🏠'.repeat(st.houses) + ` (${st.houses})` : 'No houses')
+        : '';
+
+      const rec = st.rentCollected || 0;
+      const pct = def.price > 0 ? Math.round((rec / def.price) * 100) : 0;
+      const roiCls = pct >= 100 ? 'roi-profit' : pct > 0 ? 'roi-partial' : 'roi-zero';
+
+      const playerOpts = playerListForSelect.map(pid => `<option value="${esc(pid)}" ${pid===myId?'selected':''}>${esc(playerById(pid)?.name||'Player')}</option>`).join('');
+
+      html += `<div class="tracker-prop-card ${st.ownerId?'owned':''} ${st.mortgaged?'mortgaged':''}">
+        <div class="tpc-top" style="background:${col};"></div>
+        <div class="tpc-body">
+          <div class="tpc-title-row">
+            <span class="tpc-name">${esc(def.name)} ${def.country ? `<small style="color:#cbd5e1;font-weight:600;">(${esc(def.country)})</small>` : ''}</span>
+            <span class="tpc-price">${fmt(def.price)}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.74rem;">
+            <span>Owner: <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${oColor};margin-right:3px;"></span><b>${esc(oName)}</b></span>
+            ${st.mortgaged ? '<span style="background:#ef4444;color:#fff;padding:1px 5px;border-radius:4px;font-size:0.65rem;font-weight:800;">MORTGAGED</span>' : (fullSet ? '<span style="color:#fde047;font-weight:800;">★ Monopoly 2×</span>' : '')}
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#93c5fd;">
+            <span>Active Rent: <b>${st.mortgaged ? '—' : fmt(rNow)}</b></span>
+            ${hLabel ? `<span style="color:#ffe7a5;font-weight:700;">${hLabel}</span>` : ''}
+          </div>
+          ${scheduleHTML}
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.71rem; color:#cbd5e1;">
+            <span>Mortgage: <b>${fmt(def.mortgageValue)}</b> / Unm: <b>${fmt(def.unmortgageValue)}</b></span>
+            <span class="roi-badge ${roiCls}" title="Lifetime Rent Collected: ${fmt(rec)}">${fmt(rec)} (${pct}%)</span>
+          </div>
+          <div class="tpc-controls">
+            ${!st.ownerId ? `
+              <select data-assign-sel="${def.id}" style="flex:1; min-width:85px;">${playerOpts}</select>
+              <button type="button" class="btn-good" data-buy-prop="${def.id}">${state.setupMode ? 'Assign' : 'Buy ' + fmt(def.price)}</button>
+              <button type="button" class="btn-auction" data-auc-prop="${def.id}" title="Start Live Auction">🔨 Auction</button>
+            ` : ''}
+            ${(st.ownerId && def.type==='property') ? `
+              <button type="button" class="btn-good" data-build-prop="${def.id}" ${(st.mortgaged || st.houses>=5 || (!fullSet && !state.setupMode))?'disabled':''} title="Build House/Hotel (${fmt(def.houseCost)})">+🏠 Build</button>
+              <button type="button" class="btn-alt" data-sell-prop="${def.id}" ${st.houses<=0?'disabled':''} title="Sell House/Hotel (+${fmt(Math.floor(def.houseCost/2))})">−🏠 Sell</button>
+            ` : ''}
+            ${(st.ownerId && st.houses===0) ? `
+              <button type="button" class="btn-alt" data-mort-prop="${def.id}">${st.mortgaged ? 'Unmortgage ' + fmt(def.unmortgageValue) : 'Mortgage +' + fmt(def.mortgageValue)}</button>
+            ` : ''}
+            ${(st.ownerId && state.setupMode) ? `
+              <button type="button" class="btn-danger" data-unassign-prop="${def.id}">Unassign</button>
+            ` : ''}
+          </div>
         </div>
       </div>`;
     });
     html += `</div></div>`;
   });
-  container.innerHTML = html;
+
+  container.innerHTML = html || '<div style="padding:24px;text-align:center;color:#cbd5e1;">No properties match your filter.</div>';
 }
 
+// TAB 2: ALL PROPERTIES OVERVIEW TABLE (Exact match to monopoly-tracker.html)
+function renderOverviewTableContent() {
+  if (!state) return;
+  const table = $('overviewTable');
+  let html = `<thead><tr>
+    <th style="text-align:left;">Property</th>
+    <th>Group</th>
+    <th>Price</th>
+    <th>Owner</th>
+    <th>State / Houses</th>
+    <th>Current Rent</th>
+    <th>Rent Collected</th>
+    <th>% of Price</th>
+    <th style="text-align:left;">Paid By (Breakdown)</th>
+  </tr></thead><tbody>`;
+
+  ownableDefs().forEach(def => {
+    const st = state.properties[def.id] || { ownerId: null, houses: 0, mortgaged: false, rentCollected: 0, rentByPlayer: {} };
+    const received = st.rentCollected || 0;
+    const pct = def.price > 0 ? Math.round((received / def.price) * 100) : 0;
+    const ownerLabel = st.ownerId
+      ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${playerColor(st.ownerId)};margin-right:4px;"></span><b>${esc(playerById(st.ownerId)?.name||'Player')}</b>`
+      : '<span style="color:#94a3b8;">Bank</span>';
+
+    const stateLabel = st.mortgaged
+      ? '<span style="background:#ef4444;color:#fff;padding:1px 5px;border-radius:4px;font-size:0.65rem;font-weight:800;">Mortgaged</span>'
+      : def.type === 'property'
+        ? (st.houses === 5 ? '🏨 Hotel' : st.houses > 0 ? '🏠×' + st.houses : (st.ownerId && ownsFullGroup(st.ownerId, def.group) ? '★ Monopoly 2×' : 'Base'))
+        : 'Active';
+
+    const rNow = st.mortgaged ? '—' : fmt(currentRent(def.id, 7));
+
+    let payersHtml = '';
+    if (st.rentByPlayer && Object.keys(st.rentByPlayer).length > 0) {
+      const payerEntries = Object.entries(st.rentByPlayer)
+        .filter(([_, amt]) => amt > 0)
+        .sort((a, b) => b[1] - a[1]);
+
+      if (payerEntries.length > 0) {
+        payersHtml = '<div class="payer-breakdown">' + payerEntries.map(([payerId, amt]) => {
+          const pName = playerById(payerId)?.name || 'Player';
+          const pCol = playerColor(payerId);
+          return `<span class="payer-chip" title="${esc(pName)} paid ${fmt(amt)} in rent">
+            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${pCol};"></span>
+            <span>${esc(pName)}:</span>
+            <span class="payer-amt">${fmt(amt)}</span>
+          </span>`;
+        }).join('') + '</div>';
+      }
+    }
+    if (!payersHtml) payersHtml = '<span style="color:#64748b;">—</span>';
+
+    const roiClass = pct >= 100 ? 'roi-profit' : pct > 0 ? 'roi-partial' : 'roi-zero';
+    const gCol = GROUP_COLORS[def.group] || '#64748b';
+
+    html += `<tr>
+      <td style="text-align:left; font-weight:800;"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${gCol};margin-right:6px;"></span>${esc(def.name)}</td>
+      <td>${esc(GROUP_LABELS[def.group])}</td>
+      <td>${fmt(def.price)}</td>
+      <td>${ownerLabel}</td>
+      <td>${stateLabel}</td>
+      <td style="color:#93c5fd; font-weight:700;">${rNow}</td>
+      <td style="font-weight:${received > 0 ? '800' : 'normal'}; color:${received > 0 ? '#6ee7b7' : '#cbd5e1'};">${fmt(received)}</td>
+      <td><span class="roi-badge ${roiClass}">${pct}%</span></td>
+      <td style="text-align:left;">${payersHtml}</td>
+    </tr>`;
+  });
+
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+// TAB 3: PLAYERS & BANK CARDS (Exact match to monopoly-tracker.html)
+function renderPlayersTrackerTabContent() {
+  if (!state) return;
+  const active = state.players.filter(pid => !state.bankrupt?.[pid]);
+  $('hubQuickPassGoRow').innerHTML = active.map(pid => {
+    const p = playerById(pid);
+    return `<button type="button" class="btn-alt" data-hub-passgo="${esc(pid)}" style="padding:4px 10px; font-size:0.75rem; border-left:3px solid ${playerColor(pid)};">${esc(p?.name||'Player')}: +${shortLabel(PASS_GO_AMOUNT)}</button>`;
+  }).join('');
+
+  let cardsHtml = '';
+  state.players.forEach((pid, idx) => {
+    const p = playerById(pid);
+    const pCol = PLAYER_COLORS[idx % PLAYER_COLORS.length];
+    const bal = state.balances?.[pid] || 0;
+    const nw = computePlayerNetWorth(pid);
+    const isElim = !!state.bankrupt?.[pid];
+    const inJail = !!state.inJail?.[pid];
+    const owned = ownedPropsFor(pid);
+
+    const chips = owned.map(def => {
+      const pst = state.properties[def.id];
+      const hIcon = def.type === 'property' && pst.houses > 0 ? ' ' + (pst.houses === 5 ? '🏨' : '🏠'.repeat(pst.houses)) : '';
+      return `<span class="prop-mini-chip" data-chip-prop="${def.id}" style="background:${GROUP_COLORS[def.group]}; ${pst.mortgaged?'opacity:0.55;text-decoration:line-through;':''}">${esc(def.name)}${hIcon}</span>`;
+    }).join('');
+
+    cardsHtml += `<div class="tracker-pcard" style="--pcolor:${pCol}; ${isElim?'opacity:0.6;border-style:dashed;':''}">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+        <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
+          <span style="font-size:1.25rem;">${p?.avatar||'🎩'}</span>
+          <input type="text" value="${esc(p?.name||'Player')}" data-rename-pid="${esc(pid)}" style="padding:3px 6px; font-size:0.86rem; font-weight:800; width:100%; background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.18);">
+        </div>
+        ${inJail ? `<span class="ts-jail-pill" data-toggle-jail="${esc(pid)}" title="Click to release">🔒 Jail</span>` : ''}
+        ${isElim
+          ? `<button type="button" class="btn-good" data-restore-pid="${esc(pid)}" style="padding:3px 8px; font-size:0.7rem;">Restore</button>`
+          : `<button type="button" class="btn-danger" data-elim-pid="${esc(pid)}" style="padding:3px 8px; font-size:0.7rem;">✕ Out</button>`
+        }
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+        <div style="font-size:1.45rem; font-weight:900; color:${bal<0?'#fca5a5':'#86efac'};">${fmt(bal)}</div>
+        <div style="font-size:0.75rem; color:#ffe7a5;">Net Worth: <b>${fmt(nw)}</b></div>
+      </div>
+      ${!isElim ? `
+        <div style="display:flex; gap:5px; align-items:center;">
+          <input type="text" placeholder="Amt (100k)" data-pcard-amt="${esc(pid)}" style="width:82px; padding:4px 6px; font-size:0.74rem;">
+          <button type="button" class="btn-alt" data-pcard-pay="${esc(pid)}" style="padding:4px 8px; font-size:0.72rem; flex:1;">Pay Bank</button>
+          <button type="button" class="btn-good" data-pcard-rec="${esc(pid)}" style="padding:4px 8px; font-size:0.72rem; flex:1;">Receive</button>
+          <button type="button" class="btn-alt" data-toggle-jail="${esc(pid)}" style="padding:4px 7px; font-size:0.72rem;" title="Toggle Jail">⛓️</button>
+        </div>
+      ` : '<div style="font-size:0.75rem; color:#fca5a5;">💀 Eliminated — Properties returned to Bank</div>'}
+      <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
+        ${chips || '<span style="font-size:0.72rem; color:#94a3b8;">No properties owned</span>'}
+      </div>
+    </div>`;
+  });
+
+  // Add Bank Card (From monopoly-tracker.html)
+  const b = bankStats();
+  cardsHtml += `<div class="tracker-pcard" style="--pcolor:${BANK_COLOR};">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="font-size:1.35rem;">🏦</span>
+      <strong style="font-size:1.05rem; color:#ffe7a5;">Central Bank</strong>
+    </div>
+    <div style="font-size:1.45rem; font-weight:900; color:${b.net<0?'#fca5a5':'#fde047'};">${fmt(b.net)}</div>
+    <div style="display:flex; justify-content:space-between; font-size:0.76rem; color:#cbd5e1;">
+      <span>Collected: <b style="color:#86efac;">${fmt(b.paidIn)}</b></span>
+      <span>Paid Out: <b style="color:#fca5a5;">${fmt(b.paidOut)}</b></span>
+    </div>
+    <div style="font-size:0.75rem; color:#93c5fd; margin-top:4px;">
+      🏠 Houses Available: <b>${availableHouses()}/${HOUSE_POOL}</b> · 🏨 Hotels: <b>${availableHotels()}/${HOTEL_POOL}</b>
+    </div>
+  </div>`;
+
+  $('trackerPlayersGrid').innerHTML = cardsHtml;
+}
+
+// TAB 4: LANDED ON RESOLVER (Exact match to monopoly-tracker.html)
+function renderLandedResolverTabContent() {
+  if (!state) return;
+  const active = state.players.filter(pid => !state.bankrupt?.[pid]);
+  const pList = active.length ? active : state.players;
+  const pSel = $('landResolverPlayer');
+  const prevP = pSel.value;
+  pSel.innerHTML = pList.map(pid => `<option value="${esc(pid)}">${esc(playerById(pid)?.name||'Player')} (${fmt(state.balances[pid]||0)})</option>`).join('');
+  if (prevP && pList.includes(prevP)) pSel.value = prevP;
+  else pSel.value = state.current || pList[0];
+
+  const propSel = $('landResolverProp');
+  const prevProp = propSel.value;
+  propSel.innerHTML = PROPERTIES.map(d => {
+    const st = state.properties[d.id];
+    const tag = d.type === 'tax' ? `Tax ${fmt(d.amount)}` : (st?.ownerId ? `Owned by ${playerById(st.ownerId)?.name||'Player'}` : `Unowned — ${fmt(d.price)}`);
+    return `<option value="${esc(d.id)}">${esc(d.name)} (${tag})</option>`;
+  }).join('');
+  if (prevProp && propDef(prevProp)) propSel.value = prevProp;
+
+  updateLandedResolverActionUI();
+}
+
+function updateLandedResolverActionUI() {
+  if (!state) return;
+  const playerId = $('landResolverPlayer')?.value || myId;
+  const propId = $('landResolverProp')?.value || PROPERTIES[0].id;
+  const def = propDef(propId);
+  const infoEl = $('landResolverInfo');
+  const actEl = $('landResolverActions');
+  const diceWrap = $('landResolverDiceWrap');
+  if (!def || !infoEl || !actEl) return;
+
+  diceWrap.classList.toggle('hidden', def.type !== 'utility');
+  actEl.innerHTML = '';
+
+  const pName = playerById(playerId)?.name || 'Player';
+
+  if (def.type === 'tax') {
+    infoEl.innerHTML = `💸 <b>${esc(def.name)}</b>: ${esc(pName)} owes <b>${fmt(def.amount)}</b> to the Bank.`;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-danger';
+    btn.textContent = `Pay ${fmt(def.amount)} to Bank`;
+    btn.onclick = () => sendAct('MANUAL_PAY_TAX', { payerId: playerId, propId: def.id });
+    actEl.appendChild(btn);
+    return;
+  }
+
+  const st = state.properties[propId];
+  if (!st.ownerId) {
+    infoEl.innerHTML = `📍 <b>${esc(def.name)}</b> is <b>Unowned</b> (List Price: <b>${fmt(def.price)}</b>). Under Monopoly rules, landing on an unowned property requires <b>Buying</b> or <b>Auctioning</b> it!`;
+    const buyBtn = document.createElement('button');
+    buyBtn.type = 'button';
+    buyBtn.className = 'btn-good';
+    buyBtn.textContent = `🏠 Buy for ${fmt(def.price)}`;
+    buyBtn.onclick = () => sendAct('BUY_PROP', { propId: def.id, buyerId: playerId });
+    actEl.appendChild(buyBtn);
+
+    const aucBtn = document.createElement('button');
+    aucBtn.type = 'button';
+    aucBtn.className = 'btn-auction';
+    aucBtn.textContent = `🔨 Start Auction for ${def.name}`;
+    aucBtn.onclick = () => {
+      $('allPropsModal').classList.add('hidden');
+      sendAct('START_AUCTION', { propId: def.id, initiatorId: playerId });
+    };
+    actEl.appendChild(aucBtn);
+    return;
+  }
+
+  if (st.ownerId === playerId) {
+    infoEl.innerHTML = `✅ <b>${esc(pName)}</b> already owns <b>${esc(def.name)}</b>. No rent due.`;
+    return;
+  }
+
+  if (st.mortgaged) {
+    infoEl.innerHTML = `🏦 <b>${esc(def.name)}</b> is owned by <b>${esc(playerById(st.ownerId)?.name||'Owner')}</b>, but it is currently <b>Mortgaged</b> — no rent is owed.`;
+    return;
+  }
+
+  const diceVal = Number($('landResolverDice')?.value) || 7;
+  const base = currentRent(propId, diceVal);
+  const ownerInJail = !!state.inJail[st.ownerId];
+  const rent = ownerInJail ? Math.floor(base / 2) : base;
+  const oName = playerById(st.ownerId)?.name || 'Owner';
+
+  infoEl.innerHTML = `🏠 Owned by <b>${esc(oName)}</b>${ownerInJail ? ' <span style="color:#fca5a5;">(In Jail — Rent Halved!)</span>' : ''}. Rent due from <b>${esc(pName)}</b>: <b style="color:#86efac;">${fmt(rent)}</b>`;
+
+  const payBtn = document.createElement('button');
+  payBtn.type = 'button';
+  payBtn.className = 'btn-good';
+  payBtn.textContent = `💸 Pay Rent ${fmt(rent)} to ${oName}`;
+  payBtn.onclick = () => sendAct('MANUAL_PAY_RENT', { propId: def.id, visitorId: playerId, diceRoll: diceVal });
+  actEl.appendChild(payBtn);
+}
+
+$('landResolverPlayer').onchange = updateLandedResolverActionUI;
+$('landResolverProp').onchange = updateLandedResolverActionUI;
+$('landResolverDice').oninput = updateLandedResolverActionUI;
+$('propSearchInput').oninput = renderAllPropsModalContent;
+$('propFilterSelect').onchange = renderAllPropsModalContent;
+
 $('openPropsModalBtn').onclick = () => {
-  renderAllPropsModalContent();
+  switchTrackerHubTab('props');
+  $('allPropsModal').classList.remove('hidden');
+};
+$('openPlayersTrackerBtn').onclick = () => {
+  switchTrackerHubTab('players');
+  $('allPropsModal').classList.remove('hidden');
+};
+$('openLandedResolverBtn').onclick = () => {
+  switchTrackerHubTab('landed');
   $('allPropsModal').classList.remove('hidden');
 };
 $('closeAllPropsModalBtn').onclick = () => $('allPropsModal').classList.add('hidden');
@@ -3027,6 +4442,13 @@ $('allPropsContainer').addEventListener('click', e => {
     const pid = buyBtn.dataset.buyProp;
     const sel = $('allPropsContainer').querySelector(`[data-assign-sel="${pid}"]`);
     sendAct('BUY_PROP', { propId: pid, buyerId: sel ? sel.value : myId });
+    return;
+  }
+  const aucBtn = e.target.closest('[data-auc-prop]');
+  if (aucBtn) {
+    const pid = aucBtn.dataset.aucProp;
+    $('allPropsModal').classList.add('hidden');
+    sendAct('START_AUCTION', { propId: pid, initiatorId: myId });
     return;
   }
   const buildBtn = e.target.closest('[data-build-prop]');
@@ -3042,6 +4464,45 @@ $('allPropsContainer').addEventListener('click', e => {
   }
   const unBtn = e.target.closest('[data-unassign-prop]');
   if (unBtn) { sendAct('UNASSIGN_PROP', { propId: unBtn.dataset.unassignProp }); }
+});
+
+$('hubTabPlayers').addEventListener('click', e => {
+  const passBtn = e.target.closest('[data-hub-passgo]');
+  if (passBtn) { sendAct('PASS_GO', { targetId: passBtn.dataset.hubPassgo }); return; }
+  const jailBtn = e.target.closest('[data-toggle-jail]');
+  if (jailBtn) { sendAct('TOGGLE_JAIL', { targetId: jailBtn.dataset.toggleJail }); return; }
+  const elimBtn = e.target.closest('[data-elim-pid]');
+  if (elimBtn) { sendAct('ELIMINATE_PLAYER', { targetId: elimBtn.dataset.elimPid }); return; }
+  const restBtn = e.target.closest('[data-restore-pid]');
+  if (restBtn) { sendAct('RESTORE_PLAYER', { targetId: restBtn.dataset.restorePid }); return; }
+  const payBtn = e.target.closest('[data-pcard-pay]');
+  if (payBtn) {
+    const pid = payBtn.dataset.pcardPay;
+    const inp = $('hubTabPlayers').querySelector(`[data-pcard-amt="${pid}"]`);
+    const amt = parseAmount(inp ? inp.value : '') || 100000;
+    sendAct('TRANSFER', { from: pid, to: BANK, amount: amt, note: 'Paid Bank' });
+    return;
+  }
+  const recBtn = e.target.closest('[data-pcard-rec]');
+  if (recBtn) {
+    const pid = recBtn.dataset.pcardRec;
+    const inp = $('hubTabPlayers').querySelector(`[data-pcard-amt="${pid}"]`);
+    const amt = parseAmount(inp ? inp.value : '') || 100000;
+    sendAct('TRANSFER', { from: BANK, to: pid, amount: amt, note: 'Received from Bank' });
+    return;
+  }
+  const chip = e.target.closest('[data-chip-prop]');
+  if (chip) {
+    const sp = BOARD_SPACES.find(s => s.propId === chip.dataset.chipProp);
+    if (sp) openDeedInspectModal(sp.idx);
+  }
+});
+
+$('hubTabPlayers').addEventListener('change', e => {
+  const renInput = e.target.closest('[data-rename-pid]');
+  if (renInput) {
+    sendAct('RENAME_PLAYER', { targetId: renInput.dataset.renamePid, name: renInput.value });
+  }
 });
 
 // === TRANSFER MONEY MODAL ===
@@ -3130,15 +4591,20 @@ function entityDisplayName(id) {
 
 function renderLedgerModalContent() {
   if (!state) return;
-  const entities = state.players.map(pid => ({ id: pid, name: playerById(pid)?.name || 'Player' })).concat([{ id: BANK, name: '🏦 Bank' }]);
-  let th = '<thead><tr><th>Give ↓ / Get →</th>' + entities.map(e => `<th>${esc(e.name)}</th>`).join('') + '</tr></thead><tbody>';
+  const entities = state.players.map(pid => ({
+    id: pid,
+    name: (playerById(pid)?.name || 'Player') + (state.bankrupt?.[pid] ? ' (Out)' : ''),
+    color: playerColor(pid)
+  })).concat([{ id: BANK, name: '🏦 Bank', color: BANK_COLOR }]);
+
+  let th = '<thead><tr><th>Give ↓ / Get →</th>' + entities.map(e => `<th><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${e.color};margin-right:4px;"></span>${esc(e.name)}</th>`).join('') + '</tr></thead><tbody>';
   entities.forEach(r => {
-    th += `<tr><td style="font-weight:700;text-align:left;">${esc(r.name)}</td>`;
+    th += `<tr><td style="font-weight:700;text-align:left;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${r.color};margin-right:4px;"></span>${esc(r.name)}</td>`;
     entities.forEach(c => {
       if (r.id === c.id) th += '<td style="color:#64748b;">—</td>';
       else {
         const owed = Math.max(0, computeNetGiven(r.id, c.id));
-        th += owed > 0 ? `<td style="color:#86efac;font-weight:700;">${fmt(owed)}</td>` : '<td>—</td>';
+        th += owed > 0 ? `<td style="color:#86efac;font-weight:800;">${fmt(owed)}</td>` : '<td>—</td>';
       }
     });
     th += '</tr>';
@@ -3153,7 +4619,13 @@ function renderLedgerModalContent() {
 
   const hist = (state.history || []).slice().reverse();
   $('modalHistoryList').innerHTML = hist.length
-    ? hist.map(h => `<div class="score-row" style="font-size:0.82rem;"><span><b>${esc(entityDisplayName(h.from))}</b> → <b>${esc(entityDisplayName(h.to))}</b> ${h.note ? '· <i>'+esc(h.note)+'</i>' : ''}</span><strong style="color:#fca5a5;">${fmt(h.amount)}</strong></div>`).join('')
+    ? hist.map(h => {
+        const tStr = h.ts ? new Date(h.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        return `<div class="score-row" style="font-size:0.82rem;">
+          <span><b>${esc(entityDisplayName(h.from))}</b> → <b>${esc(entityDisplayName(h.to))}</b> ${h.note ? '· <i>'+esc(h.note)+'</i>' : ''}</span>
+          <span style="display:flex;align-items:center;gap:8px;"><strong style="color:#fca5a5;">${fmt(h.amount)}</strong><small style="color:#94a3b8;">${tStr}</small></span>
+        </div>`;
+      }).join('')
     : '<div style="color:#cbd5e1;font-size:0.84rem;text-align:center;">No transactions recorded yet.</div>';
 }
 
@@ -3164,19 +4636,28 @@ $('openLedgerModalBtn').onclick = () => {
 $('closeLedgerModalBtn').onclick = () => $('ledgerModal').classList.add('hidden');
 $('ledgerModal').onclick = e => { if (e.target === $('ledgerModal')) $('ledgerModal').classList.add('hidden'); };
 $('undoTxBtn').onclick = () => sendAct('UNDO_TX');
+$('clearHistoryModalBtn').onclick = () => sendAct('CLEAR_HISTORY');
 
 $('passGoQuickBtn').onclick = () => sendAct('PASS_GO', { targetId: myId });
 $('closeCardDrawnBtn').onclick = () => $('cardDrawnModal').classList.add('hidden');
 $('cardDrawnModal').onclick = e => { if (e.target === $('cardDrawnModal')) $('cardDrawnModal').classList.add('hidden'); };
 
-// Top Scoreboard Click (Toggle Jail or Kick Player)
+// Top Scoreboard Click -> Opens Player Portfolio Modal (or handles Jail pill / Kick button)
 $('topScoreboard').addEventListener('click', e => {
+  const kickBtn = e.target.closest('[data-kick]');
+  if (kickBtn) {
+    handleKickClick(e);
+    return;
+  }
   const jailEl = e.target.closest('[data-toggle-jail]');
   if (jailEl) {
     sendAct('TOGGLE_JAIL', { targetId: jailEl.dataset.toggleJail });
     return;
   }
-  handleKickClick(e);
+  const pCard = e.target.closest('[data-portfolio-pid]');
+  if (pCard) {
+    openPlayerPortfolioModal(pCard.dataset.portfolioPid);
+  }
 });
 
 // Forfeit / End Game Menu
@@ -3268,11 +4749,11 @@ if($('lobbyStartBalance')) $('lobbyStartBalance').onchange = () => { if(!host) r
 const HERO_DEEDS = [
   { name: 'MONTREAL', color: '#1d4ed8', price: '$4M', rent: '$500k', hotel: '$20M' },
   { name: 'CAPE TOWN', color: '#16a34a', price: '$3.2M', rent: '$280k', hotel: '$14M' },
-  { name: 'JERUSALEM', color: '#eab308', price: '$2.8M', rent: '$240k', hotel: '$12M' },
+  { name: 'JERUSALEM', color: '#ca8a04', price: '$2.8M', rent: '$240k', hotel: '$12M' },
   { name: 'LONDON', color: '#dc2626', price: '$2.4M', rent: '$200k', hotel: '$11M' },
-  { name: 'VANCOUVER', color: '#ea7317', price: '$2M', rent: '$160k', hotel: '$10M' },
-  { name: 'TORONTO', color: '#b8338a', price: '$1.6M', rent: '$120k', hotel: '$9M' },
-  { name: 'TOKYO', color: '#6ec6f0', price: '$1M', rent: '$60k', hotel: '$5.5M' }
+  { name: 'VANCOUVER', color: '#ea580c', price: '$2M', rent: '$160k', hotel: '$10M' },
+  { name: 'TORONTO', color: '#9333ea', price: '$1.6M', rent: '$120k', hotel: '$9M' },
+  { name: 'TOKYO', color: '#0284c7', price: '$1M', rent: '$60k', hotel: '$5.5M' }
 ];
 let heroIdx = 0, heroRolling = false;
 $('heroStage').onclick = () => {

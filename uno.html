@@ -511,6 +511,54 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   text-align: center;
   border-top: 1px solid rgba(255,255,255,0.15);
   z-index: 10;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.hand-area.active-turn {
+  border-top-color: #ffd66f;
+  box-shadow: 0 -4px 22px rgba(255, 214, 111, 0.24);
+}
+.player-turn-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  animation: turnFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.player-turn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(255, 214, 111, 0.22) 0%, rgba(245, 158, 11, 0.38) 100%);
+  border: 1.5px solid #ffd66f;
+  color: #fff;
+  padding: 3px 14px;
+  border-radius: 99px;
+  font-weight: 800;
+  font-size: 0.92rem;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 16px rgba(255, 214, 111, 0.35);
+  animation: playerTurnPulse 1.4s infinite alternate ease-in-out;
+}
+.player-turn-pill .player-turn-avatar {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+.player-turn-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  display: inline-block;
+  animation: urgentPulse 0.8s infinite alternate;
+}
+@keyframes playerTurnPulse {
+  0% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 214, 111, 0.3); }
+  100% { transform: scale(1.025); box-shadow: 0 0 20px rgba(255, 214, 111, 0.6); }
+}
+@keyframes turnFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .hand {
   display: flex;
@@ -1105,7 +1153,7 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 
 <!-- GAME AREA -->
 <main class="game-area hidden" id="gamePanel">
-  <div style="padding: 5px 12px; background: rgba(0,0,0,0.35); border-bottom: 1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;">
+  <div id="topTurnBar" style="padding: 5px 12px; background: rgba(0,0,0,0.35); border-bottom: 1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;">
     <div id="turnLabel" style="font-size:0.98rem; font-weight:bold; color:#ffe7a5; letter-spacing:0.5px;">Waiting...</div>
     <div id="gameTimerBadge" class="timer-badge hidden">⏱️ --:--</div>
     <button id="inGameRejoinBtn" type="button" class="btn-alt hidden" style="padding:3px 10px; font-size:0.78rem; border-color:#ffd66f; color:#ffe7a5;">🔄 Reconnect</button>
@@ -1153,6 +1201,14 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   </div>
   
   <div class="hand-area">
+    <div id="playerTurnBar" class="player-turn-bar hidden">
+      <div class="player-turn-pill">
+        <span class="player-turn-pulse-dot"></span>
+        <span class="player-turn-avatar" id="playerTurnAvatar">😎</span>
+        <span class="player-turn-text" id="playerTurnLabel">YOUR TURN</span>
+        <span id="playerTimerBadge" class="timer-badge hidden" style="margin-left:6px; font-size:0.85rem; padding:1px 8px;">⏱️ --:--</span>
+      </div>
+    </div>
     <div id="gameMsg" style="color:#c4e0d0; font-size:0.92rem; min-height:1.35em; margin-bottom:4px; font-weight:500;"></div>
     <div class="hand" id="hand"></div>
   </div>
@@ -1443,17 +1499,50 @@ function formatTimerClock(secs, mode) {
 
 function updateTimerBadgeUI() {
   const badge = $('gameTimerBadge');
+  const playerBadge = $('playerTimerBadge');
   if (!badge) return;
   if (!state || !state.started || state.winner || !state.timerMode || state.timerMode === 'untimed') {
     badge.classList.add('hidden');
     badge.classList.remove('urgent');
+    if (playerBadge) {
+      playerBadge.classList.add('hidden');
+      playerBadge.classList.remove('urgent');
+    }
     return;
   }
-  badge.classList.remove('hidden');
   const rem = state.timeRemaining ?? state.timeLimitSecs ?? 0;
-  badge.textContent = formatTimerClock(rem, state.timerMode);
+  const timeStr = formatTimerClock(rem, state.timerMode);
   const urgentThreshold = (state.timerMode === 'turn') ? 5 : 15;
-  badge.classList.toggle('urgent', rem <= urgentThreshold);
+  const isUrgent = rem <= urgentThreshold;
+  const myTurn = state.current === myId && !state.winner;
+
+  if (state.timerMode === 'turn') {
+    if (myTurn) {
+      badge.classList.add('hidden');
+      badge.classList.remove('urgent');
+      if (playerBadge) {
+        playerBadge.textContent = timeStr;
+        playerBadge.classList.remove('hidden');
+        playerBadge.classList.toggle('urgent', isUrgent);
+      }
+    } else {
+      badge.textContent = timeStr;
+      badge.classList.remove('hidden');
+      badge.classList.toggle('urgent', isUrgent);
+      if (playerBadge) {
+        playerBadge.classList.add('hidden');
+        playerBadge.classList.remove('urgent');
+      }
+    }
+  } else {
+    badge.textContent = timeStr;
+    badge.classList.remove('hidden');
+    badge.classList.toggle('urgent', isUrgent);
+    if (playerBadge) {
+      playerBadge.classList.add('hidden');
+      playerBadge.classList.remove('urgent');
+    }
+  }
 }
 
 function stopGameClock() {
@@ -1650,7 +1739,7 @@ function updatePlayers() {
       let displayScore = (state.winner && roundRevealPhase === 'blinking' && state.prevScores && state.prevScores[pid] !== undefined)
         ? state.prevScores[pid]
         : (state.scores?.[pid] || 0);
-      let isCurr = state.current === pid && !state.winner;
+      let isCurr = state.current === pid && pid !== myId && !state.winner;
       let isDrew = activeDrawPlayerId === pid;
       let hCount = state.handCounts ? state.handCounts[pid] : (state.hands&&state.hands[pid]?state.hands[pid].length:0);
       let name = p ? esc(p.name) : 'Player';
@@ -3056,10 +3145,45 @@ function renderGame() {
   updatePlayers();
   const myTurn = state.current === myId && !state.winner;
   const p = playerById(state.current);
+  const myPlayer = playerById(myId);
+  const topTurnBar = $('topTurnBar');
+  const playerTurnBar = $('playerTurnBar');
+  const handArea = document.querySelector('.hand-area');
 
-  $('turnLabel').textContent = state.winner
-    ? 'Round Complete'
-    : (p ? (p.id===myId ? `${p.avatar||'😎'} Your Turn` : `${p.avatar||'😎'} ${p.name}'s Turn`) : 'In Progress');
+  if (state.winner) {
+    if (topTurnBar) topTurnBar.classList.remove('hidden');
+    if ($('turnLabel')) {
+      $('turnLabel').classList.remove('hidden');
+      $('turnLabel').textContent = 'Round Complete';
+    }
+    if (playerTurnBar) playerTurnBar.classList.add('hidden');
+    if (handArea) handArea.classList.remove('active-turn');
+  } else if (myTurn) {
+    // MY TURN: Show on player side (bottom), NOT at top
+    if ($('turnLabel')) {
+      $('turnLabel').textContent = '';
+      $('turnLabel').classList.add('hidden');
+    }
+    const hasTopBtn = $('inGameRejoinBtn') && !$('inGameRejoinBtn').classList.contains('hidden');
+    const hasMatchTimer = state.timerMode === 'match';
+    if (topTurnBar) topTurnBar.classList.toggle('hidden', !hasTopBtn && !hasMatchTimer);
+
+    if (playerTurnBar) {
+      playerTurnBar.classList.remove('hidden');
+      if ($('playerTurnAvatar')) $('playerTurnAvatar').textContent = myPlayer?.avatar || '😎';
+      if ($('playerTurnLabel')) $('playerTurnLabel').textContent = 'YOUR TURN';
+    }
+    if (handArea) handArea.classList.add('active-turn');
+  } else {
+    // OTHER PLAYER'S TURN: Show at top, NOT at bottom
+    if (topTurnBar) topTurnBar.classList.remove('hidden');
+    if ($('turnLabel')) {
+      $('turnLabel').classList.remove('hidden');
+      $('turnLabel').textContent = p ? `${p.avatar||'😎'} ${p.name}'s Turn` : 'In Progress';
+    }
+    if (playerTurnBar) playerTurnBar.classList.add('hidden');
+    if (handArea) handArea.classList.remove('active-turn');
+  }
 
   // Direction & Active Color Bar
   const isCW = (state.direction !== -1);
@@ -3173,13 +3297,18 @@ function renderGame() {
         $('winModal').classList.remove('hidden');
       } else {
         roundRevealPhase = 'blinking';
-        $('turnLabel').textContent = '✨ Round Over! Revealing opponent cards...';
+        if ($('topTurnBar')) $('topTurnBar').classList.remove('hidden');
+        if ($('turnLabel')) {
+          $('turnLabel').classList.remove('hidden');
+          $('turnLabel').textContent = '✨ Round Over! Revealing opponent cards...';
+        }
+        if ($('playerTurnBar')) $('playerTurnBar').classList.add('hidden');
         updatePlayers();
         renderWinModalContent();
         $('winModal').classList.remove('hidden');
         roundRevealTimer = setTimeout(() => {
           roundRevealPhase = 'points';
-          $('turnLabel').textContent = 'Round Complete';
+          if ($('turnLabel')) $('turnLabel').textContent = 'Round Complete';
           updatePlayers();
           renderWinModalContent();
         }, 2200);
