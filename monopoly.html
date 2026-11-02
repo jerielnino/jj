@@ -1713,27 +1713,24 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
       <button id="closeAllPropsModalBtn" class="icon-btn" type="button">✕</button>
     </div>
 
-    <!-- Multi-Tab Navigation integrating all monopoly-tracker.html panels -->
+    <!-- Multi-Tab Navigation -->
     <div class="tracker-tabs" id="trackerHubTabs">
-      <button type="button" class="tracker-tab-btn active" data-hub-tab="props">🏘️ Properties &amp; Houses (28)</button>
-      <button type="button" class="tracker-tab-btn" data-hub-tab="overview">📈 All Properties ROI Overview</button>
-      <button type="button" class="tracker-tab-btn" data-hub-tab="players">👥 Players &amp; Bank Cards</button>
-      <button type="button" class="tracker-tab-btn" data-hub-tab="landed">📍 Landed On Resolver</button>
+      <button type="button" class="tracker-tab-btn active" data-hub-tab="props">🏘️ My Properties &amp; Houses</button>
+      <button type="button" class="tracker-tab-btn" data-hub-tab="overview">📈 My Properties ROI</button>
+      <button type="button" class="tracker-tab-btn" data-hub-tab="players">👥 Players &amp; Bank</button>
     </div>
 
     <!-- TAB 1: PROPERTIES & HOUSES -->
     <div id="hubTabProps" class="modal-scroll-body">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px; font-size:0.82rem; color:#c4e0d0; background:rgba(0,0,0,0.32); padding:8px 12px; border-radius:10px;">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:700; color:#ffe7a5;">
+          <label class="hidden" style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:700; color:#ffe7a5;">
             <input type="checkbox" id="setupModeCheckbox"> Setup Mode (assign/build free)
           </label>
           <input type="text" id="propSearchInput" placeholder="🔍 Search city / property..." style="padding:5px 10px; font-size:0.78rem; width:175px;">
           <select id="propFilterSelect" style="padding:5px 8px; font-size:0.78rem;">
-            <option value="all">All 28 Properties</option>
-            <option value="unowned">Unowned Only</option>
-            <option value="owned">Owned Only</option>
-            <option value="buildable">Monopoly / Buildable</option>
+            <option value="all">All My Properties</option>
+            <option value="buildable">Colour Match / Buildable</option>
             <option value="mortgaged">Mortgaged Only</option>
           </select>
         </div>
@@ -2564,10 +2561,38 @@ function ensurePropertyStateObj() {
   });
 }
 
+function requiredColorMatchCount(group) {
+  if (group === 'darkblue' || group === 'brown') return 2;
+  if (['lightblue', 'purple', 'orange', 'red', 'yellow', 'green'].includes(group)) return 3;
+  return 0;
+}
+
 function ownsFullGroup(playerId, group) {
   if (!playerId || !state) return false;
+  const req = requiredColorMatchCount(group);
+  if (req <= 0) return false;
   const props = groupProps(group).filter(p => p.type === 'property');
-  return props.length > 0 && props.every(p => state.properties[p.id]?.ownerId === playerId);
+  if (props.length < req) return false;
+  const ownedInSet = props.filter(p => state.properties[p.id]?.ownerId === playerId);
+  return ownedInSet.length >= req && props.every(p => state.properties[p.id]?.ownerId === playerId);
+}
+
+function canBuildHouseOnProp(playerId, propId) {
+  if (!playerId || !state) return false;
+  const def = propDef(propId);
+  const st = state.properties?.[propId];
+  if (!def || def.type !== 'property' || !st) return false;
+  if (st.ownerId !== playerId || st.mortgaged || st.houses >= 5) return false;
+  if (!ownsFullGroup(playerId, def.group)) return false;
+  // Cannot build if any property in the color group is mortgaged
+  const anyMortgagedInGroup = groupProps(def.group).some(p => state.properties[p.id]?.mortgaged);
+  if (anyMortgagedInGroup) return false;
+  // Must have enough cash for house/hotel cost
+  if ((state.balances?.[playerId] || 0) < def.houseCost) return false;
+  const nextLevel = st.houses + 1;
+  if (nextLevel <= 4 && availableHouses() <= 0) return false;
+  if (nextLevel === 5 && availableHotels() <= 0) return false;
+  return true;
 }
 
 function ownedCountInGroup(playerId, group) {
@@ -2772,17 +2797,19 @@ function updatePlayers() {
       const isCurr = state.current === pid && !state.winner;
       const isBankrupt = state.bankrupt?.[pid];
       const inJail = state.inJail?.[pid];
+      const isMe = (pid === myId);
       const propCount = ownedPropsFor(pid).length;
       const pColor = PLAYER_COLORS[idx % PLAYER_COLORS.length];
       const name = p ? esc(p.name) : 'Player';
       const avatar = p?.avatar || '🎩';
       const kickBtn = (host && pid !== myId) ? `<button class="kick-btn" data-kick="${esc(pid)}" type="button" title="Remove">✕</button>` : '';
       const jailTag = inJail ? `<span class="ts-jail-pill" title="Click to toggle Jail" data-toggle-jail="${esc(pid)}">⛓️ JAIL</span>` : '';
-      sbHtml += `<div class="ts-player ${isCurr?'active':''} ${isBankrupt?'bankrupt':''}" style="border-left: 4px solid ${pColor};" data-portfolio-pid="${esc(pid)}" title="Click to view ${name}'s owned properties &amp; tracker controls">
+      const propBadgeHtml = isMe ? `<span class="ts-prop-count" title="Click to view your ${propCount} owned properties">🏠 ${propCount}</span>` : '';
+      sbHtml += `<div class="ts-player ${isCurr?'active':''} ${isBankrupt?'bankrupt':''}" style="border-left: 4px solid ${pColor};" data-portfolio-pid="${esc(pid)}" title="${isMe ? 'Click to view your owned properties' : name}">
         <span class="ts-avatar">${avatar}</span>
         <strong class="ts-name">${name}</strong>
         <span style="color:${bal<0?'#fca5a5':'#86efac'};font-weight:800;">${fmt(bal)}</span>
-        <span class="ts-prop-count" title="Click to inspect ${propCount} owned properties">🏠 ${propCount}</span>
+        ${propBadgeHtml}
         ${jailTag}
         ${kickBtn}
       </div>`;
@@ -3972,15 +3999,20 @@ function handleAction(id, d) {
   if(d.action === 'BUILD_HOUSE') {
     const def = propDef(d.propId);
     const st = state.properties[d.propId];
-    if (!def || !st || !st.ownerId || st.mortgaged) return;
-    if (!ownsFullGroup(st.ownerId, def.group) && !state.setupMode) return;
+    if (!def || def.type !== 'property' || !st || !st.ownerId || st.mortgaged) return;
+    // Only the property owner can build (unless Setup Mode)
+    if (!state.setupMode && st.ownerId !== id) return;
+    // Strictly require full colour match (2 for Montreal/Riga & Brown, 3 for all other colour groups)!
+    if (!ownsFullGroup(st.ownerId, def.group)) return;
+    if (groupProps(def.group).some(p => state.properties[p.id]?.mortgaged)) return;
     if (st.houses >= 5) return;
+    if (!state.setupMode && (state.balances[st.ownerId] || 0) < def.houseCost) return;
     const nextLevel = st.houses + 1;
     if (nextLevel <= 4 && availableHouses() <= 0) return;
     if (nextLevel === 5 && availableHotels() <= 0) return;
     st.houses = nextLevel;
     if (!state.setupMode) {
-      recordTransfer(st.ownerId, BANK, def.houseCost, (nextLevel === 5 ? 'Hotel: ' : 'House: ') + def.name);
+      recordTransfer(st.ownerId, BANK, def.houseCost, (nextLevel === 5 ? 'Hotel: ' : 'House: ') + def.name, { propId: def.id });
     }
     state.lastEventText = `🏗️ ${(playerById(st.ownerId)?.name||'Player')} built a ${nextLevel===5?'Hotel 🏨':'House 🏠'} on ${def.name}`;
     state.lastEventId++;
@@ -4447,11 +4479,11 @@ function renderBoardDomOnly() {
       : (sp.sub || '');
 
     let ownerBadge = '';
-    if (st && st.ownerId) {
+    if (st && st.ownerId === myId) {
       const oCol = playerColor(st.ownerId);
       const oP = playerById(st.ownerId);
       const oInitial = (oP?.name || 'P').slice(0, 2).toUpperCase();
-      ownerBadge = `<span class="cell-owner-badge" style="background:${oCol};" title="Owned by ${esc(oP?.name||'Player')}">${esc(oInitial)}</span>`;
+      ownerBadge = `<span class="cell-owner-badge" style="background:${oCol};" title="Owned by You">${esc(oInitial)}</span>`;
     }
 
     // Use visualPositions[pid] so tokens step one tile at a time!
@@ -4900,6 +4932,10 @@ function renderAuctionModalContent() {
 // === PLAYER PORTFOLIO MODAL (Triggered when clicking top player bar!) ===
 function openPlayerPortfolioModal(pid) {
   if (!state || !pid) return;
+  if (pid !== myId) {
+    showEventToast('🔒 Other players\' properties are private! Click your own bar to view yours.');
+    return;
+  }
   inspectedPortfolioPlayerId = pid;
   renderPlayerPortfolioModal(pid);
   $('playerPortfolioModal').classList.remove('hidden');
@@ -4958,10 +4994,10 @@ function renderPlayerPortfolioModal(pid) {
             <span class="roi-badge ${roiCls}">ROI ${pct}%</span>
           </div>
           <div class="tpc-controls">
-            ${def.type === 'property' ? `
-              <button type="button" class="btn-good" data-pf-build="${def.id}" ${(st.mortgaged || st.houses >= 5 || (!fullSet && !state.setupMode)) ? 'disabled' : ''}>+🏠 (${fmt(def.houseCost)})</button>
-              <button type="button" class="btn-alt" data-pf-sell="${def.id}" ${st.houses <= 0 ? 'disabled' : ''}>−🏠</button>
-            ` : ''}
+            ${def.type === 'property' ? (fullSet ? `
+              <button type="button" class="btn-good" data-pf-build="${def.id}" ${!canBuildHouseOnProp(pid, def.id) ? 'disabled' : ''}>+${st.houses === 4 ? '🏨 Hotel' : '🏠 House'} (${fmt(def.houseCost)})</button>
+              ${st.houses > 0 ? `<button type="button" class="btn-alt" data-pf-sell="${def.id}">−🏠 Sell</button>` : ''}
+            ` : `<span style="font-size:0.7rem; color:#fde047; font-weight:700;">🔒 Need ${ownedCountInGroup(pid, def.group)}/${requiredColorMatchCount(def.group)} ${esc(GROUP_LABELS[def.group])} match to build</span>`) : ''}
             ${st.houses === 0 ? `<button type="button" class="btn-alt" data-pf-mort="${def.id}">${st.mortgaged ? 'Unmortgage ' + fmt(def.unmortgageValue) : 'Mortgage +' + fmt(def.mortgageValue)}</button>` : ''}
             <button type="button" class="btn-alt" data-pf-deed="${def.id}">📜 Deed</button>
           </div>
@@ -5097,6 +5133,10 @@ function openDeedInspectModal(idx) {
     return;
   }
 
+  if (st && st.ownerId && st.ownerId !== myId && !state.setupMode) {
+    showEventToast('🔒 Other players\' properties are hidden!');
+    return;
+  }
   const col = GROUP_COLORS[def.group] || '#334155';
   const ownerName = st?.ownerId ? (playerById(st.ownerId)?.name || 'Player') : 'Unowned (Bank)';
   const rec = st?.rentCollected || 0;
@@ -5173,22 +5213,29 @@ function openDeedInspectModal(idx) {
 
   // Action buttons if owned by current user or if in Setup Mode
   if (st && (st.ownerId === myId || state.setupMode)) {
-    if (def.type === 'property' && st.ownerId) {
-      const bPlus = document.createElement('button');
-      bPlus.type = 'button';
-      bPlus.className = 'btn-good';
-      bPlus.textContent = `+ Build (${fmt(def.houseCost)})`;
-      bPlus.disabled = st.mortgaged || st.houses >= 5 || (!ownsFullGroup(st.ownerId, def.group) && !state.setupMode);
-      bPlus.onclick = () => { sendAct('BUILD_HOUSE', { propId: def.id }); $('deedModal').classList.add('hidden'); };
-      actions.appendChild(bPlus);
+    if (def.type === 'property' && st.ownerId === myId) {
+      if (ownsFullGroup(myId, def.group)) {
+        const bPlus = document.createElement('button');
+        bPlus.type = 'button';
+        bPlus.className = 'btn-good';
+        bPlus.textContent = `+ Build ${st.houses === 4 ? 'Hotel 🏨' : 'House 🏠'} (${fmt(def.houseCost)})`;
+        bPlus.disabled = !canBuildHouseOnProp(myId, def.id);
+        bPlus.onclick = () => { sendAct('BUILD_HOUSE', { propId: def.id }); $('deedModal').classList.add('hidden'); };
+        actions.appendChild(bPlus);
 
-      if (st.houses > 0) {
-        const bMinus = document.createElement('button');
-        bMinus.type = 'button';
-        bMinus.className = 'btn-alt';
-        bMinus.textContent = `− Sell Building`;
-        bMinus.onclick = () => { sendAct('SELL_HOUSE', { propId: def.id }); $('deedModal').classList.add('hidden'); };
-        actions.appendChild(bMinus);
+        if (st.houses > 0) {
+          const bMinus = document.createElement('button');
+          bMinus.type = 'button';
+          bMinus.className = 'btn-alt';
+          bMinus.textContent = `− Sell Building`;
+          bMinus.onclick = () => { sendAct('SELL_HOUSE', { propId: def.id }); $('deedModal').classList.add('hidden'); };
+          actions.appendChild(bMinus);
+        }
+      } else {
+        const lockNote = document.createElement('div');
+        lockNote.style.cssText = 'font-size:0.78rem; color:#fde047; font-weight:700; width:100%; margin-bottom:4px;';
+        lockNote.textContent = `🔒 Need ${ownedCountInGroup(myId, def.group)}/${requiredColorMatchCount(def.group)} ${GROUP_LABELS[def.group]} colour match to build houses/hotels.`;
+        actions.appendChild(lockNote);
       }
     }
     if (st.ownerId && st.houses === 0) {
@@ -5254,23 +5301,28 @@ function renderAllPropsModalContent() {
   GROUP_ORDER.forEach(group => {
     const defs = groupProps(group).filter(def => {
       const st = state.properties[def.id] || {};
+      // Strictly hide other players' properties (and unowned properties unless Setup Mode is on)!
+      if (!state.setupMode && st.ownerId !== myId) return false;
       if (query && !def.name.toLowerCase().includes(query) && !(def.country||'').toLowerCase().includes(query) && !GROUP_LABELS[group].toLowerCase().includes(query)) {
         return false;
       }
-      if (filterMode === 'unowned' && st.ownerId) return false;
-      if (filterMode === 'owned' && !st.ownerId) return false;
       if (filterMode === 'mortgaged' && !st.mortgaged) return false;
-      if (filterMode === 'buildable' && !(def.type === 'property' && st.ownerId && ownsFullGroup(st.ownerId, def.group))) return false;
+      if (filterMode === 'buildable' && !(def.type === 'property' && st.ownerId === myId && ownsFullGroup(myId, def.group))) return false;
       return true;
     });
     if (!defs.length) return;
 
     const col = GROUP_COLORS[group] || '#334155';
     const totalInGroup = groupProps(group).length;
+    const myOwnedInGroup = groupProps(group).filter(p => state.properties[p.id]?.ownerId === myId).length;
+    const reqMatch = requiredColorMatchCount(group);
+    const matchRuleLabel = reqMatch > 0
+      ? `Owned ${myOwnedInGroup}/${reqMatch} (Need ${reqMatch} for Houses · Cost ${fmt(defs[0].houseCost)})`
+      : (defs[0].type === 'transport' ? `Owned ${myOwnedInGroup}/4 Transports` : `Owned ${myOwnedInGroup}/2 Utilities`);
     html += `<div class="group-block">
       <div class="group-header-bar" style="background:${col};">
-        <span>${esc(GROUP_LABELS[group])} (${defs.length}/${totalInGroup})</span>
-        <span style="font-size:0.74rem; opacity:0.92;">${defs[0].type === 'property' ? 'House/Hotel Cost: ' + fmt(defs[0].houseCost) : defs[0].type === 'transport' ? 'Rent scales 1–4 owned' : 'Rent = 40k× / 100k× Dice'}</span>
+        <span>${esc(GROUP_LABELS[group])}</span>
+        <span style="font-size:0.74rem; opacity:0.95;">${matchRuleLabel}</span>
       </div>
       <div class="group-cards-grid">`;
 
@@ -5338,18 +5390,15 @@ function renderAllPropsModalContent() {
             <span class="roi-badge ${roiCls}" title="Lifetime Rent Collected: ${fmt(rec)}">${fmt(rec)} (${pct}%)</span>
           </div>
           <div class="tpc-controls">
-            ${!st.ownerId ? (state.setupMode ? `
+            ${!st.ownerId && state.setupMode ? `
               <select data-assign-sel="${def.id}" style="flex:1; min-width:85px;">${playerOpts}</select>
               <button type="button" class="btn-good" data-buy-prop="${def.id}">Assign (Setup)</button>
-            ` : (state.pendingDecision?.propId === def.id && state.current === myId ? `
-              <button type="button" class="btn-good" data-buy-prop="${def.id}" ${(state.balances?.[myId]||0) < def.price ? 'disabled' : ''}>🏠 Buy ${fmt(def.price)}</button>
-              <button type="button" class="btn-auction" data-auc-prop="${def.id}">🔨 Auction</button>
-            ` : `<span style="color:#94a3b8; font-size:0.72rem;">📍 Land on tile to buy or auction</span>`)) : ''}
-            ${(st.ownerId && def.type==='property') ? `
-              <button type="button" class="btn-good" data-build-prop="${def.id}" ${(st.mortgaged || st.houses>=5 || (!fullSet && !state.setupMode))?'disabled':''} title="Build House/Hotel (${fmt(def.houseCost)})">+🏠 Build</button>
-              <button type="button" class="btn-alt" data-sell-prop="${def.id}" ${st.houses<=0?'disabled':''} title="Sell House/Hotel (+${fmt(Math.floor(def.houseCost/2))})">−🏠 Sell</button>
             ` : ''}
-            ${(st.ownerId && st.houses===0) ? `
+            ${(st.ownerId === myId && def.type === 'property') ? (fullSet ? `
+              <button type="button" class="btn-good" data-build-prop="${def.id}" ${!canBuildHouseOnProp(myId, def.id) ? 'disabled' : ''} title="Build ${st.houses===4?'Hotel':'House'} (${fmt(def.houseCost)})">+${st.houses===4?'🏨 Build Hotel':'🏠 Build House'} (${fmt(def.houseCost)})</button>
+              ${st.houses > 0 ? `<button type="button" class="btn-alt" data-sell-prop="${def.id}" title="Sell House/Hotel (+${fmt(Math.floor(def.houseCost/2))})">−🏠 Sell</button>` : ''}
+            ` : `<span style="color:#fde047; font-size:0.72rem; font-weight:700;">🔒 Need ${ownedCountInGroup(myId, def.group)}/${requiredColorMatchCount(def.group)} ${esc(GROUP_LABELS[def.group])} match to build houses</span>`) : ''}
+            ${(st.ownerId === myId && st.houses === 0) ? `
               <button type="button" class="btn-alt" data-mort-prop="${def.id}">${st.mortgaged ? 'Unmortgage ' + fmt(def.unmortgageValue) : 'Mortgage +' + fmt(def.mortgageValue)}</button>
             ` : ''}
             ${(st.ownerId && state.setupMode) ? `
@@ -5362,7 +5411,7 @@ function renderAllPropsModalContent() {
     html += `</div></div>`;
   });
 
-  container.innerHTML = html || '<div style="padding:24px;text-align:center;color:#cbd5e1;">No properties match your filter.</div>';
+  container.innerHTML = html || '<div style="padding:28px;text-align:center;color:#cbd5e1;"><div style="font-size:1.8rem;margin-bottom:6px;">🏘️</div><b>You do not own any properties yet.</b><div style="font-size:0.8rem;color:#94a3b8;margin-top:4px;">Land on an unowned property on the board to buy or auction it! (Other players\' properties are hidden.)</div></div>';
 }
 
 // TAB 2: ALL PROPERTIES OVERVIEW TABLE (Exact match to monopoly-tracker.html)
@@ -5381,7 +5430,12 @@ function renderOverviewTableContent() {
     <th style="text-align:left;">Paid By (Breakdown)</th>
   </tr></thead><tbody>`;
 
-  ownableDefs().forEach(def => {
+  const myOwnedDefs = ownableDefs().filter(def => state.properties[def.id]?.ownerId === myId);
+  if (myOwnedDefs.length === 0) {
+    table.innerHTML = '<tbody><tr><td colspan="9" style="padding:20px;color:#cbd5e1;text-align:center;">You do not own any properties yet. (Other players\' properties are hidden.)</td></tr></tbody>';
+    return;
+  }
+  myOwnedDefs.forEach(def => {
     const st = state.properties[def.id] || { ownerId: null, houses: 0, mortgaged: false, rentCollected: 0, rentByPlayer: {} };
     const received = st.rentCollected || 0;
     const pct = def.price > 0 ? Math.round((received / def.price) * 100) : 0;
@@ -5456,11 +5510,13 @@ function renderPlayersTrackerTabContent() {
     const inJail = !!state.inJail?.[pid];
     const owned = ownedPropsFor(pid);
 
-    const chips = owned.map(def => {
-      const pst = state.properties[def.id];
-      const hIcon = def.type === 'property' && pst.houses > 0 ? ' ' + (pst.houses === 5 ? '🏨' : '🏠'.repeat(pst.houses)) : '';
-      return `<span class="prop-mini-chip" data-chip-prop="${def.id}" style="background:${GROUP_COLORS[def.group]}; ${pst.mortgaged?'opacity:0.55;text-decoration:line-through;':''}">${esc(def.name)}${hIcon}</span>`;
-    }).join('');
+    const chips = (pid === myId)
+      ? owned.map(def => {
+          const pst = state.properties[def.id];
+          const hIcon = def.type === 'property' && pst.houses > 0 ? ' ' + (pst.houses === 5 ? '🏨' : '🏠'.repeat(pst.houses)) : '';
+          return `<span class="prop-mini-chip" data-chip-prop="${def.id}" style="background:${GROUP_COLORS[def.group]}; ${pst.mortgaged?'opacity:0.55;text-decoration:line-through;':''}">${esc(def.name)}${hIcon}</span>`;
+        }).join('')
+      : '<span style="font-size:0.72rem; color:#94a3b8;">🔒 Opponent properties hidden</span>';
 
     cardsHtml += `<div class="tracker-pcard" style="--pcolor:${pCol}; ${isElim?'opacity:0.6;border-style:dashed;':''}">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
