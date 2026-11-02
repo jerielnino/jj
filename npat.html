@@ -758,6 +758,10 @@ input:focus, select:focus {
   border-left-color: #64748b;
   opacity: 0.75;
 }
+.item-row.unsure {
+  border-left-color: #60a5fa;
+  background: rgba(59, 130, 246, 0.08);
+}
 
 .item-thumb {
   width: 56px;
@@ -815,6 +819,7 @@ input:focus, select:focus {
 .score-pill.unique { background: rgba(16, 185, 129, 0.3); color: #34d399; }
 .score-pill.duplicate { background: rgba(245, 158, 11, 0.3); color: #fbbf24; }
 .score-pill.empty { background: rgba(100, 116, 139, 0.3); color: #cbd5e1; }
+.score-pill.unsure { background: rgba(59, 130, 246, 0.3); color: #93c5fd; }
 
 /* Category comparison tabs */
 .results-tabs {
@@ -1091,6 +1096,7 @@ input:focus, select:focus {
 
     <!-- Bottom Actions -->
     <div class="row" style="margin-top: 10px; gap: 12px; flex-wrap: wrap;">
+      <button id="startVotingBtn" type="button" class="btn-good hidden" style="font-size:1.1rem; padding:12px 28px;">🗳️ Vote on Doubtful Answers</button>
       <button id="nextRoundBtn" type="button" class="btn-good hidden" style="font-size:1.1rem; padding:12px 28px;">🎲 Play Next Round</button>
       <button id="closeResultsBtn" type="button" class="btn-alt">View Summary</button>
     </div>
@@ -1646,49 +1652,46 @@ async function evaluateRoundResults(skipVoting = false) {
     });
   }
 
-  if (!skipVoting) {
-    const uniqueWordsToLookup = [];
-    CATEGORIES.forEach(cat => {
-      if (cat === 'name') return; // Names are auto-accepted if valid format
-      categoryAnswers[cat].forEach(entry => {
-        const raw = entry.rawAnswer;
-        if (raw && raw.length > 1 && raw.toUpperCase().startsWith(letter)) {
-          uniqueWordsToLookup.push({ word: raw, category: cat });
-        }
-      });
+  const uniqueWordsToLookup = [];
+  CATEGORIES.forEach(cat => {
+    if (cat === 'name') return; // Names are auto-accepted if valid format
+    categoryAnswers[cat].forEach(entry => {
+      const raw = entry.rawAnswer;
+      if (raw && raw.length > 1 && raw.toUpperCase().startsWith(letter)) {
+        uniqueWordsToLookup.push({ word: raw, category: cat });
+      }
     });
+  });
 
-    const lookupPromises = uniqueWordsToLookup.map(item => lookupEntity(item.word, item.category));
-    await Promise.allSettled(lookupPromises);
+  const lookupPromises = uniqueWordsToLookup.map(item => lookupEntity(item.word, item.category));
+  await Promise.allSettled(lookupPromises);
 
-    const unsureItems = [];
-    CATEGORIES.forEach(cat => {
-      if (cat === 'name') return;
-      categoryAnswers[cat].forEach(entry => {
-        const raw = entry.rawAnswer;
-        if (raw && raw.length > 1 && raw.toUpperCase().startsWith(letter)) {
-          const cached = entityCache.get(cat + ':' + raw.toLowerCase());
-          if (cached && !cached.exists) {
-            if (!unsureItems.find(u => u.word === raw && u.category === cat)) {
-              unsureItems.push({ word: raw, category: cat });
-            }
+  let hasUnsure = false;
+  const unsureItems = [];
+  CATEGORIES.forEach(cat => {
+    if (cat === 'name') return;
+    categoryAnswers[cat].forEach(entry => {
+      const raw = entry.rawAnswer;
+      if (raw && raw.length > 1 && raw.toUpperCase().startsWith(letter)) {
+        const cached = entityCache.get(cat + ':' + raw.toLowerCase());
+        if (cached && !cached.exists) {
+          if (!unsureItems.find(u => u.word === raw && u.category === cat)) {
+            unsureItems.push({ word: raw, category: cat });
           }
+          hasUnsure = true;
         }
-      });
+      }
     });
+  });
 
-    if (unsureItems.length > 0) {
-      state.voting = { items: unsureItems, votes: {}, completed: new Set() };
-      sendHost({ type: 'START_VOTING', items: unsureItems });
-      showVotingModal();
-      triggerBotVotes();
-      return; // Pause evaluation until voting completes
-    }
+  if (!skipVoting && hasUnsure) {
+    state.voting = { items: unsureItems, votes: {}, completed: new Set() };
   }
 
   // Final Scoring Pass
   const results = {};
   const cumulativeScores = state.cumulativeScores || {};
+  let tempCumulativeScores = { ...cumulativeScores };
 
   players.forEach(p => {
     results[p.id] = {
@@ -1718,7 +1721,20 @@ async function evaluateRoundResults(skipVoting = false) {
         return;
       }
 
+      let isValid = true;
+      let isUnsure = false;
+
       if (cat !== 'name' && !cached.exists) {
+        isValid = false;
+        isUnsure = true;
+      }
+
+      if (isUnsure) {
+        results[playerId].answers[cat] = { word: cleanAnswer, status: 'unsure', points: 0, matchedWith: null, info: cached };
+        return;
+      }
+
+      if (!isValid) {
         results[playerId].answers[cat] = { word: cleanAnswer, status: 'invalid', points: 0, matchedWith: null, info: cached };
         return;
       }
@@ -1755,24 +1771,30 @@ async function evaluateRoundResults(skipVoting = false) {
   let winnerId = null;
 
   players.forEach(p => {
-    cumulativeScores[p.id] = (cumulativeScores[p.id] || 0) + results[p.id].roundScore;
-    results[p.id].totalScore = cumulativeScores[p.id];
+    tempCumulativeScores[p.id] = (tempCumulativeScores[p.id] || 0) + results[p.id].roundScore;
+    results[p.id].totalScore = tempCumulativeScores[p.id];
     if (results[p.id].totalScore > maxScore) {
       maxScore = results[p.id].totalScore;
       winnerId = p.id;
     }
   });
 
-  state.cumulativeScores = cumulativeScores;
+  if (skipVoting || !hasUnsure) {
+    state.cumulativeScores = tempCumulativeScores;
+  }
+
   state.results = results;
   state.winner = winnerId;
+  state.hasUnsure = (!skipVoting && hasUnsure);
 
   sendHost({
     type: 'RESULTS',
     results: results,
     winner: winnerId,
     letter: state.letter,
-    cumulativeScores: cumulativeScores
+    cumulativeScores: tempCumulativeScores,
+    hasUnsure: state.hasUnsure,
+    unsureItems: state.hasUnsure ? unsureItems : []
   });
 
   showResultsModal();
@@ -1780,228 +1802,6 @@ async function evaluateRoundResults(skipVoting = false) {
 
 // =====================================================================
 // UI RENDERERS & TRANSITIONS
-// =====================================================================
-function showPanel(panelId) {
-  $('setupWrap').classList.toggle('hidden', panelId === 'gamePanel');
-  $('setupPanel').classList.toggle('hidden', panelId !== 'setupPanel');
-  $('lobbyPanel').classList.toggle('hidden', panelId !== 'lobbyPanel');
-  $('gamePanel').classList.toggle('hidden', panelId !== 'gamePanel');
-}
-
-function msg(text) {
-  $('setupMsg').textContent = text;
-}
-
-function updateTopScoreboard() {
-  const sb = $('topScoreboard');
-  sb.innerHTML = '';
-  players.forEach(p => {
-    const isDone = state && state.completed && state.completed.has(p.id);
-    const score = (state?.cumulativeScores && state.cumulativeScores[p.id]) || 0;
-    const el = document.createElement('div');
-    el.className = 'ts-player' + (isDone ? ' completed' : '') + (p.id === myId ? ' active' : '');
-    el.innerHTML = `
-      <span class="ts-avatar">${p.avatar || '😎'}</span>
-      <strong class="ts-name">${esc(p.name)}</strong>
-      <span>${score} pts</span>
-      ${isDone ? '<span style="color:#10b981; font-weight:bold;">✓</span>' : ''}
-    `;
-    sb.appendChild(el);
-  });
-}
-
-function renderLobbyPlayers() {
-  const list = $('lobbyPlayers');
-  list.innerHTML = '';
-  $('playerCountLabel').textContent = players.length;
-
-  players.forEach(p => {
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.08); padding:8px 12px; border-radius:10px; font-weight:600;';
-    row.innerHTML = `
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:1.3rem;">${p.avatar || '😎'}</span>
-        <span>${esc(p.name)}</span>
-        ${p.id === hostId ? '<span style="font-size:0.75rem; background:rgba(255,214,111,0.25); color:#ffe7a5; padding:2px 6px; border-radius:6px;">HOST</span>' : ''}
-        ${p.isBot ? '<span style="font-size:0.75rem; background:rgba(59,130,246,0.25); color:#93c5fd; padding:2px 6px; border-radius:6px;">BOT</span>' : ''}
-      </div>
-      ${host && p.id !== myId ? `<button type="button" class="btn-alt" style="padding:2px 8px; font-size:0.75rem; color:#ef4444;" onclick="kickPlayer('${p.id}')">✕</button>` : ''}
-    `;
-    list.appendChild(row);
-  });
-
-  if (host) {
-    $('startBtn').classList.remove('hidden');
-    $('hostLobbyControls').classList.remove('hidden');
-  } else {
-    $('startBtn').classList.add('hidden');
-    $('hostLobbyControls').classList.add('hidden');
-  }
-}
-
-function updateStepCard() {
-  const catKey = CATEGORIES[currentStep];
-  const cat = CATEGORY_DATA[catKey];
-  const letter = state ? state.letter.toUpperCase() : '?';
-
-  $('stepIcon').textContent = cat.icon;
-  $('stepTitle').textContent = cat.label;
-  $('stepPrompt').textContent = cat.prompt + `"${letter}"`;
-  $('stepInputLabel').innerHTML = `Your Answer (Starts with <span style="color:#ffd66f; font-weight:bold; font-size:1.1em;">${letter}</span>):`;
-
-  const inputEl = $('stepInput');
-  inputEl.placeholder = `e.g. A ${cat.label.toLowerCase()} starting with ${letter}...`;
-  inputEl.value = myAnswers[catKey] || '';
-  setTimeout(() => inputEl.focus(), 50);
-
-  $('stepBackBtn').style.visibility = (currentStep > 0) ? 'visible' : 'hidden';
-
-  if (currentStep === CATEGORIES.length - 1) {
-    $('stepNextBtn').classList.add('hidden');
-    $('stepSubmitBtn').classList.remove('hidden');
-  } else {
-    const nextCat = CATEGORY_DATA[CATEGORIES[currentStep + 1]].label;
-    $('stepNextBtn').textContent = `Next: ${nextCat} ➔`;
-    $('stepNextBtn').classList.remove('hidden');
-    $('stepSubmitBtn').classList.add('hidden');
-  }
-
-  const dots = document.querySelectorAll('.step-dot');
-  dots.forEach((dot, idx) => {
-    dot.classList.toggle('active', idx === currentStep);
-    const filled = !!myAnswers[CATEGORIES[idx]];
-    dot.classList.toggle('filled', filled);
-  });
-
-  const chipsEl = $('answersChips');
-  chipsEl.innerHTML = '';
-  CATEGORIES.forEach((cKey, idx) => {
-    const ans = myAnswers[cKey];
-    const chip = document.createElement('div');
-    chip.className = 'ans-chip' + (ans ? ' filled' : '');
-    chip.innerHTML = `<span>${CATEGORY_DATA[cKey].icon}</span> <span>${CATEGORY_DATA[cKey].label}: <strong>${ans ? esc(ans) : '—'}</strong></span>`;
-    chipsEl.appendChild(chip);
-  });
-}
-
-function nextStep() {
-  saveCurrentStepInput();
-  if (currentStep < CATEGORIES.length - 1) {
-    currentStep++;
-    playStepSound();
-    updateStepCard();
-  }
-}
-
-function prevStep() {
-  saveCurrentStepInput();
-  if (currentStep > 0) {
-    currentStep--;
-    playBackSound();
-    updateStepCard();
-  }
-}
-
-function saveCurrentStepInput() {
-  const catKey = CATEGORIES[currentStep];
-  myAnswers[catKey] = $('stepInput').value.trim();
-  if (!host) {
-    sendToHost({ type: 'STEP_PROGRESS', playerId: myId, step: currentStep, filled: Object.values(myAnswers).filter(Boolean).length });
-  }
-}
-
-function submitAnswers() {
-  saveCurrentStepInput();
-  hasSubmitted = true;
-  playSubmitSound();
-
-  if (host) {
-    state.submissions[myId] = { answers: { ...myAnswers }, time: Date.now() };
-    state.completed.add(myId);
-    broadcastLobbyState();
-    checkIfAllCompleted();
-  } else {
-    sendToHost({ type: 'SUBMIT', playerId: myId, answers: { ...myAnswers } });
-  }
-
-  $('stepCard').classList.add('hidden');
-  $('waitingBox').classList.remove('hidden');
-  updateWaitingRoster();
-  updateTopScoreboard();
-}
-
-function updateWaitingRoster() {
-  const list = $('playerStatusList');
-  if (!list) return;
-  list.innerHTML = '';
-
-  players.forEach(p => {
-    const isCompleted = state && state.completed && state.completed.has(p.id);
-    const row = document.createElement('div');
-    row.className = 'player-status-row ' + (isCompleted ? 'ready' : 'typing');
-    row.innerHTML = `
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:1.2rem;">${p.avatar || '😎'}</span>
-        <strong style="color:#ffe7a5;">${esc(p.name)}</strong>
-      </div>
-      <div>
-        ${isCompleted ? '<span style="color:#34d399; font-weight:bold;">Ready ✓</span>' : '<span style="color:#f59e0b;">Answering... ⏳</span>'}
-      </div>
-    `;
-    list.appendChild(row);
-  });
-}
-
-function checkIfAllCompleted() {
-  if (!host || !state || !state.started) return;
-  if (state.completed.size >= players.length) {
-    if (gameTimerInterval) clearInterval(gameTimerInterval);
-    evaluateRoundResults();
-  }
-}
-
-function startGameTimer() {
-  if (gameTimerInterval) clearInterval(gameTimerInterval);
-  if (!host || !state) return;
-
-  state.timeRemaining = state.timeLimit;
-
-  gameTimerInterval = setInterval(() => {
-    if (!state || !state.started || state.results) {
-      clearInterval(gameTimerInterval);
-      return;
-    }
-
-    state.timeRemaining = Math.max(0, state.timeRemaining - 1);
-    updateGameTimerUI(state.timeRemaining);
-
-    sendHost({ type: 'TIMER_TICK', timeRemaining: state.timeRemaining });
-
-    if (state.timeRemaining <= 10 && state.timeRemaining > 0) {
-      playTimerTick(true);
-    }
-
-    if (state.timeRemaining <= 0) {
-      clearInterval(gameTimerInterval);
-      if (!hasSubmitted) {
-        submitAnswers();
-      }
-      evaluateRoundResults();
-    }
-  }, 1000);
-}
-
-function updateGameTimerUI(remaining) {
-  const badge = $('gameTimerBadge');
-  const mins = Math.floor(remaining / 60);
-  const secs = remaining % 60;
-  badge.textContent = `⏱️ ${mins}:${secs.toString().padStart(2, '0')}`;
-  badge.classList.remove('hidden');
-  badge.classList.toggle('urgent', remaining <= 10);
-}
-
-// =====================================================================
-// RESULTS SCREEN DISPLAY
 // =====================================================================
 function showResultsModal() {
   if (!state || !state.results) return;
@@ -2018,9 +1818,16 @@ function showResultsModal() {
   renderResultsGrid();
 
   if (host) {
-    $('nextRoundBtn').classList.remove('hidden');
+    if (state.hasUnsure) {
+      $('startVotingBtn').classList.remove('hidden');
+      $('nextRoundBtn').classList.add('hidden');
+    } else {
+      $('startVotingBtn').classList.add('hidden');
+      $('nextRoundBtn').classList.remove('hidden');
+    }
   } else {
     $('nextRoundBtn').classList.add('hidden');
+    $('startVotingBtn').classList.add('hidden');
   }
 
   $('resultsModal').classList.remove('hidden');
@@ -2071,8 +1878,9 @@ function renderResultsGrid() {
       let badgeLabel = '+0 pts';
       if (ans.status === 'unique') badgeLabel = '+10 pts ⭐';
       else if (ans.status === 'duplicate') badgeLabel = `+5 pts (Matched: ${esc(ans.matchedWith || 'Player')})`;
-      else if (ans.status === 'invalid') badgeLabel = '0 pts (Wrong Letter)';
+      else if (ans.status === 'invalid') badgeLabel = '0 pts (Invalid)';
       else if (ans.status === 'empty') badgeLabel = '0 pts (Empty)';
+      else if (ans.status === 'unsure') badgeLabel = '0 pts (Unsure)';
 
       let mediaHtml = '';
       if (ans.info && ans.info.thumbnail) {
@@ -2124,6 +1932,8 @@ function showVotingModal() {
   const list = $('votingList');
   list.innerHTML = '';
   myVotes = {};
+
+  if (!state.voting || !state.voting.items) return;
 
   state.voting.items.forEach((item) => {
     const key = item.category + ':' + item.word;
@@ -2218,18 +2028,22 @@ function resolveVotingAndFinalize() {
   state.voting.items.forEach(item => {
     const key = item.category + ':' + item.word;
     const cacheKey = item.category + ':' + item.word.toLowerCase();
-    const isAccepted = tally[key].yes >= tally[key].no;
+    const isAccepted = tally[key].yes >= tally[key].no; // Tie goes to accepted
     
     let cached = entityCache.get(cacheKey) || { exists: false, title: item.word, description: null, thumbnail: null };
     cached.exists = isAccepted;
     if (isAccepted && !cached.description) {
       cached.description = "✅ Validated by player vote";
+    } else if (!isAccepted && !cached.description) {
+      cached.description = "❌ Rejected by player vote";
     }
     entityCache.set(cacheKey, cached);
   });
 
   state.voting = null;
+  state.hasUnsure = false;
   sendHost({ type: 'END_VOTING' });
+  $('votingModal').classList.add('hidden');
   evaluateRoundResults(true); // Call round evaluation again bypassing the voting check
 }
 
@@ -2507,10 +2321,18 @@ function handleClientMessage(data) {
       state.results = data.results;
       state.winner = data.winner;
       state.cumulativeScores = data.cumulativeScores;
+      state.hasUnsure = data.hasUnsure;
+      if (data.hasUnsure && data.unsureItems) {
+        state.voting = { items: data.unsureItems };
+      }
     }
+    $('votingModal').classList.add('hidden');
     showResultsModal();
   } else if (data.type === 'START_VOTING') {
-    if (state) state.voting = { items: data.items };
+    if (state) {
+      if (!state.voting) state.voting = { items: data.items };
+      else state.voting.items = data.items;
+    }
     showVotingModal();
   } else if (data.type === 'END_VOTING') {
     $('votingModal').classList.add('hidden');
@@ -2559,6 +2381,7 @@ function startRoundUI() {
   $('activeLetterText').textContent = state.letter;
   $('resultsModal').classList.add('hidden');
   $('waitingBox').classList.add('hidden');
+  $('votingModal').classList.add('hidden');
   $('stepCard').classList.remove('hidden');
 
   playLetterRevealSound();
@@ -2593,6 +2416,14 @@ $('joinBtn').onclick = () => { playClickSound(); joinGame(); };
 $('soloBtn').onclick = () => { playClickSound(); playSolo(); };
 $('startBtn').onclick = () => { playClickSound(); startNewRound(); };
 $('nextRoundBtn').onclick = () => { playClickSound(); startNewRound(); };
+$('startVotingBtn').onclick = () => {
+  playClickSound();
+  if (state.hasUnsure && host) {
+    sendHost({ type: 'START_VOTING', items: state.voting.items });
+    showVotingModal();
+    triggerBotVotes();
+  }
+};
 
 $('stepNextBtn').onclick = nextStep;
 $('stepBackBtn').onclick = prevStep;
