@@ -354,9 +354,10 @@ input:focus, select:focus {
   letter-spacing: 1.5px;
   border: 1px solid rgba(255, 214, 111, 0.3);
   user-select: all;
-  word-break: break-all; /* Fixed horizontal bleed */
-  max-width: 100%;       /* Fixed horizontal bleed */
-  display: inline-block; /* Fixed horizontal bleed */
+  word-break: break-all;
+  max-width: 100%;
+  display: inline-block;
+  white-space: normal;
 }
 .qr-wrap {
   background: #fff;
@@ -655,14 +656,17 @@ input:focus, select:focus {
   border: 2px solid var(--modal-border);
   border-radius: 24px;
   padding: 26px;
+  padding-bottom: 30px;
   max-width: 900px;
   width: 100%;
-  max-height: 92vh;
+  max-height: 85dvh;
   overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: 0 20px 50px rgba(0,0,0,0.6);
   display: flex;
   flex-direction: column;
   gap: 20px;
+  box-sizing: border-box;
 }
 
 /* Winner Banner */
@@ -694,6 +698,8 @@ input:focus, select:focus {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 16px;
   width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 .result-card {
   background: rgba(15, 23, 42, 0.65);
@@ -754,8 +760,8 @@ input:focus, select:focus {
 }
 
 .item-thumb {
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   border-radius: 8px;
   object-fit: cover;
   background: rgba(0,0,0,0.3);
@@ -763,15 +769,15 @@ input:focus, select:focus {
   flex-shrink: 0;
 }
 .item-icon-fallback {
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   border-radius: 8px;
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  font-size: 1.8rem;
   flex-shrink: 0;
 }
 .item-body {
@@ -789,16 +795,14 @@ input:focus, select:focus {
   font-size: 0.98rem;
   font-weight: 700;
   color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
 }
 .item-desc {
   font-size: 0.72rem;
   color: #94a3b8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
 }
 .score-pill {
   font-size: 0.75rem;
@@ -815,13 +819,14 @@ input:focus, select:focus {
 /* Category comparison tabs */
 .results-tabs {
   display: flex;
-  gap: 6px;
-  overflow-x: auto;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
   padding-bottom: 4px;
 }
 .tab-btn {
-  padding: 6px 14px;
-  font-size: 0.85rem;
+  padding: 8px 16px;
+  font-size: 0.95rem;
   border-radius: 99px;
   background: rgba(255,255,255,0.08);
   color: #cbd5e1;
@@ -1085,10 +1090,23 @@ input:focus, select:focus {
     <div class="results-grid" id="resultsGrid"></div>
 
     <!-- Bottom Actions -->
-    <div class="row" style="margin-top: 10px; gap: 12px;">
+    <div class="row" style="margin-top: 10px; gap: 12px; flex-wrap: wrap;">
       <button id="nextRoundBtn" type="button" class="btn-good hidden" style="font-size:1.1rem; padding:12px 28px;">🎲 Play Next Round</button>
       <button id="closeResultsBtn" type="button" class="btn-alt">View Summary</button>
     </div>
+  </div>
+</div>
+
+<!-- 4.5 VOTING MODAL -->
+<div class="modal hidden" id="votingModal">
+  <div class="modal-box" style="max-width: 600px;">
+    <h2 style="text-align:center; color:#ffe7a5; margin:0 0 8px; font-size: 1.6rem;">🗳️ Voting Phase</h2>
+    <p style="text-align:center; color:#94a3b8; font-size:0.9rem; margin: 0 0 16px;">Some answers couldn't be verified by the system. Vote to accept or reject them!</p>
+    
+    <div id="votingList" style="display:flex; flex-direction:column; gap:12px; max-height: 60vh; overflow-y:auto; padding-right:8px;"></div>
+    
+    <div id="votingWaiting" class="hidden" style="text-align:center; color:#34d399; margin-top:12px; font-weight: bold;">⏳ Waiting for others to vote...</div>
+    <button id="submitVotesBtn" class="btn-good" style="margin-top: 16px; width:100%;">Submit Votes</button>
   </div>
 </div>
 
@@ -1342,49 +1360,7 @@ function isLocalWordKnown(word, cat) {
   return list.some(item => areAnswersSame(item, word));
 }
 
-// Levenshtein distance
-function levenshtein(a, b) {
-  const m = a.length, n = b.length;
-  const d = [];
-  for (let i = 0; i <= m; i++) d[i] = [i];
-  for (let j = 0; j <= n; j++) d[0][j] = j;
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      if (a[i - 1] === b[j - 1]) d[i][j] = d[i - 1][j - 1];
-      else d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + 1);
-    }
-  }
-  return d[m][n];
-}
-
-// Soundex algorithm: Matches English phonetics (e.g. Deli -> D400, Delhi -> D400)
-function soundex(str) {
-  if (!str) return '';
-  const s = str.toUpperCase().replace(/[^A-Z]/g, '');
-  if (!s.length) return '';
-  const first = s[0];
-  const map = {
-    B: 1, F: 1, P: 1, V: 1,
-    C: 2, G: 2, J: 2, K: 2, Q: 2, S: 2, X: 2, Z: 2,
-    D: 3, T: 3,
-    L: 4,
-    M: 5, N: 5,
-    R: 6
-  };
-  let res = first;
-  let prev = map[first] || 0;
-  for (let i = 1; i < s.length && res.length < 4; i++) {
-    const c = s[i];
-    const code = map[c] || 0;
-    if (code !== 0 && code !== prev) {
-      res += code;
-    }
-    prev = code;
-  }
-  return res.padEnd(4, '0');
-}
-
-// Comprehensive spelling & phonetic equivalence engine
+// Comprehensive exact-spelling equivalence engine
 function areAnswersSame(w1, w2) {
   if (!w1 || !w2) return false;
   let s1 = String(w1).trim().toLowerCase();
@@ -1395,46 +1371,13 @@ function areAnswersSame(w1, w2) {
   const stripArticles = s => s.replace(/^(the|a|an)\s+/i, '').trim();
   s1 = stripArticles(s1);
   s2 = stripArticles(s2);
-  if (s1 === s2) return true;
 
-  // Strip non-alphanumeric
+  // Exact alphanumeric match only (no fuzzy matching!)
   const c1 = s1.replace(/[^a-z0-9]/g, '');
   const c2 = s2.replace(/[^a-z0-9]/g, '');
   if (!c1 || !c2) return false;
-  if (c1 === c2) return true;
-
-  // Both must start with the exact same first letter
-  if (c1[0] !== c2[0]) return false;
-
-  // Soundex match check
-  const sx1 = soundex(c1);
-  const sx2 = soundex(c2);
-  if (sx1 && sx2 && sx1 === sx2) {
-    const editDist = levenshtein(c1, c2);
-    if (editDist <= 2) return true;
-  }
-
-  // Phonetic normalization
-  const normalizePhonetic = s => s
-    .replace(/ph/g, 'f')
-    .replace(/ck/g, 'k')
-    .replace(/qu/g, 'k')
-    .replace(/c(?=[iey])/g, 's')
-    .replace(/c/g, 'k')
-    .replace(/([ldtkrg])h/g, '$1') // e.g. delhi -> deli, gandhi -> gandi
-    .replace(/([a-z])\1+/g, '$1');  // collapse double letters
-
-  const p1 = normalizePhonetic(c1);
-  const p2 = normalizePhonetic(c2);
-  if (p1 === p2) return true;
-
-  // Levenshtein edit distance
-  const dist = levenshtein(c1, c2);
-  const minLen = Math.min(c1.length, c2.length);
-  if (minLen <= 5 && dist <= 1) return true;
-  if (minLen > 5 && dist <= 2) return true;
-
-  return false;
+  
+  return c1 === c2;
 }
 
 // Online lookup via Wikipedia REST API & dictionary
@@ -1684,7 +1627,7 @@ function createInitialState(timeLimit = 60, onlineCheck = true) {
 // =====================================================================
 // SCORING LOGIC & EVALUATION ENGINE
 // =====================================================================
-async function evaluateRoundResults() {
+async function evaluateRoundResults(skipVoting = false) {
   if (!host || !state) return;
 
   const letter = state.letter.toUpperCase();
@@ -1695,27 +1638,55 @@ async function evaluateRoundResults() {
   for (const p of players) {
     const sub = allSubmissions[p.id]?.answers || { name: '', place: '', animal: '', thing: '', film: '' };
     CATEGORIES.forEach(cat => {
-      const raw = (sub[cat] || '').trim();
       categoryAnswers[cat].push({
         playerId: p.id,
         playerName: p.name,
-        rawAnswer: raw
+        rawAnswer: (sub[cat] || '').trim()
       });
     });
   }
 
-  const uniqueWordsToLookup = [];
-  CATEGORIES.forEach(cat => {
-    categoryAnswers[cat].forEach(entry => {
-      if (entry.rawAnswer) {
-        uniqueWordsToLookup.push({ word: entry.rawAnswer, category: cat });
-      }
+  if (!skipVoting) {
+    const uniqueWordsToLookup = [];
+    CATEGORIES.forEach(cat => {
+      if (cat === 'name') return; // Names are auto-accepted if valid format
+      categoryAnswers[cat].forEach(entry => {
+        const raw = entry.rawAnswer;
+        if (raw && raw.length > 1 && raw.toUpperCase().startsWith(letter)) {
+          uniqueWordsToLookup.push({ word: raw, category: cat });
+        }
+      });
     });
-  });
 
-  const lookupPromises = uniqueWordsToLookup.map(item => lookupEntity(item.word, item.category));
-  await Promise.allSettled(lookupPromises);
+    const lookupPromises = uniqueWordsToLookup.map(item => lookupEntity(item.word, item.category));
+    await Promise.allSettled(lookupPromises);
 
+    const unsureItems = [];
+    CATEGORIES.forEach(cat => {
+      if (cat === 'name') return;
+      categoryAnswers[cat].forEach(entry => {
+        const raw = entry.rawAnswer;
+        if (raw && raw.length > 1 && raw.toUpperCase().startsWith(letter)) {
+          const cached = entityCache.get(cat + ':' + raw.toLowerCase());
+          if (cached && !cached.exists) {
+            if (!unsureItems.find(u => u.word === raw && u.category === cat)) {
+              unsureItems.push({ word: raw, category: cat });
+            }
+          }
+        }
+      });
+    });
+
+    if (unsureItems.length > 0) {
+      state.voting = { items: unsureItems, votes: {}, completed: new Set() };
+      sendHost({ type: 'START_VOTING', items: unsureItems });
+      showVotingModal();
+      triggerBotVotes();
+      return; // Pause evaluation until voting completes
+    }
+  }
+
+  // Final Scoring Pass
   const results = {};
   const cumulativeScores = state.cumulativeScores || {};
 
@@ -1734,38 +1705,32 @@ async function evaluateRoundResults() {
     const entries = categoryAnswers[cat];
     entries.forEach(entry => {
       const { playerId, rawAnswer } = entry;
-      const cached = entityCache.get(cat + ':' + rawAnswer.toLowerCase()) || { exists: false, title: rawAnswer, description: null, thumbnail: null };
+      const cleanAnswer = rawAnswer;
+      const cached = entityCache.get(cat + ':' + cleanAnswer.toLowerCase()) || { exists: false, title: cleanAnswer, description: null, thumbnail: null };
 
-      if (!rawAnswer) {
-        results[playerId].answers[cat] = {
-          word: '',
-          status: 'empty',
-          points: 0,
-          matchedWith: null,
-          info: cached
-        };
+      if (!cleanAnswer) {
+        results[playerId].answers[cat] = { word: '', status: 'empty', points: 0, matchedWith: null, info: cached };
         return;
       }
 
-      const startsWithLetter = rawAnswer.toUpperCase().startsWith(letter);
-      if (!startsWithLetter) {
-        results[playerId].answers[cat] = {
-          word: rawAnswer,
-          status: 'invalid',
-          points: 0,
-          matchedWith: null,
-          info: cached
-        };
+      if (cleanAnswer.length <= 1 || !cleanAnswer.toUpperCase().startsWith(letter)) {
+        results[playerId].answers[cat] = { word: cleanAnswer, status: 'invalid', points: 0, matchedWith: null, info: cached };
         return;
       }
 
-      const others = entries.filter(other => other.playerId !== playerId && other.rawAnswer);
-      const duplicateMatch = others.find(other => areAnswersSame(other.rawAnswer, rawAnswer));
+      if (cat !== 'name' && !cached.exists) {
+        results[playerId].answers[cat] = { word: cleanAnswer, status: 'invalid', points: 0, matchedWith: null, info: cached };
+        return;
+      }
+
+      // Valid answer! Now check uniqueness against other VALID answers.
+      const others = entries.filter(other => other.playerId !== playerId && other.rawAnswer.trim().length > 1);
+      const duplicateMatch = others.find(other => areAnswersSame(other.rawAnswer, cleanAnswer));
 
       if (duplicateMatch) {
         const pts = 5;
         results[playerId].answers[cat] = {
-          word: rawAnswer,
+          word: cleanAnswer,
           status: 'duplicate',
           points: pts,
           matchedWith: duplicateMatch.playerName,
@@ -1775,7 +1740,7 @@ async function evaluateRoundResults() {
       } else {
         const pts = 10;
         results[playerId].answers[cat] = {
-          word: rawAnswer,
+          word: cleanAnswer,
           status: 'unique',
           points: pts,
           matchedWith: null,
@@ -2147,6 +2112,128 @@ $('resultsTabs').addEventListener('click', e => {
 });
 
 // =====================================================================
+// VOTING PHASE LOGIC
+// =====================================================================
+let myVotes = {};
+
+function showVotingModal() {
+  $('waitingBox').classList.add('hidden');
+  $('votingWaiting').classList.add('hidden');
+  $('submitVotesBtn').classList.remove('hidden');
+  
+  const list = $('votingList');
+  list.innerHTML = '';
+  myVotes = {};
+
+  state.voting.items.forEach((item) => {
+    const key = item.category + ':' + item.word;
+    myVotes[key] = true; // Default to Yes
+
+    const el = document.createElement('div');
+    el.style.cssText = "background:rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap: wrap;";
+    el.innerHTML = `
+      <div style="flex:1; min-width:120px;">
+        <div style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase;">${CATEGORY_DATA[item.category].icon} ${CATEGORY_DATA[item.category].label}</div>
+        <div style="font-weight:bold; font-size:1.1rem; color:#fff; word-break: break-word;">${esc(item.word)}</div>
+      </div>
+      <div style="display:flex; gap:6px;" class="vote-btns" data-key="${esc(key)}">
+        <button class="btn-alt vote-yes active" style="padding:6px 12px; background:rgba(16, 185, 129, 0.2); border-color:#10b981; color:#10b981;">👍 Yes</button>
+        <button class="btn-alt vote-no" style="padding:6px 12px;">👎 No</button>
+      </div>
+    `;
+    list.appendChild(el);
+  });
+  $('votingModal').classList.remove('hidden');
+}
+
+$('votingList')?.addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  const container = btn.closest('.vote-btns');
+  const key = container.getAttribute('data-key');
+  const isYes = btn.classList.contains('vote-yes');
+  
+  container.querySelector('.vote-yes').classList.toggle('active', isYes);
+  container.querySelector('.vote-no').classList.toggle('active', !isYes);
+  
+  container.querySelector('.vote-yes').style.cssText = isYes ? "padding:6px 12px; background:rgba(16, 185, 129, 0.2); border-color:#10b981; color:#10b981;" : "padding:6px 12px;";
+  container.querySelector('.vote-no').style.cssText = !isYes ? "padding:6px 12px; background:rgba(239, 68, 68, 0.2); border-color:#ef4444; color:#ef4444;" : "padding:6px 12px;";
+
+  myVotes[key] = isYes;
+});
+
+$('submitVotesBtn')?.addEventListener('click', () => {
+  $('submitVotesBtn').classList.add('hidden');
+  $('votingWaiting').classList.remove('hidden');
+  if (host) {
+    handleVoteSubmission(myId, myVotes);
+  } else {
+    sendToHost({ type: 'SUBMIT_VOTES', playerId: myId, votes: myVotes });
+  }
+});
+
+function handleVoteSubmission(playerId, votes) {
+  if (!state || !state.voting) return;
+  state.voting.votes[playerId] = votes;
+  state.voting.completed.add(playerId);
+
+  const realPlayers = players.filter(p => !p.isBot);
+  if (state.voting.completed.size >= realPlayers.length) {
+    resolveVotingAndFinalize();
+  }
+}
+
+function triggerBotVotes() {
+  if (!host || !state || !state.voting) return;
+  const bots = players.filter(p => p.isBot);
+  bots.forEach(bot => {
+    setTimeout(() => {
+      if (!state.voting) return;
+      const botVotes = {};
+      state.voting.items.forEach(item => {
+        const key = item.category + ':' + item.word;
+        botVotes[key] = Math.random() > 0.4; // 60% chance to approve
+      });
+      handleVoteSubmission(bot.id, botVotes);
+    }, 1500 + Math.random() * 2000);
+  });
+}
+
+function resolveVotingAndFinalize() {
+  const tally = {};
+  state.voting.items.forEach(item => {
+    const key = item.category + ':' + item.word;
+    tally[key] = { yes: 0, no: 0 };
+  });
+
+  Object.values(state.voting.votes).forEach(playerVotes => {
+    Object.keys(playerVotes).forEach(key => {
+      if (tally[key]) {
+        if (playerVotes[key]) tally[key].yes++;
+        else tally[key].no++;
+      }
+    });
+  });
+
+  state.voting.items.forEach(item => {
+    const key = item.category + ':' + item.word;
+    const cacheKey = item.category + ':' + item.word.toLowerCase();
+    const isAccepted = tally[key].yes >= tally[key].no;
+    
+    let cached = entityCache.get(cacheKey) || { exists: false, title: item.word, description: null, thumbnail: null };
+    cached.exists = isAccepted;
+    if (isAccepted && !cached.description) {
+      cached.description = "✅ Validated by player vote";
+    }
+    entityCache.set(cacheKey, cached);
+  });
+
+  state.voting = null;
+  sendHost({ type: 'END_VOTING' });
+  evaluateRoundResults(true); // Call round evaluation again bypassing the voting check
+}
+
+// =====================================================================
 // BOT SIMULATION FOR SOLO & EXTRA FUN
 // =====================================================================
 function triggerBotAnswers() {
@@ -2373,6 +2460,8 @@ function handleHostMessage(conn, data) {
     }
   } else if (data.type === 'STEP_PROGRESS') {
     updateWaitingRoster();
+  } else if (data.type === 'SUBMIT_VOTES') {
+    handleVoteSubmission(data.playerId, data.votes);
   }
 }
 
@@ -2420,6 +2509,11 @@ function handleClientMessage(data) {
       state.cumulativeScores = data.cumulativeScores;
     }
     showResultsModal();
+  } else if (data.type === 'START_VOTING') {
+    if (state) state.voting = { items: data.items };
+    showVotingModal();
+  } else if (data.type === 'END_VOTING') {
+    $('votingModal').classList.add('hidden');
   } else if (data.type === 'KICKED') {
     msg('You were removed from the room by the host.');
     showPanel('setupPanel');
