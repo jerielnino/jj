@@ -255,6 +255,15 @@ body {
   color: #fff;
 }
 
+.game-card.npat .info-badge {
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.game-card.npat .play-button {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #fff;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .games-container {
@@ -398,6 +407,24 @@ body {
         </div>
       </div>
       <button class="play-button" onclick="event.preventDefault(); window.location.href='monopoly.html';">Play Monopoly</button>
+    </a>
+
+    <!-- Name Place Animal Thing Game Card -->
+    <a href="npat.html" class="game-card npat" style="text-decoration: none;">
+      <div class="game-header">
+        <div class="game-icon" style="font-size: 3.5rem; display: flex; gap: 6px; justify-content: center; align-items: center;">
+          <span style="font-size: 2.8rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));">📝</span>
+          <span style="font-size: 2.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));">🦁</span>
+          <span style="font-size: 2.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));">🎬</span>
+        </div>
+        <h2 class="game-title">Name Place Animal Thing</h2>
+        <p class="game-description">Film Edition speed word race! Think fast, guess unique words for the letter, and score maximum points over LAN.</p>
+        <div class="game-info">
+          <div class="info-badge">👥 1-8 Players</div>
+          <div class="info-badge">⏱️ 1-3 min</div>
+        </div>
+      </div>
+      <button class="play-button" onclick="event.preventDefault(); window.location.href='npat.html';">Play NPAT</button>
     </a>
   </div>
 </div>
