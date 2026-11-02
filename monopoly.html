@@ -260,8 +260,8 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   border-radius: 12px;
   box-shadow: 0 22px 55px rgba(0,0,0,0.75), inset 0 0 0 2px #1e293b;
   display: grid;
-  grid-template-columns: 1.42fr repeat(9, 1fr) 1.42fr;
-  grid-template-rows: 1.42fr repeat(9, 1fr) 1.42fr;
+  grid-template-columns: 1.38fr repeat(9, minmax(0, 1fr)) 1.38fr;
+  grid-template-rows: 1.38fr repeat(9, minmax(0, 1fr)) 1.38fr;
   position: relative;
   user-select: none;
   color: #0f172a;
@@ -619,64 +619,58 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   flex-direction: column;
   align-items: center;
   z-index: 3;
-  margin-top: 1px;
+  margin-top: 0;
 }
 .monopoly-red-logo {
   background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
-  border: 2.5px solid #ffffff;
-  box-shadow: 0 5px 14px rgba(0,0,0,0.45);
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.42);
   color: #fff;
   font-family: 'Arial Black', Impact, sans-serif;
-  font-size: clamp(0.9rem, 2.3vmin, 1.65rem);
+  font-size: clamp(0.76rem, 2.1vmin, 1.45rem);
   font-weight: 900;
-  letter-spacing: 2.5px;
-  padding: 2px 16px;
-  border-radius: 7px;
+  letter-spacing: 2px;
+  padding: 1px 12px;
+  border-radius: 6px;
   text-shadow: 1px 2px 0 #450a0a;
 }
-.monopoly-sub-logo {
-  font-size: clamp(0.46rem, 0.95vmin, 0.68rem);
-  font-weight: 800;
-  color: #064e3b;
-  letter-spacing: 0.8px;
-  margin-top: 2px;
-}
 
-/* Interactive Center Play Hub */
+/* Interactive Center Play Hub — Fitted for both iPhone & Desktop */
 .center-play-hub {
   z-index: 4;
-  background: rgba(15, 23, 42, 0.9);
+  background: rgba(15, 23, 42, 0.92);
   backdrop-filter: blur(10px);
   border: 1.5px solid rgba(255, 255, 255, 0.28);
-  border-radius: 14px;
-  padding: clamp(6px, 1.3vmin, 12px);
-  width: 90%;
-  max-width: 410px;
+  border-radius: 12px;
+  padding: clamp(5px, 1.2vmin, 11px);
+  width: 94%;
+  max-width: 350px;
   color: #fff;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(4px, 0.9vmin, 8px);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.52);
+  gap: clamp(4px, 0.9vmin, 7px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.52);
+  margin: auto 0;
 }
 
 .dice-stage {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: clamp(6px, 1.4vmin, 10px);
 }
 .die-box {
-  width: clamp(36px, 5.6vmin, 46px);
-  height: clamp(36px, 5.6vmin, 46px);
+  width: clamp(26px, 4.8vmin, 42px);
+  height: clamp(26px, 4.8vmin, 42px);
   background: radial-gradient(circle at 30% 28%, #ffffff 0%, #f1f5f9 65%, #cbd5e1 100%);
-  border-radius: 10px;
-  border: 2px solid #94a3b8;
-  box-shadow: 0 5px 12px rgba(0,0,0,0.55), inset 0 2px 3px #ffffff;
+  border-radius: 8px;
+  border: 1.5px solid #94a3b8;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 1px 2px #ffffff;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  padding: 5px;
+  padding: clamp(3px, 0.7vmin, 5px);
   gap: 2px;
   cursor: pointer;
 }
@@ -810,33 +804,127 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   width: 100%;
   background: rgba(255,255,255,0.09);
   border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 10px;
-  padding: 5px 10px;
-  text-align: center;
-  font-size: clamp(0.66rem, 1.25vmin, 0.82rem);
-}
-.mandatory-banner {
-  background: rgba(249, 115, 22, 0.22);
-  border: 1px solid #fb923c;
-  color: #ffedd5;
   border-radius: 8px;
-  padding: 3px 8px;
-  font-size: clamp(0.6rem, 1.1vmin, 0.74rem);
-  font-weight: 700;
-  width: 100%;
+  padding: clamp(3px, 0.8vmin, 6px) clamp(6px, 1.2vmin, 10px);
   text-align: center;
+  font-size: clamp(0.6rem, 1.2vmin, 0.8rem);
+  line-height: 1.22;
+}
+.hub-decision-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(4px, 1vmin, 8px);
+  width: 100%;
 }
 .hub-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: clamp(4px, 1vmin, 6px);
   justify-content: center;
   width: 100%;
 }
-.hub-actions button {
-  padding: clamp(5px, 0.9vmin, 8px) clamp(8px, 1.4vmin, 13px);
-  font-size: clamp(0.66rem, 1.2vmin, 0.82rem);
+.hub-actions button, .hub-decision-grid button {
+  padding: clamp(5px, 1vmin, 8px) clamp(6px, 1.2vmin, 12px);
+  font-size: clamp(0.62rem, 1.2vmin, 0.82rem);
   border-radius: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 600px) {
+  .main-header { padding: 4px 8px; }
+  .status-strip { padding: 3px 8px; font-size: 0.72rem; }
+  .bottom-toolbar { padding: 4px 6px; gap: 4px; }
+  .bottom-toolbar button { padding: 5px 8px; font-size: 0.74rem; }
+  .game-core { padding: 2px; overflow: hidden; }
+  .monopoly-board {
+    width: min(96vw, calc(100dvh - 132px));
+    height: min(96vw, calc(100dvh - 132px));
+    min-width: 290px;
+    min-height: 290px;
+    margin: 14px auto 2px;
+    border-width: 3px;
+    grid-template-columns: 1.32fr repeat(9, minmax(0, 1fr)) 1.32fr;
+    grid-template-rows: 1.32fr repeat(9, minmax(0, 1fr)) 1.32fr;
+  }
+  .cell-band { min-height: 5px; font-size: 0.36rem; }
+  .board-cell.side-left .cell-band,
+  .board-cell.side-right .cell-band { min-width: 5px; }
+  .cell-content { padding: 1px; gap: 0; }
+  .cell-name {
+    font-size: 0.34rem !important;
+    line-height: 0.96 !important;
+    letter-spacing: -0.3px;
+  }
+  .cell-icon {
+    font-size: 0.46rem !important;
+    line-height: 0.95 !important;
+  }
+  .board-cell.side-left .cell-icon,
+  .board-cell.side-right .cell-icon {
+    display: none;
+  }
+  .cell-price {
+    font-size: 0.32rem !important;
+    line-height: 0.95 !important;
+    padding: 0 1px;
+  }
+  .board-cell.corner-cell .cell-name { font-size: 0.38rem !important; }
+  .board-cell.corner-cell .cell-icon { font-size: 0.72rem !important; display: block; }
+  .board-center {
+    padding: 4px;
+    justify-content: center;
+    gap: 3px;
+  }
+  .center-deck-slot {
+    width: 44px;
+    height: 26px;
+    font-size: 0.34rem;
+    border-width: 1.5px;
+  }
+  .center-deck-slot.cc-slot { top: 3px; left: 3px; }
+  .center-deck-slot.chance-slot { bottom: 3px; right: 3px; }
+  .monopoly-red-logo {
+    font-size: 0.72rem;
+    padding: 1px 8px;
+    letter-spacing: 1.2px;
+  }
+  .center-play-hub {
+    width: 96%;
+    padding: 5px 6px;
+    gap: 4px;
+    border-radius: 10px;
+  }
+  .die-box {
+    width: 24px;
+    height: 24px;
+    padding: 3px;
+    gap: 1.5px;
+    border-radius: 6px;
+  }
+  .hub-space-card {
+    padding: 3px 5px;
+    font-size: 0.58rem;
+  }
+  .hub-decision-grid {
+    gap: 4px;
+  }
+  .hub-decision-grid button, .hub-actions button {
+    padding: 5px 4px;
+    font-size: 0.62rem;
+    border-radius: 6px;
+  }
+  .board-token {
+    width: 28px;
+    height: 28px;
+    font-size: 1.05rem;
+    border-width: 2px;
+  }
+  .board-token .token-name-tag {
+    font-size: 0.42rem;
+    top: -10px;
+    padding: 0 4px;
+  }
 }
 
 /* Bottom Toolbar */
@@ -1349,6 +1437,13 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
           </select>
         </label>
         <label style="font-size: 0.9rem; color: #c4e0d0; display:flex; align-items:center; gap:6px;">
+          $2M Pass GO Rule:
+          <select id="setupGoMoneyMode" style="padding: 8px 12px; font-size: 0.92rem;">
+            <option value="throughout" selected>Always ($2M Throughout Game)</option>
+            <option value="until_all_bought">Until All Properties Are Bought</option>
+          </select>
+        </label>
+        <label style="font-size: 0.9rem; color: #c4e0d0; display:flex; align-items:center; gap:6px;">
           Timer:
           <select id="setupTimerMode" style="padding: 8px 12px; font-size: 0.92rem;">
             <option value="untimed" selected>∞ Untimed Match</option>
@@ -1435,6 +1530,13 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
       <div><label>Player Limit</label><select id="playerLimit"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
       <div><label>Starting Balance</label><select id="lobbyStartBalance"><option value="15000000" selected>$15M (World Standard)</option><option value="1500000">$1.5M (Tracker Classic)</option><option value="10000000">$10M</option><option value="20000000">$20M</option></select></div>
       <div>
+        <label>$2M Pass GO Rule</label>
+        <select id="lobbyGoMoneyMode">
+          <option value="throughout" selected>Always ($2M Throughout Game)</option>
+          <option value="until_all_bought">Until All Properties Are Bought</option>
+        </select>
+      </div>
+      <div>
         <label>Match Timer Mode</label>
         <select id="lobbyTimerMode">
           <option value="untimed" selected>∞ Untimed Match</option>
@@ -1468,14 +1570,13 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 <main class="game-area hidden" id="gamePanel">
   <div class="status-strip">
     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-      <div id="turnLabel" style="font-size:0.92rem; font-weight:800; color:#ffe7a5;">Waiting...</div>
+      <div id="turnLabel" style="font-size:0.9rem; font-weight:800; color:#ffe7a5;">Waiting...</div>
       <div id="gameTimerBadge" class="timer-badge hidden">⏱️ --:--</div>
-      <span style="font-size:0.75rem; color:#93c5fd;">💡 Click any player above to view their properties</span>
+      <span id="hudGoRuleBadge" style="font-size:0.74rem; background:rgba(34,197,94,0.18); border:1px solid rgba(74,222,128,0.4); color:#86efac; padding:1px 8px; border-radius:99px; font-weight:700;">💰 Pass GO $2M: Active</span>
     </div>
-    <div style="display:flex; align-items:center; gap:10px; font-size:0.78rem; color:#c4e0d0;">
-      <span>🏦 Bank Net: <b id="hudBankNet">$0</b></span>
-      <span>🏠 Houses Left: <b id="hudHousesLeft">32</b></span>
-      <span>🏨 Hotels Left: <b id="hudHotelsLeft">12</b></span>
+    <div style="display:flex; align-items:center; gap:10px; font-size:0.76rem; color:#c4e0d0;">
+      <span>🏠 Houses: <b id="hudHousesLeft">32</b></span>
+      <span>🏨 Hotels: <b id="hudHotelsLeft">12</b></span>
       <button id="inGameRejoinBtn" type="button" class="btn-alt hidden" style="padding:2px 8px; font-size:0.74rem;">🔄 Reconnect</button>
     </div>
   </div>
@@ -1490,14 +1591,11 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
     </div>
   </div>
 
-  <!-- Bottom Action & Tracker Toolbar -->
+  <!-- Streamlined Automated Bottom Toolbar -->
   <div class="bottom-toolbar">
     <button id="openPropsModalBtn" type="button" class="btn-alt">🏘️ Properties &amp; Build</button>
-    <button id="openPlayersTrackerBtn" type="button" class="btn-alt">👥 Players &amp; Bank Tracker</button>
-    <button id="openLandedResolverBtn" type="button" class="btn-alt">📍 Landed On Resolver</button>
-    <button id="openTransferModalBtn" type="button" class="btn-alt">💸 Transfer Money</button>
-    <button id="openLedgerModalBtn" type="button" class="btn-alt">📊 Who Gives Whom &amp; Log</button>
-    <button id="passGoQuickBtn" type="button" class="btn-good" title="Quick Collect $2M Pass GO">+ $2M Pass GO</button>
+    <button id="openPlayersTrackerBtn" type="button" class="btn-alt">👥 Players &amp; Bank</button>
+    <button id="openTransferModalBtn" type="button" class="btn-alt">💸 Custom Transfer</button>
   </div>
 </main>
 
@@ -1932,7 +2030,7 @@ const PRESET_EMOJIS = [
 
 let peer=null, host=false, solo=false, roomCode='', myId='', hostId='';
 let connections=new Map(), transportPlayers=new Map(), players=[], state=null;
-let revision=0, participantLimit=4, startingBalanceConfig=15000000, timerMode='untimed', timeLimitValue=15, gameClockInterval=null;
+let revision=0, participantLimit=4, startingBalanceConfig=15000000, goMoneyMode='throughout', timerMode='untimed', timeLimitValue=15, gameClockInterval=null;
 let botActionRevision=-1, lastWinnerTracker=null, lastSeenEventId=0, lastSeenCardId=0, lastSeenPurchaseId=0, lastAnimatedRollSeq=0, diceAnimTimer=null;
 let visualPositions = {};
 let steppingPlayerId = null;
@@ -2164,15 +2262,19 @@ function syncTimerControlsUI(fromSetup=false) {
     timerMode = $('setupTimerMode')?.value || 'untimed';
     timeLimitValue = Math.max(1, Number($('setupTimeLimitInput')?.value) || (timerMode === 'turn' ? 45 : 15));
     startingBalanceConfig = Number($('setupStartBalance')?.value) || 15000000;
+    goMoneyMode = $('setupGoMoneyMode')?.value || 'throughout';
   } else {
     timerMode = $('lobbyTimerMode')?.value || timerMode;
     timeLimitValue = Math.max(1, Number($('lobbyTimeLimitInput')?.value) || timeLimitValue);
     startingBalanceConfig = Number($('lobbyStartBalance')?.value) || startingBalanceConfig;
+    goMoneyMode = $('lobbyGoMoneyMode')?.value || goMoneyMode;
   }
   if ($('setupTimerMode')) $('setupTimerMode').value = timerMode;
   if ($('lobbyTimerMode')) $('lobbyTimerMode').value = timerMode;
   if ($('setupStartBalance')) $('setupStartBalance').value = String(startingBalanceConfig);
   if ($('lobbyStartBalance')) $('lobbyStartBalance').value = String(startingBalanceConfig);
+  if ($('setupGoMoneyMode')) $('setupGoMoneyMode').value = goMoneyMode;
+  if ($('lobbyGoMoneyMode')) $('lobbyGoMoneyMode').value = goMoneyMode;
   if ($('setupTimeLimitInput') && document.activeElement !== $('setupTimeLimitInput')) $('setupTimeLimitInput').value = String(timeLimitValue);
   if ($('lobbyTimeLimitInput') && document.activeElement !== $('lobbyTimeLimitInput')) $('lobbyTimeLimitInput').value = String(timeLimitValue);
   if ($('setupTimeLimitWrap')) $('setupTimeLimitWrap').classList.toggle('hidden', timerMode === 'untimed');
@@ -2181,7 +2283,8 @@ function syncTimerControlsUI(fromSetup=false) {
   if ($('lobbyTimeLimitLabel')) $('lobbyTimeLimitLabel').textContent = (timerMode === 'turn') ? 'Turn Limit (Secs)' : 'Match Limit (Mins)';
   if ($('lobbyRulesBadge')) {
     const modeDesc = (timerMode === 'match') ? `⏱️ Timed Match (${timeLimitValue}m)` : (timerMode === 'turn') ? `⚡ Timed Turns (${timeLimitValue}s)` : `∞ Untimed`;
-    $('lobbyRulesBadge').textContent = `💰 Starting Cash: ${fmt(startingBalanceConfig)}  ·  Pass GO: $2M  ·  ${modeDesc}`;
+    const goDesc = (goMoneyMode === 'until_all_bought') ? 'Pass GO $2M: Until All Props Bought' : 'Pass GO $2M: Always';
+    $('lobbyRulesBadge').textContent = `💰 Starting Cash: ${fmt(startingBalanceConfig)}  ·  ${goDesc}  ·  ${modeDesc}`;
   }
 }
 
@@ -2397,6 +2500,34 @@ function hotelsInUse() {
 }
 function availableHouses() { return HOUSE_POOL - housesInUse(); }
 function availableHotels() { return HOTEL_POOL - hotelsInUse(); }
+
+
+function areAllPropertiesBought() {
+  if (!state || !state.properties) return false;
+  return ownableDefs().every(def => !!state.properties[def.id]?.ownerId);
+}
+
+function unownedPropertiesCount() {
+  if (!state || !state.properties) return ownableDefs().length;
+  return ownableDefs().filter(def => !state.properties[def.id]?.ownerId).length;
+}
+
+function canCollectPassGo() {
+  if (!state) return true;
+  if (state.goMoneyMode === 'until_all_bought' && areAllPropertiesBought()) {
+    return false;
+  }
+  return true;
+}
+
+function awardPassGoIfEligible(playerId, reasonLabel='Passed GO') {
+  if (!state) return false;
+  if (canCollectPassGo()) {
+    recordTransfer(BANK, playerId, PASS_GO_AMOUNT, reasonLabel);
+    return true;
+  }
+  return false;
+}
 
 function ownedPropsFor(playerId) {
   if (!state || !state.properties) return [];
@@ -3005,6 +3136,7 @@ function startGame() {
     started: true,
     players: players.map(p => p.id),
     startingBalance: startCash,
+    goMoneyMode: goMoneyMode || 'throughout',
     balances: Object.fromEntries(players.map(p => [p.id, startCash])),
     positions: Object.fromEntries(players.map(p => [p.id, 0])),
     inJail: Object.fromEntries(players.map(p => [p.id, false])),
@@ -3111,7 +3243,17 @@ function resolveSpaceLanding(playerId, spaceIdx, diceSum) {
       if (!st.rentByPlayer) st.rentByPlayer = {};
       st.rentByPlayer[playerId] = (st.rentByPlayer[playerId] || 0) + rent;
       recordTransfer(playerId, st.ownerId, rent, `Rent: ${def.name}${ownerInJail ? ' (owner in jail)' : ''}`, { propId: def.id });
-      state.lastEventText = `🏠 ${pName} paid ${fmt(rent)} rent to ${ownerP?.name||'Owner'} for ${def.name}${ownerInJail ? ' (50% Jail rule)' : ''}`;
+      state.lastPurchase = {
+        id: (state.lastPurchase?.id || 0) + 1,
+        propId: def.id,
+        propName: def.name,
+        group: def.group,
+        price: rent,
+        buyerId: st.ownerId,
+        payerId: playerId,
+        mode: 'AUTO RENT PAID'
+      };
+      state.lastEventText = `🏠 ${pName} auto-paid ${fmt(rent)} rent to ${ownerP?.name||'Owner'} for ${def.name}${ownerInJail ? ' (50% Jail rule)' : ''}`;
       state.lastEventId++;
     } else if (def && st && !st.ownerId) {
       // Mandatory Buy or Auction rule: cannot leave an unowned property unowned!
@@ -3148,9 +3290,9 @@ function applyDrawnCardEffect(playerId, card, diceSum) {
     const oldPos = state.positions[playerId] || 0;
     const newPos = card.target;
     if (newPos < oldPos && newPos !== 0) {
-      recordTransfer(BANK, playerId, PASS_GO_AMOUNT, 'Passed GO');
+      awardPassGoIfEligible(playerId, 'Passed GO');
     } else if (newPos === 0) {
-      recordTransfer(BANK, playerId, PASS_GO_AMOUNT, 'Landed on GO');
+      awardPassGoIfEligible(playerId, 'Landed on GO');
     }
     state.positions[playerId] = newPos;
     inspectedSpaceIdx = newPos;
@@ -3700,7 +3842,7 @@ function handleAction(id, d) {
     const oldPos = state.positions[id] || 0;
     const newPos = (oldPos + sum) % 40;
     if (oldPos + sum >= 40) {
-      recordTransfer(BANK, id, PASS_GO_AMOUNT, 'Passed GO');
+      awardPassGoIfEligible(id, 'Passed GO');
     }
     state.positions[id] = newPos;
     inspectedSpaceIdx = newPos;
@@ -3770,12 +3912,18 @@ function showPurchaseSideBadge(purchase) {
     }
   }, 1850);
 
+  const isRent = purchase.mode === 'AUTO RENT PAID';
+  const payer = purchase.payerId ? playerById(purchase.payerId) : null;
+  const subLine = isRent
+    ? `💸 <b>${esc(payer?.name || 'Player')}</b> → <b>${esc(buyerName)}</b>`
+    : `${buyerAvatar} Owned by <b>${esc(buyerName)}</b>`;
+  const sealIcon = isRent ? '💸' : '✓';
   container.innerHTML = `<div class="purchase-side-badge" style="border-left: 6px solid ${col};">
-    <div class="psb-seal">✓</div>
+    <div class="psb-seal">${sealIcon}</div>
     <div class="psb-info">
       <div class="psb-tag"><span>✨</span> <span>${esc(purchase.mode || 'PURCHASED')}</span></div>
       <div class="psb-prop">${esc(purchase.propName)} · ${esc(priceStr)}</div>
-      <div class="psb-buyer">${buyerAvatar} Owned by <b>${esc(buyerName)}</b></div>
+      <div class="psb-buyer">${subLine}</div>
     </div>
   </div>`;
   renderBoardDomOnly();
@@ -4093,47 +4241,43 @@ function renderBoardDomOnly() {
     <div class="center-world-watermark"></div>
 
     <!-- Top-Left Community Chest Deck -->
-    <div class="center-deck-slot cc-slot" id="centerCCSlot" title="Click to view Community Chest info">
+    <div class="center-deck-slot cc-slot" id="centerCCSlot" title="Community Chest Deck">
       <span style="font-size:1.3em;">📦</span>
       <span>Community Chest</span>
     </div>
 
     <!-- Bottom-Right Chance Deck -->
-    <div class="center-deck-slot chance-slot" id="centerChanceSlot" title="Click to view Chance info">
+    <div class="center-deck-slot chance-slot" id="centerChanceSlot" title="Chance Deck">
       <span style="font-size:1.3em;">❓</span>
       <span>Chance</span>
     </div>
 
     <div class="center-brand-banner">
       <div class="monopoly-red-logo">MONOPOLY</div>
-      <div class="monopoly-sub-logo">HERE &amp; NOW · THE WORLD EDITION · BUSINESS BOARD</div>
     </div>
 
     <div class="center-play-hub">
       <div class="dice-stage">
         <div class="die-box" id="dieBox1" title="Die 1: ${d1}">${renderMiniDiePipsHTML(d1)}</div>
         <div class="die-box" id="dieBox2" title="Die 2: ${d2}">${renderMiniDiePipsHTML(d2)}</div>
-        <div style="text-align:left; font-size:0.78rem;">
-          <div style="font-weight:800; color:#ffe7a5;">Roll: ${d1} + ${d2} = ${d1 + d2} ${d1===d2 ? '⚡(Doubles)' : ''}</div>
-          <div style="color:#cbd5e1; font-size:0.7rem;">3D Full-Board Dice · Click space for deed</div>
+        <div style="text-align:left; font-size:clamp(0.68rem, 1.3vmin, 0.84rem);">
+          <div style="font-weight:850; color:#ffe7a5;">Roll: ${d1} + ${d2} = ${d1 + d2} ${d1===d2 ? '⚡' : ''}</div>
         </div>
       </div>
 
       <div class="hub-space-card">${spaceSummaryHTML}</div>
 
-      ${hasMandatoryDecision ? `<div class="mandatory-banner">⚠️ Mandatory Rule: ${esc(currP?.name||'Player')} must <b>Buy</b> or <b>Auction</b> ${esc(pendingDef.name)} — cannot leave it unowned!</div>` : ''}
+      ${(canBuy || canAuction) ? `
+      <div class="hub-decision-grid">
+        <button type="button" id="hubBuyBtn" class="btn-good">🏠 Buy (${fmt(pendingDef.price)})</button>
+        <button type="button" id="hubAuctionBtn" class="btn-auction">🔨 Auction</button>
+      </div>` : ''}
 
       <div class="hub-actions">
-        ${canBail ? `<button type="button" id="hubBailBtn" class="btn-alt">🔓 ${(state.jailFreeCards?.[myId]>0)?'Use Jail Pass':'Pay $500k Bail'}</button>` : ''}
-        <button type="button" id="hubRollBtn" ${canRoll?'':'disabled'}>🎲 ${state.canRollAgain ? 'Roll Doubles Again!' : 'Roll Dice'}</button>
-        ${canBuy ? `<button type="button" id="hubBuyBtn" class="btn-good">🏠 Buy ${esc(pendingDef.name)} (${fmt(pendingDef.price)})</button>` : ''}
-        ${canAuction ? `<button type="button" id="hubAuctionBtn" class="btn-auction">🔨 Auction ${esc(pendingDef.name)}</button>` : ''}
-        <button type="button" id="hubEndTurnBtn" class="btn-alt" ${canEnd?'':'disabled'}>✅ End Turn</button>
+        ${canBail ? `<button type="button" id="hubBailBtn" class="btn-alt" style="flex:1;">🔓 ${(state.jailFreeCards?.[myId]>0)?'Jail Pass':'Bail $500k'}</button>` : ''}
+        <button type="button" id="hubRollBtn" style="flex:1;" ${canRoll?'':'disabled'}>🎲 ${state.canRollAgain ? 'Roll Again' : 'Roll Dice'}</button>
+        <button type="button" id="hubEndTurnBtn" class="btn-alt" style="flex:1;" ${canEnd?'':'disabled'}>✅ End Turn</button>
       </div>
-    </div>
-
-    <div style="font-size:0.64rem; color:#064e3b; font-weight:800; z-index:3; text-align:center; max-width:64%; line-height:1.2;">
-      Unowned Landing = Buy or Auction · Owner in Jail = 50% Rent · Full Group = 2× Base Rent &amp; Houses
     </div>
   </div>`;
 
@@ -4199,10 +4343,23 @@ function renderGame() {
     }
   }
 
-  const bStats = bankStats();
-  if ($('hudBankNet')) $('hudBankNet').textContent = fmt(bStats.net);
   $('hudHousesLeft').textContent = String(availableHouses());
   $('hudHotelsLeft').textContent = String(availableHotels());
+  if ($('hudGoRuleBadge')) {
+    const leftCount = unownedPropertiesCount();
+    if (state.goMoneyMode === 'until_all_bought') {
+      if (leftCount > 0) {
+        $('hudGoRuleBadge').textContent = `💰 $2M GO: Until All Bought (${leftCount} left)`;
+        $('hudGoRuleBadge').style.color = '#fde047';
+      } else {
+        $('hudGoRuleBadge').textContent = `🚫 $2M GO: Ended (All Bought)`;
+        $('hudGoRuleBadge').style.color = '#fca5a5';
+      }
+    } else {
+      $('hudGoRuleBadge').textContent = `💰 $2M GO: Always On`;
+      $('hudGoRuleBadge').style.color = '#86efac';
+    }
+  }
 
   updatePlayers();
   const myTurn = state.current === myId && !state.winner;
@@ -5136,7 +5293,7 @@ $('openPlayersTrackerBtn').onclick = () => {
   switchTrackerHubTab('players');
   $('allPropsModal').classList.remove('hidden');
 };
-$('openLandedResolverBtn').onclick = () => {
+if($('openLandedResolverBtn')) $('openLandedResolverBtn').onclick = () => {
   switchTrackerHubTab('landed');
   $('allPropsModal').classList.remove('hidden');
 };
@@ -5337,7 +5494,7 @@ function renderLedgerModalContent() {
     : '<div style="color:#cbd5e1;font-size:0.84rem;text-align:center;">No transactions recorded yet.</div>';
 }
 
-$('openLedgerModalBtn').onclick = () => {
+if($('openLedgerModalBtn')) $('openLedgerModalBtn').onclick = () => {
   renderLedgerModalContent();
   $('ledgerModal').classList.remove('hidden');
 };
@@ -5346,7 +5503,7 @@ $('ledgerModal').onclick = e => { if (e.target === $('ledgerModal')) $('ledgerMo
 $('undoTxBtn').onclick = () => sendAct('UNDO_TX');
 $('clearHistoryModalBtn').onclick = () => sendAct('CLEAR_HISTORY');
 
-$('passGoQuickBtn').onclick = () => sendAct('PASS_GO', { targetId: myId });
+if($('passGoQuickBtn')) $('passGoQuickBtn').onclick = () => sendAct('PASS_GO', { targetId: myId });
 $('closeCardDrawnBtn').onclick = () => $('cardDrawnModal').classList.add('hidden');
 $('cardDrawnModal').onclick = e => { if (e.target === $('cardDrawnModal')) $('cardDrawnModal').classList.add('hidden'); };
 
@@ -5449,6 +5606,8 @@ if($('lobbyNameInput')) $('lobbyNameInput').addEventListener('input', e => handl
 if($('setupTimerMode')) $('setupTimerMode').onchange = () => syncTimerControlsUI(true);
 if($('setupTimeLimitInput')) $('setupTimeLimitInput').oninput = () => syncTimerControlsUI(true);
 if($('setupStartBalance')) $('setupStartBalance').onchange = () => syncTimerControlsUI(true);
+if($('setupGoMoneyMode')) $('setupGoMoneyMode').onchange = () => syncTimerControlsUI(true);
+if($('lobbyGoMoneyMode')) $('lobbyGoMoneyMode').onchange = () => { if(!host) return; syncTimerControlsUI(false); saveHostSession(); sendHost({ type: 'SETTINGS', participantLimit, startingBalanceConfig, goMoneyMode, timerMode, timeLimitValue }); };
 if($('lobbyTimerMode')) $('lobbyTimerMode').onchange = () => { if(!host) return; syncTimerControlsUI(false); saveHostSession(); sendHost({ type: 'SETTINGS', participantLimit, startingBalanceConfig, timerMode, timeLimitValue }); };
 if($('lobbyTimeLimitInput')) $('lobbyTimeLimitInput').oninput = () => { if(!host) return; syncTimerControlsUI(false); saveHostSession(); sendHost({ type: 'SETTINGS', participantLimit, startingBalanceConfig, timerMode, timeLimitValue }); };
 if($('lobbyStartBalance')) $('lobbyStartBalance').onchange = () => { if(!host) return; syncTimerControlsUI(false); saveHostSession(); sendHost({ type: 'SETTINGS', participantLimit, startingBalanceConfig, timerMode, timeLimitValue }); };
