@@ -287,11 +287,14 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   min-width: 0;
   min-height: 0;
 }
+.board-cell {
+  z-index: 10;
+}
 .board-cell.has-tokens {
-  z-index: 18;
+  z-index: 95 !important;
 }
 .board-cell.has-tokens:hover {
-  z-index: 25;
+  z-index: 105 !important;
 }
 .board-cell:hover {
   filter: brightness(0.97);
@@ -475,35 +478,74 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   left: 2px;
 }
 
-/* Player Tokens on Cell — Extra Large, Floating ABOVE the Card Tile */
+/* Player Tokens on Cell — Always on Top & Non-Colliding Multi-Token Layout */
 .cell-tokens {
   position: absolute;
-  bottom: calc(100% - 8px);
+  bottom: calc(100% - 10px);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: row;
   align-items: flex-end;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   width: max-content;
   pointer-events: none;
-  z-index: 45;
+  z-index: 110;
+}
+/* On left and right vertical columns, place tokens slightly inward/centered so vertically adjacent tiles never collide */
+.board-cell.side-left .cell-tokens {
+  bottom: auto;
+  top: -8px;
+  left: 52%;
+  transform: translateX(-50%);
+}
+.board-cell.side-right .cell-tokens {
+  bottom: auto;
+  top: -8px;
+  left: 48%;
+  transform: translateX(-50%);
 }
 .board-token {
-  width: clamp(38px, 6.2vmin, 54px);
-  height: clamp(38px, 6.2vmin, 54px);
+  width: clamp(34px, 5.2vmin, 46px);
+  height: clamp(34px, 5.2vmin, 46px);
   border-radius: 50%;
   background: radial-gradient(circle at 32% 26%, rgba(255,255,255,0.6), rgba(255,255,255,0) 58%), var(--tcolor, #f0c93d);
-  border: 3px solid #ffffff;
-  box-shadow: 0 8px 18px rgba(0,0,0,0.88), 0 0 0 2.5px #0f172a;
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.88), 0 0 0 2px #0f172a;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(1.45rem, 3.2vmin, 2.15rem);
+  font-size: clamp(1.25rem, 2.7vmin, 1.85rem);
   line-height: 1;
   transition: transform 0.25s, box-shadow 0.25s;
   position: relative;
+  flex-shrink: 0;
+}
+/* When 2 or more players share the same space, scale slightly & fan out cleanly so they never collide */
+.cell-tokens.multi-tokens {
+  gap: 5px;
+}
+.cell-tokens.multi-tokens .board-token {
+  width: clamp(28px, 4.2vmin, 36px);
+  height: clamp(28px, 4.2vmin, 36px);
+  font-size: clamp(1.02rem, 2.1vmin, 1.4rem);
+}
+.board-token .token-jail-lock {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: #fff;
+  border: 1.5px solid #0f172a;
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  font-size: 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
 }
 /* Downward pointer triangle connecting the floating avatar to its card tile below */
 .board-token::after {
@@ -551,6 +593,7 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   grid-column: 2 / 11;
   grid-row: 2 / 11;
   position: relative;
+  z-index: 2;
   background:
     radial-gradient(circle at 50% 42%, rgba(255,255,255,0.52) 0%, rgba(45, 149, 116, 0.25) 62%, rgba(15, 76, 58, 0.5) 100%),
     repeating-linear-gradient(135deg, rgba(16, 95, 70, 0.06) 0px, rgba(16, 95, 70, 0.06) 10px, transparent 10px, transparent 20px),
@@ -973,26 +1016,52 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 }
 
 
-/* === COMPACT ANIMATED SIDE PURCHASE BADGE (DOES NOT SPAN FULL BOARD) === */
-.purchase-side-badge {
+/* === COMPACT ANIMATED SIDE MONEY & PURCHASE BANNER STACK === */
+#purchaseBadgeContainer {
   position: absolute;
-  bottom: 18px;
-  left: 18px;
+  bottom: 14px;
+  left: 14px;
   z-index: 260;
-  width: clamp(220px, 28vw, 285px);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  pointer-events: none;
+  max-width: min(300px, 88vw);
+}
+.purchase-side-badge {
+  position: relative;
+  width: clamp(225px, 30vw, 295px);
   background: linear-gradient(145deg, rgba(6, 78, 59, 0.96) 0%, rgba(4, 47, 46, 0.98) 100%);
   border: 2px solid #34d399;
-  border-radius: 16px;
-  padding: 10px 14px;
+  border-radius: 15px;
+  padding: 9px 13px;
   color: #fff;
-  box-shadow: 0 14px 32px rgba(0,0,0,0.65), 0 0 22px rgba(52, 211, 153, 0.45);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.7), 0 0 18px rgba(52, 211, 153, 0.4);
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 10px;
   pointer-events: none;
   transform-origin: bottom left;
-  animation: purchaseBadgePopIn 3.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: purchaseBadgePopIn 3.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   overflow: hidden;
+}
+.purchase-side-badge.banner-deduct {
+  background: linear-gradient(145deg, rgba(127, 29, 29, 0.96) 0%, rgba(69, 10, 10, 0.98) 100%);
+  border-color: #f87171;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.7), 0 0 18px rgba(248, 113, 113, 0.4);
+}
+.purchase-side-badge.banner-deduct .psb-seal {
+  background: radial-gradient(circle at 30% 30%, #fca5a5, #ef4444 65%, #991b1b);
+}
+.purchase-side-badge.banner-deduct .psb-tag {
+  background: rgba(248, 113, 113, 0.22);
+  border-color: #fca5a5;
+  color: #fecaca;
+}
+.purchase-side-badge.banner-add {
+  background: linear-gradient(145deg, rgba(6, 95, 70, 0.96) 0%, rgba(6, 78, 59, 0.98) 100%);
+  border-color: #fde047;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.7), 0 0 20px rgba(253, 224, 71, 0.45);
 }
 .purchase-side-badge::before {
   content: "";
@@ -1095,29 +1164,31 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   z-index: 22;
 }
 
-/* === COMPACT SIDE CHANCE & COMMUNITY CHEST POPOVER (DOES NOT COVER BOARD) === */
+/* === COMPACT CENTER-OF-BOARD CHANCE & COMMUNITY CHEST CARD (SHOWN IN MIDDLE ONLY) === */
 .modal.compact-card-popover {
-  inset: auto 18px 62px auto;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   backdrop-filter: none;
-  padding: 0;
-  width: auto;
-  height: auto;
+  padding: 12px;
   z-index: 270;
   pointer-events: none;
 }
 .modal.compact-card-popover .modal-box {
   pointer-events: auto;
-  width: clamp(235px, 28vw, 295px);
+  width: clamp(240px, 68vw, 315px);
   padding: 14px 16px;
   border-radius: 16px;
-  box-shadow: 0 16px 38px rgba(0,0,0,0.78), 0 0 20px rgba(255, 214, 111, 0.3);
-  animation: compactCardFlipIn 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
-  text-align: left;
+  border: 2.5px solid #fde047;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.85), 0 0 24px rgba(253, 224, 71, 0.45);
+  animation: compactCardCenterPop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+  text-align: center;
 }
-@keyframes compactCardFlipIn {
-  0%   { opacity: 0; transform: translateX(40px) scale(0.75) rotateY(-35deg); }
-  100% { opacity: 1; transform: translateX(0) scale(1) rotateY(0deg); }
+@keyframes compactCardCenterPop {
+  0%   { opacity: 0; transform: scale(0.68) rotateX(25deg); }
+  100% { opacity: 1; transform: scale(1) rotateX(0deg); }
 }
 
 /* Modals */
@@ -1594,8 +1665,10 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   <!-- Streamlined Automated Bottom Toolbar -->
   <div class="bottom-toolbar">
     <button id="openPropsModalBtn" type="button" class="btn-alt">🏘️ Properties &amp; Build</button>
+    <button id="openTradeModalBtn" type="button" class="btn-good">🤝 Trade</button>
     <button id="openPlayersTrackerBtn" type="button" class="btn-alt">👥 Players &amp; Bank</button>
     <button id="openTransferModalBtn" type="button" class="btn-alt">💸 Custom Transfer</button>
+    <button id="openLedgerModalBtn" type="button" class="btn-alt">📜 Recent Transactions</button>
   </div>
 </main>
 
@@ -1716,6 +1789,43 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   </div>
 </div>
 
+<!-- TRADE PROPERTIES & CASH MODAL -->
+<div id="tradeModal" class="modal hidden">
+  <div class="modal-box" style="width: 680px; max-width: 96%;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-shrink:0;">
+      <h2 style="margin:0; font-size:1.45rem;">🤝 Trade Properties &amp; Cash</h2>
+      <button id="closeTradeModalBtn" class="icon-btn" type="button">✕</button>
+    </div>
+    <div class="modal-scroll-body" style="text-align:left;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-bottom:12px;">
+        <!-- Side A -->
+        <div style="background:rgba(0,0,0,0.32); border:1px solid rgba(255,255,255,0.16); border-radius:12px; padding:12px;">
+          <label style="font-size:0.78rem; color:#ffe7a5; font-weight:800; display:block; margin-bottom:4px;">Player 1 (Offering)</label>
+          <select id="tradePlayerASelect" style="width:100%; padding:8px; margin-bottom:10px;"></select>
+          <div style="font-size:0.76rem; color:#cbd5e1; margin-bottom:4px;">Cash Offered (Max: <b id="tradeMaxCashA">$0</b>):</div>
+          <input id="tradeCashAInput" type="text" placeholder="e.g. 500k or 0" style="width:100%; padding:7px 10px; margin-bottom:10px;">
+          <div style="font-size:0.76rem; color:#cbd5e1; margin-bottom:4px;">Properties Offered (Unimproved):</div>
+          <div id="tradePropsAList" style="max-height:150px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; background:rgba(0,0,0,0.25); padding:6px; border-radius:8px;"></div>
+        </div>
+        <!-- Side B -->
+        <div style="background:rgba(0,0,0,0.32); border:1px solid rgba(255,255,255,0.16); border-radius:12px; padding:12px;">
+          <label style="font-size:0.78rem; color:#93c5fd; font-weight:800; display:block; margin-bottom:4px;">Player 2 (Trade Partner)</label>
+          <select id="tradePlayerBSelect" style="width:100%; padding:8px; margin-bottom:10px;"></select>
+          <div style="font-size:0.76rem; color:#cbd5e1; margin-bottom:4px;">Cash Requested (Max: <b id="tradeMaxCashB">$0</b>):</div>
+          <input id="tradeCashBInput" type="text" placeholder="e.g. 500k or 0" style="width:100%; padding:7px 10px; margin-bottom:10px;">
+          <div style="font-size:0.76rem; color:#cbd5e1; margin-bottom:4px;">Properties Requested (Unimproved):</div>
+          <div id="tradePropsBList" style="max-height:150px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; background:rgba(0,0,0,0.25); padding:6px; border-radius:8px;"></div>
+        </div>
+      </div>
+      <div id="tradeStatusMsg" style="font-size:0.84rem; color:#ffe7a5; margin-bottom:10px; text-align:center; min-height:1.2em;"></div>
+      <div style="display:flex; gap:8px;">
+        <button id="executeTradeBtn" type="button" class="btn-good" style="flex:2; padding:10px;">🤝 Execute Trade</button>
+        <button id="cancelTradeBtn" type="button" class="btn-alt" style="flex:1; padding:10px;">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- TRANSFER MONEY & QUICK AMOUNTS MODAL -->
 <div id="transferModal" class="modal hidden">
   <div class="modal-box" style="width: 440px;">
@@ -1759,34 +1869,29 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   </div>
 </div>
 
-<!-- WHO GIVES WHOM, SIMPLIFIED SETTLEMENT & TRANSACTION HISTORY MODAL -->
+<!-- RECENT TRANSACTIONS & ACTIVITY LOG MODAL -->
 <div id="ledgerModal" class="modal hidden">
-  <div class="modal-box" style="width: 700px; max-width: 96%;">
+  <div class="modal-box" style="width: 620px; max-width: 96%;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-shrink:0;">
-      <h2 style="margin:0; font-size:1.45rem;">📊 Tracker Ledger &amp; History</h2>
+      <h2 style="margin:0; font-size:1.4rem;">📜 Recent Transactions &amp; Log</h2>
       <button id="closeLedgerModalBtn" class="icon-btn" type="button">✕</button>
     </div>
     <div class="modal-scroll-body" style="text-align:left;">
-      <div style="margin-bottom:14px;">
-        <div style="font-size:0.85rem; font-weight:700; color:#ffe7a5; margin-bottom:6px;">Who Gives Whom (Net Direct Flows — Row gives Column)</div>
-        <div style="overflow-x:auto; background:rgba(0,0,0,0.28); border-radius:10px; padding:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+        <span style="font-size:0.85rem; font-weight:700; color:#ffe7a5;">All Automated &amp; Manual Transactions (Newest First)</span>
+        <div style="display:flex; gap:6px;">
+          <button id="undoTxBtn" type="button" class="btn-alt" style="padding:5px 10px; font-size:0.75rem;">↩ Undo Last</button>
+          <button id="clearHistoryModalBtn" type="button" class="btn-danger" style="padding:5px 10px; font-size:0.75rem;">🧹 Clear History (New Round)</button>
+        </div>
+      </div>
+      <div id="modalHistoryList" class="score-list" style="margin-bottom:12px; max-height:55vh; overflow-y:auto;"></div>
+      <details style="background:rgba(0,0,0,0.22); border-radius:10px; padding:8px 12px; font-size:0.8rem; color:#cbd5e1;">
+        <summary style="cursor:pointer; font-weight:700; color:#ffe7a5;">📊 Net Flows &amp; Simplified Settlement</summary>
+        <div style="margin-top:8px; overflow-x:auto;">
           <table class="ledger-table" id="modalLedgerTable"></table>
         </div>
-      </div>
-      <div style="margin-bottom:14px;">
-        <div style="font-size:0.85rem; font-weight:700; color:#ffe7a5; margin-bottom:6px;">Simplified Settlement (Fewest Direct Payments)</div>
-        <div id="modalSettlementList" class="score-list" style="margin-bottom:0; max-height:130px; overflow-y:auto;"></div>
-      </div>
-      <div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
-          <span style="font-size:0.85rem; font-weight:700; color:#ffe7a5;">Transaction History</span>
-          <div style="display:flex; gap:6px;">
-            <button id="undoTxBtn" type="button" class="btn-alt" style="padding:4px 10px; font-size:0.75rem;">↩ Undo Last</button>
-            <button id="clearHistoryModalBtn" type="button" class="btn-danger" style="padding:4px 10px; font-size:0.75rem;">🧹 Clear History (New Round)</button>
-          </div>
-        </div>
-        <div id="modalHistoryList" class="score-list" style="margin-bottom:0; max-height:200px; overflow-y:auto;"></div>
-      </div>
+        <div id="modalSettlementList" class="score-list" style="margin-top:8px; margin-bottom:0; max-height:110px; overflow-y:auto;"></div>
+      </details>
     </div>
   </div>
 </div>
@@ -1950,7 +2055,7 @@ const BOARD_SPACES = [
   { idx: 7, kind: 'chance', name: 'Chance', sub: 'Draw Card', icon: '❓' },
   { idx: 8, kind: 'prop', propId: 'barcelona', icon: '⛪' },
   { idx: 9, kind: 'prop', propId: 'athens', icon: '🏛️' },
-  { idx: 10, kind: 'jail', name: 'In Jail', sub: 'Just Visiting', icon: '⛓️' },
+  { idx: 10, kind: 'jail', name: 'Jail / Visit', sub: 'Visiting', icon: '⛓️' },
 
   // Left Column (11 to 20, Bottom to Top)
   { idx: 11, kind: 'prop', propId: 'istanbul', icon: '🕌' },
@@ -2558,6 +2663,19 @@ function computePlayerNetWorth(pid) {
   return total;
 }
 
+function pushMoneyBanner(bannerObj) {
+  if (!state) return;
+  if (!Array.isArray(state.moneyBanners)) state.moneyBanners = [];
+  state.moneyBanners.push({
+    id: (state.lastBannerSeq || 0) + 1,
+    ...bannerObj
+  });
+  state.lastBannerSeq = (state.lastBannerSeq || 0) + 1;
+  if (state.moneyBanners.length > 6) {
+    state.moneyBanners = state.moneyBanners.slice(-6);
+  }
+}
+
 function recordTransfer(fromId, toId, amount, note, extra={}) {
   if (!state || amount < 0) return;
   if (amount > 0) {
@@ -2572,6 +2690,44 @@ function recordTransfer(fromId, toId, amount, note, extra={}) {
     ts: Date.now(),
     ...extra
   });
+  // Emit animated money banner for every cash addition or deduction (including Pass GO, Rent, Tax, Cards, Purchases, Bail, Builds)!
+  if (amount > 0 && !extra.suppressAutoBanner) {
+    if (fromId === BANK && toId !== BANK) {
+      const p = playerById(toId);
+      pushMoneyBanner({
+        kind: 'ADD',
+        tag: note && note.toLowerCase().includes('go') ? '💰 PASS GO BONUS' : '💵 MONEY ADDED',
+        title: `+${fmt(amount)} · ${note || 'Bank Payout'}`,
+        sub: `${p?.avatar||'🎩'} ${p?.name||'Player'} (Bal: ${fmt(state.balances[toId]||0)})`,
+        color: '#fde047',
+        icon: '💰'
+      });
+    } else if (fromId !== BANK && toId === BANK) {
+      const p = playerById(fromId);
+      const isBuy = note && (note.startsWith('Bought ') || note.startsWith('Won Auction:') || note.startsWith('House:') || note.startsWith('Hotel:'));
+      pushMoneyBanner({
+        kind: isBuy ? 'PURCHASE' : 'DEDUCT',
+        tag: isBuy ? '✓ PURCHASED' : '💸 MONEY DEDUCTED',
+        title: `-${fmt(amount)} · ${note || 'Paid Bank'}`,
+        sub: `${p?.avatar||'🎩'} ${p?.name||'Player'} (Bal: ${fmt(state.balances[fromId]||0)})`,
+        color: isBuy ? '#10b981' : '#ef4444',
+        icon: isBuy ? '✓' : '💸',
+        propId: extra.propId || null
+      });
+    } else if (fromId !== BANK && toId !== BANK) {
+      const pFrom = playerById(fromId);
+      const pTo = playerById(toId);
+      pushMoneyBanner({
+        kind: 'DEDUCT',
+        tag: note && note.startsWith('Rent:') ? '🏠 AUTO RENT PAID' : '💸 PLAYER TRANSFER',
+        title: `${fmt(amount)} · ${note || 'Transfer'}`,
+        sub: `${pFrom?.avatar||'🎩'} ${pFrom?.name||'P1'} → ${pTo?.avatar||'🎩'} ${pTo?.name||'P2'}`,
+        color: '#f59e0b',
+        icon: '💸',
+        propId: extra.propId || null
+      });
+    }
+  }
 }
 
 function updatePlayers() {
@@ -3149,10 +3305,15 @@ function startGame() {
     dice: [1, 1],
     rollSeq: 0,
     doublesCount: 0,
+    doublesCountByPlayer: Object.fromEntries(players.map(p => [p.id, 0])),
     rolledThisTurn: false,
     canRollAgain: false,
+    pendingArrival: null,
+    pendingCardMove: null,
     pendingDecision: null, // { propId, playerId } when landing on unowned property (must Buy or Auction!)
     auction: null,         // { propId, initiatorId, highBid, highBidderId, passedIds: [], minIncrement: 50000 }
+    moneyBanners: [],
+    lastBannerSeq: 0,
     setupMode: false,
     winner: null,
     timedOut: false,
@@ -3206,6 +3367,33 @@ function getNextActivePlayer(fromId) {
   return active[(idx + 1) % active.length];
 }
 
+function sendPlayerDirectlyToJail(playerId, reasonText) {
+  const p = playerById(playerId);
+  const pName = p?.name || 'Player';
+  state.positions[playerId] = 10;
+  state.inJail[playerId] = true;
+  state.jailTurns[playerId] = 0;
+  if (!state.doublesCountByPlayer) state.doublesCountByPlayer = {};
+  state.doublesCountByPlayer[playerId] = 0;
+  state.doublesCount = 0;
+  state.canRollAgain = false;
+  state.pendingDecision = null;
+  state.pendingArrival = null;
+  state.pendingCardMove = null;
+  state.lastJailJumpSeq = (state.lastJailJumpSeq || 0) + 1;
+  state.lastJailJumpPlayerId = playerId;
+  pushMoneyBanner({
+    kind: 'DEDUCT',
+    tag: '👮 SENT TO JAIL',
+    title: `${pName} Locked in Jail!`,
+    sub: reasonText || 'Do not pass GO, do not collect $2M',
+    color: '#ef4444',
+    icon: '⛓️'
+  });
+  state.lastEventText = `👮 ${pName} sent to Jail (${reasonText})!`;
+  state.lastEventId++;
+}
+
 function resolveSpaceLanding(playerId, spaceIdx, diceSum) {
   const sp = BOARD_SPACES[spaceIdx];
   const p = playerById(playerId);
@@ -3213,16 +3401,16 @@ function resolveSpaceLanding(playerId, spaceIdx, diceSum) {
   if (!sp) return;
 
   if (sp.kind === 'go') {
-    state.lastEventText = `${pName} landed on GO!`;
+    state.lastEventText = `💰 ${pName} landed on GO!`;
+    state.lastEventId++;
+  } else if (sp.kind === 'jail') {
+    state.lastEventText = `🚶 ${pName} is Just Visiting Jail (Not locked up).`;
+    state.lastEventId++;
+  } else if (sp.kind === 'parking') {
+    state.lastEventText = `🚗 ${pName} is resting at Free Parking.`;
     state.lastEventId++;
   } else if (sp.kind === 'gotojail') {
-    state.positions[playerId] = 10;
-    state.inJail[playerId] = true;
-    state.jailTurns[playerId] = 0;
-    state.canRollAgain = false;
-    state.pendingDecision = null;
-    state.lastEventText = `👮 ${pName} was sent to Jail!`;
-    state.lastEventId++;
+    sendPlayerDirectlyToJail(playerId, 'Landed on Go To Jail (Tile 30)');
   } else if (sp.kind === 'tax') {
     const def = propDef(sp.propId);
     if (def) {
@@ -3235,24 +3423,14 @@ function resolveSpaceLanding(playerId, spaceIdx, diceSum) {
     const st = state.properties[sp.propId];
     if (def && st && st.ownerId && st.ownerId !== playerId && !st.mortgaged) {
       const base = currentRent(sp.propId, diceSum);
-      const ownerInJail = !!state.inJail[st.ownerId];
-      // Exact rule from monopoly-tracker.html: owner in jail halves the rent!
+      const ownerInJail = !!(state.inJail && state.inJail[st.ownerId] === true);
+      // Only when owner is actually locked in Jail is rent halved!
       const rent = ownerInJail ? Math.floor(base / 2) : base;
       const ownerP = playerById(st.ownerId);
       st.rentCollected = (st.rentCollected || 0) + rent;
       if (!st.rentByPlayer) st.rentByPlayer = {};
       st.rentByPlayer[playerId] = (st.rentByPlayer[playerId] || 0) + rent;
-      recordTransfer(playerId, st.ownerId, rent, `Rent: ${def.name}${ownerInJail ? ' (owner in jail)' : ''}`, { propId: def.id });
-      state.lastPurchase = {
-        id: (state.lastPurchase?.id || 0) + 1,
-        propId: def.id,
-        propName: def.name,
-        group: def.group,
-        price: rent,
-        buyerId: st.ownerId,
-        payerId: playerId,
-        mode: 'AUTO RENT PAID'
-      };
+      recordTransfer(playerId, st.ownerId, rent, `Rent: ${def.name}${ownerInJail ? ' (50% Jail rule)' : ''}`, { propId: def.id });
       state.lastEventText = `🏠 ${pName} auto-paid ${fmt(rent)} rent to ${ownerP?.name||'Owner'} for ${def.name}${ownerInJail ? ' (50% Jail rule)' : ''}`;
       state.lastEventId++;
     } else if (def && st && !st.ownerId) {
@@ -3279,38 +3457,47 @@ function applyDrawnCardEffect(playerId, card, diceSum) {
   const p = playerById(playerId);
   const pName = p?.name || 'Player';
   if (card.action === 'BANK_PAY') {
-    recordTransfer(BANK, playerId, card.amount, card.title);
+    recordTransfer(BANK, playerId, card.amount, `Card: ${card.title}`);
     state.lastEventText = `🃏 ${pName}: ${card.title} (+${fmt(card.amount)})`;
     state.lastEventId++;
   } else if (card.action === 'PAY_BANK') {
-    recordTransfer(playerId, BANK, card.amount, card.title);
+    recordTransfer(playerId, BANK, card.amount, `Card: ${card.title}`);
     state.lastEventText = `🃏 ${pName}: ${card.title} (-${fmt(card.amount)})`;
     state.lastEventId++;
   } else if (card.action === 'MOVE_TO') {
     const oldPos = state.positions[playerId] || 0;
     const newPos = card.target;
-    if (newPos < oldPos && newPos !== 0) {
-      awardPassGoIfEligible(playerId, 'Passed GO');
-    } else if (newPos === 0) {
-      awardPassGoIfEligible(playerId, 'Landed on GO');
-    }
-    state.positions[playerId] = newPos;
-    inspectedSpaceIdx = newPos;
-    resolveSpaceLanding(playerId, newPos, diceSum);
+    const passedGo = (newPos < oldPos && newPos !== 0) || (newPos === 0);
+    // Defer the card's bonus movement for 1.3s while the player reads the center card explaining WHY they are moving!
+    state.pendingCardMove = {
+      id: (state.pendingCardMove?.id || 0) + 1,
+      playerId,
+      fromPos: oldPos,
+      toPos: newPos,
+      direction: 1,
+      passedGo,
+      diceSum,
+      cardTitle: card.title
+    };
+    state.lastEventText = `🃏 Card Move (${pName}): ${card.title}!`;
+    state.lastEventId++;
   } else if (card.action === 'MOVE_REL') {
     const oldPos = state.positions[playerId] || 0;
     const newPos = (oldPos + card.delta + 40) % 40;
-    state.positions[playerId] = newPos;
-    inspectedSpaceIdx = newPos;
-    resolveSpaceLanding(playerId, newPos, diceSum);
-  } else if (card.action === 'GOTO_JAIL') {
-    state.positions[playerId] = 10;
-    state.inJail[playerId] = true;
-    state.jailTurns[playerId] = 0;
-    state.canRollAgain = false;
-    state.pendingDecision = null;
-    state.lastEventText = `👮 ${pName} drew Go To Jail!`;
+    state.pendingCardMove = {
+      id: (state.pendingCardMove?.id || 0) + 1,
+      playerId,
+      fromPos: oldPos,
+      toPos: newPos,
+      direction: card.delta < 0 ? -1 : 1,
+      passedGo: false,
+      diceSum,
+      cardTitle: card.title
+    };
+    state.lastEventText = `🃏 Card Move (${pName}): ${card.title}!`;
     state.lastEventId++;
+  } else if (card.action === 'GOTO_JAIL') {
+    sendPlayerDirectlyToJail(playerId, `Card: ${card.title}`);
   } else if (card.action === 'JAIL_FREE') {
     state.jailFreeCards[playerId] = (state.jailFreeCards[playerId] || 0) + 1;
     state.lastEventText = `🎟️ ${pName} received a Get Out of Jail Free pass!`;
@@ -3318,7 +3505,7 @@ function applyDrawnCardEffect(playerId, card, diceSum) {
   } else if (card.action === 'PAY_EACH') {
     state.players.forEach(otherId => {
       if (otherId !== playerId && !state.bankrupt?.[otherId]) {
-        recordTransfer(playerId, otherId, card.amount, card.title);
+        recordTransfer(playerId, otherId, card.amount, `Card: ${card.title}`);
       }
     });
     state.lastEventText = `🃏 ${pName} paid ${fmt(card.amount)} to each player`;
@@ -3326,7 +3513,7 @@ function applyDrawnCardEffect(playerId, card, diceSum) {
   } else if (card.action === 'COLLECT_EACH') {
     state.players.forEach(otherId => {
       if (otherId !== playerId && !state.bankrupt?.[otherId]) {
-        recordTransfer(otherId, playerId, card.amount, card.title);
+        recordTransfer(otherId, playerId, card.amount, `Card: ${card.title}`);
       }
     });
     state.lastEventText = `🃏 ${pName} collected ${fmt(card.amount)} from each player`;
@@ -3340,7 +3527,7 @@ function applyDrawnCardEffect(playerId, card, diceSum) {
         else if (st.houses === 5) fee += card.hotelFee;
       }
     });
-    if (fee > 0) recordTransfer(playerId, BANK, fee, 'Street Repairs');
+    if (fee > 0) recordTransfer(playerId, BANK, fee, 'Card: Street Repairs');
     state.lastEventText = `🛠️ ${pName} paid ${fmt(fee)} for Street Repairs`;
     state.lastEventId++;
   }
@@ -3351,15 +3538,17 @@ function startPropertyAuction(propId, initiatorId) {
   const def = propDef(propId);
   const st = state?.properties?.[propId];
   if (!def || !st || st.ownerId) return;
-  const startBid = 50000;
+  const initId = initiatorId || state.current;
+  const initCash = Math.max(0, state.balances[initId] || 0);
+  const startBid = Math.min(50000, initCash);
   state.auction = {
     propId,
-    initiatorId: initiatorId || state.current,
+    initiatorId: initId,
     highBid: startBid,
-    highBidderId: initiatorId || state.current,
-    passedIds: [],
+    highBidderId: startBid > 0 ? initId : (state.players.find(pid => !state.bankrupt?.[pid] && (state.balances[pid]||0) > 0) || initId),
+    passedIds: initCash <= 0 ? [initId] : [],
     history: [
-      { bidderId: initiatorId || state.current, amount: startBid, note: 'Opening floor bid' }
+      { bidderId: initId, amount: startBid, note: 'Opening floor bid' }
     ]
   };
   selectedAuctionBidderId = myId;
@@ -3387,7 +3576,7 @@ function runBotAuctionBidsIfNeeded() {
     const bal = state.balances[botId] || 0;
     // Bot values property up to 85% of list price, or 110% if it already owns a property in the same group
     const groupOwned = def.group ? ownedCountInGroup(botId, def.group) : 0;
-    const maxWilling = Math.min(bal - 200000, Math.floor(def.price * (groupOwned > 0 ? 1.05 : 0.8)));
+    const maxWilling = Math.min(bal, Math.max(0, bal - 100000), Math.floor(def.price * (groupOwned > 0 ? 1.05 : 0.8)));
     const nextBid = auc.highBid + 100000;
     if (nextBid <= maxWilling && nextBid > 0) {
       auc.highBid = nextBid;
@@ -3443,6 +3632,40 @@ function handleAction(id, d) {
   if(!state || state.winner) return;
   const p = playerById(id);
   const pName = p?.name || 'Player';
+
+  if(d.action === 'COMPLETE_ARRIVAL') {
+    if (!state.pendingArrival) return;
+    if (d.arrivalId && state.pendingArrival.id !== d.arrivalId) return;
+    const arr = state.pendingArrival;
+    state.pendingArrival = null;
+    if (arr.passedGo) {
+      awardPassGoIfEligible(arr.playerId, 'Passed GO');
+    }
+    inspectedSpaceIdx = arr.spaceIdx;
+    resolveSpaceLanding(arr.playerId, arr.spaceIdx, arr.diceSum);
+    botActionRevision = -1;
+    broadcastState('ARRIVE');
+    return;
+  }
+
+  if(d.action === 'START_CARD_MOVE') {
+    if (!state.pendingCardMove) return;
+    if (d.moveId && state.pendingCardMove.id !== d.moveId) return;
+    const cm = state.pendingCardMove;
+    state.pendingCardMove = null;
+    state.positions[cm.playerId] = cm.toPos;
+    state.pendingArrival = {
+      id: (state.pendingArrival?.id || 0) + 1,
+      playerId: cm.playerId,
+      spaceIdx: cm.toPos,
+      diceSum: cm.diceSum,
+      passedGo: cm.passedGo,
+      direction: cm.direction || 1
+    };
+    botActionRevision = -1;
+    broadcastState('CARD_MOVE');
+    return;
+  }
 
   // End game by Net Worth
   if(d.action === 'FINISH_NET_WORTH') {
@@ -3608,13 +3831,55 @@ function handleAction(id, d) {
     return;
   }
 
-  // Buy / Assign Property
+  // Execute Trade (Properties + Cash between two players)
+  if(d.action === 'EXECUTE_TRADE') {
+    const pA = d.playerA, pB = d.playerB;
+    if (!pA || !pB || pA === pB) return;
+    const cashA = Math.max(0, Number(d.cashA) || 0);
+    const cashB = Math.max(0, Number(d.cashB) || 0);
+    const propsA = Array.isArray(d.propsA) ? d.propsA : [];
+    const propsB = Array.isArray(d.propsB) ? d.propsB : [];
+    if (cashA > (state.balances[pA] || 0) || cashB > (state.balances[pB] || 0)) return;
+    // Verify ownership
+    if (!propsA.every(pid => state.properties[pid]?.ownerId === pA && (state.properties[pid]?.houses || 0) === 0)) return;
+    if (!propsB.every(pid => state.properties[pid]?.ownerId === pB && (state.properties[pid]?.houses || 0) === 0)) return;
+    propsA.forEach(pid => { state.properties[pid].ownerId = pB; });
+    propsB.forEach(pid => { state.properties[pid].ownerId = pA; });
+    if (cashA > 0) recordTransfer(pA, pB, cashA, 'Trade Cash');
+    if (cashB > 0) recordTransfer(pB, pA, cashB, 'Trade Cash');
+    const nameA = playerById(pA)?.name || 'Player 1';
+    const nameB = playerById(pB)?.name || 'Player 2';
+    pushMoneyBanner({
+      kind: 'ADD',
+      tag: '🤝 TRADE COMPLETED',
+      title: `${nameA} ⇄ ${nameB}`,
+      sub: `${propsA.length + propsB.length} propert(ies) swapped`,
+      color: '#38bdf8',
+      icon: '🤝'
+    });
+    state.lastEventText = `🤝 Trade completed between ${nameA} and ${nameB}!`;
+    state.lastEventId++;
+    broadcastState('BUY');
+    return;
+  }
+
+  // Buy / Assign Property (Strictly requires landing on the property & having sufficient cash, unless Setup Mode is on!)
   if(d.action === 'BUY_PROP') {
     const propId = d.propId;
     const buyerId = d.buyerId || id;
     const def = propDef(propId);
     const st = state.properties[propId];
     if (!def || !st || st.ownerId) return;
+    if (!state.setupMode && !d.free) {
+      // Must have landed on this exact property
+      if (!state.pendingDecision || state.pendingDecision.propId !== propId || state.pendingDecision.playerId !== buyerId) {
+        return;
+      }
+      // Cannot buy if player does not have enough money!
+      if ((state.balances[buyerId] || 0) < def.price) {
+        return;
+      }
+    }
     st.ownerId = buyerId;
     if (state.pendingDecision && state.pendingDecision.propId === propId) {
       state.pendingDecision = null;
@@ -3623,29 +3888,30 @@ function handleAction(id, d) {
       state.auction = null;
     }
     if (!state.setupMode && !d.free) {
-      recordTransfer(buyerId, BANK, def.price, 'Bought ' + def.name);
+      recordTransfer(buyerId, BANK, def.price, 'Bought ' + def.name, { propId: def.id });
       state.lastEventText = `🎉 ${(playerById(buyerId)?.name||'Player')} bought ${def.name} for ${fmt(def.price)}!`;
     } else {
+      pushMoneyBanner({
+        kind: 'PURCHASE',
+        tag: '📋 ASSIGNED (SETUP)',
+        title: `${def.name} Assigned`,
+        sub: `Owned by ${playerById(buyerId)?.name||'Player'}`,
+        color: GROUP_COLORS[def.group] || '#10b981',
+        icon: '✓',
+        propId: def.id
+      });
       state.lastEventText = `📋 Assigned ${def.name} to ${(playerById(buyerId)?.name||'Player')} (Setup Mode)`;
     }
-    state.lastPurchase = {
-      id: (state.lastPurchase?.id || 0) + 1,
-      propId: def.id,
-      propName: def.name,
-      group: def.group,
-      price: (!state.setupMode && !d.free) ? def.price : 0,
-      buyerId,
-      mode: 'PURCHASED'
-    };
     state.lastEventId++;
     broadcastState('BUY');
     return;
   }
 
-  // Auction Actions
+  // Auction Actions (Only for landed unowned property unless Setup Mode)
   if(d.action === 'START_AUCTION') {
     const propId = d.propId || state.pendingDecision?.propId;
     if (!propId) return;
+    if (!state.setupMode && (!state.pendingDecision || state.pendingDecision.propId !== propId)) return;
     startPropertyAuction(propId, d.initiatorId || id);
     broadcastState('AUCTION');
     return;
@@ -3654,8 +3920,10 @@ function handleAction(id, d) {
   if(d.action === 'AUCTION_BID') {
     if (!state.auction) return;
     const bidderId = d.bidderId || id;
-    const bidAmt = Number(d.amount) || 0;
-    if (bidAmt <= state.auction.highBid) return;
+    const bidAmt = Math.floor(Number(d.amount) || 0);
+    const maxCash = state.balances[bidderId] || 0;
+    // Maximum money a player can bid is the cash they currently have!
+    if (bidAmt <= state.auction.highBid || bidAmt > maxCash) return;
     state.auction.highBid = bidAmt;
     state.auction.highBidderId = bidderId;
     state.auction.passedIds = (state.auction.passedIds || []).filter(x => x !== bidderId);
@@ -3785,7 +4053,7 @@ function handleAction(id, d) {
 
   if(d.action === 'ROLL') {
     // Cannot roll again if player hasn't resolved Buy-or-Auction on current unowned property!
-    if (state.pendingDecision && state.pendingDecision.propId) return;
+    if (state.pendingArrival || (state.pendingDecision && state.pendingDecision.propId)) return;
     if (state.rolledThisTurn && !state.canRollAgain) return;
     const d1 = Math.floor(Math.random() * 6) + 1;
     const d2 = Math.floor(Math.random() * 6) + 1;
@@ -3818,22 +4086,18 @@ function handleAction(id, d) {
         }
       }
     } else {
+      if (!state.doublesCountByPlayer) state.doublesCountByPlayer = {};
       if (isDoubles) {
-        state.doublesCount = (state.doublesCount || 0) + 1;
-        if (state.doublesCount >= 3) {
-          state.positions[id] = 10;
-          state.inJail[id] = true;
-          state.jailTurns[id] = 0;
-          state.doublesCount = 0;
-          state.canRollAgain = false;
-          state.pendingDecision = null;
-          state.lastEventText = `👮 ${pName} rolled 3 doubles in a row — sent to Jail!`;
-          state.lastEventId++;
+        state.doublesCountByPlayer[id] = (state.doublesCountByPlayer[id] || 0) + 1;
+        state.doublesCount = state.doublesCountByPlayer[id];
+        if (state.doublesCountByPlayer[id] >= 3) {
+          sendPlayerDirectlyToJail(id, `3 Consecutive Doubles (${d1}+${d2})`);
           broadcastState('ROLL');
           return;
         }
         state.canRollAgain = true;
       } else {
+        state.doublesCountByPlayer[id] = 0;
         state.doublesCount = 0;
         state.canRollAgain = false;
       }
@@ -3841,12 +4105,15 @@ function handleAction(id, d) {
 
     const oldPos = state.positions[id] || 0;
     const newPos = (oldPos + sum) % 40;
-    if (oldPos + sum >= 40) {
-      awardPassGoIfEligible(id, 'Passed GO');
-    }
+    // Store pendingArrival so rent/tax/cards/buy-or-auction are ONLY detected and applied AFTER the avatar finishes stepping tile-by-tile onto newPos!
     state.positions[id] = newPos;
-    inspectedSpaceIdx = newPos;
-    resolveSpaceLanding(id, newPos, sum);
+    state.pendingArrival = {
+      id: (state.pendingArrival?.id || 0) + 1,
+      playerId: id,
+      spaceIdx: newPos,
+      diceSum: sum,
+      passedGo: (oldPos + sum >= 40)
+    };
     botActionRevision = -1;
     broadcastState('ROLL');
     return;
@@ -3854,9 +4121,12 @@ function handleAction(id, d) {
 
   if(d.action === 'END_TURN') {
     if (!state.rolledThisTurn) return;
-    // Enforce rule: Cannot end turn while an unowned property decision (Buy or Auction) is pending!
-    if (state.pendingDecision && state.pendingDecision.propId) return;
+    // Enforce rule: Cannot end turn while movement, card move, or Buy/Auction decision is pending!
+    if (state.pendingArrival || state.pendingCardMove || (state.pendingDecision && state.pendingDecision.propId)) return;
+    if (!state.doublesCountByPlayer) state.doublesCountByPlayer = {};
+    state.doublesCountByPlayer[id] = 0;
     state.current = getNextActivePlayer(id);
+    state.doublesCountByPlayer[state.current] = 0;
     state.rolledThisTurn = false;
     state.canRollAgain = false;
     state.doublesCount = 0;
@@ -3894,42 +4164,44 @@ function playStepHopSound(stepIndex) {
   playTone(baseFreq, 'sine', 0.055, 0.13);
 }
 
-function showPurchaseSideBadge(purchase) {
-  if (!purchase) return;
+let lastSeenBannerSeq = 0;
+let lastSeenJailJumpSeq = 0;
+
+function showMoneySideBanner(b) {
+  if (!b) return;
   const container = $('purchaseBadgeContainer');
   if (!container) return;
-  const buyer = playerById(purchase.buyerId);
-  const buyerName = buyer ? buyer.name : 'Player';
-  const buyerAvatar = buyer ? (buyer.avatar || '🎩') : '🎩';
-  const col = GROUP_COLORS[purchase.group] || '#10b981';
-  const priceStr = purchase.price > 0 ? fmt(purchase.price) : 'Assigned';
-
-  recentlyPurchasedPropId = purchase.propId;
-  setTimeout(() => {
-    if (recentlyPurchasedPropId === purchase.propId) {
-      recentlyPurchasedPropId = null;
-      renderBoardDomOnly();
-    }
-  }, 1850);
-
-  const isRent = purchase.mode === 'AUTO RENT PAID';
-  const payer = purchase.payerId ? playerById(purchase.payerId) : null;
-  const subLine = isRent
-    ? `💸 <b>${esc(payer?.name || 'Player')}</b> → <b>${esc(buyerName)}</b>`
-    : `${buyerAvatar} Owned by <b>${esc(buyerName)}</b>`;
-  const sealIcon = isRent ? '💸' : '✓';
-  container.innerHTML = `<div class="purchase-side-badge" style="border-left: 6px solid ${col};">
-    <div class="psb-seal">${sealIcon}</div>
+  if (b.propId) {
+    recentlyPurchasedPropId = b.propId;
+    setTimeout(() => {
+      if (recentlyPurchasedPropId === b.propId) {
+        recentlyPurchasedPropId = null;
+        renderBoardDomOnly();
+      }
+    }, 1850);
+  }
+  const kindCls = b.kind === 'DEDUCT' ? 'banner-deduct' : b.kind === 'ADD' ? 'banner-add' : '';
+  const el = document.createElement('div');
+  el.className = `purchase-side-badge ${kindCls}`;
+  el.style.borderLeft = `6px solid ${b.color || '#10b981'}`;
+  el.innerHTML = `
+    <div class="psb-seal">${b.icon || '💰'}</div>
     <div class="psb-info">
-      <div class="psb-tag"><span>✨</span> <span>${esc(purchase.mode || 'PURCHASED')}</span></div>
-      <div class="psb-prop">${esc(purchase.propName)} · ${esc(priceStr)}</div>
-      <div class="psb-buyer">${subLine}</div>
+      <div class="psb-tag"><span>✨</span> <span>${esc(b.tag || 'TRANSACTION')}</span></div>
+      <div class="psb-prop">${esc(b.title || '')}</div>
+      <div class="psb-buyer">${esc(b.sub || '')}</div>
     </div>
-  </div>`;
-  renderBoardDomOnly();
+  `;
+  container.appendChild(el);
+  while (container.children.length > 3) {
+    container.removeChild(container.firstChild);
+  }
+  setTimeout(() => {
+    if (el.parentNode) el.remove();
+  }, 3400);
 }
 
-function startTileByTileStepping(pid, targetPos, onDone) {
+function startTileByTileStepping(pid, targetPos, onDone, direction=1) {
   if (stepIntervalTimer) { clearInterval(stepIntervalTimer); stepIntervalTimer = null; }
   let cur = visualPositions[pid];
   if (cur === undefined || cur === targetPos) {
@@ -3943,9 +4215,10 @@ function startTileByTileStepping(pid, targetPos, onDone) {
   isAnimatingMove = true;
   steppingPlayerId = pid;
   let stepCount = 0;
+  const stepDir = direction < 0 ? -1 : 1;
   stepIntervalTimer = setInterval(() => {
     if (!state) { clearInterval(stepIntervalTimer); stepIntervalTimer = null; isAnimatingMove = false; return; }
-    cur = (cur + 1) % 40;
+    cur = (cur + stepDir + 40) % 40;
     visualPositions[pid] = cur;
     steppingTileIdx = cur;
     inspectedSpaceIdx = cur;
@@ -3961,11 +4234,15 @@ function startTileByTileStepping(pid, targetPos, onDone) {
         steppingTileIdx = -1;
         isAnimatingMove = false;
         inspectedSpaceIdx = targetPos;
-        renderGame();
+        if (state && state.pendingArrival && (solo || host || state.pendingArrival.playerId === myId)) {
+          sendAct('COMPLETE_ARRIVAL', { arrivalId: state.pendingArrival.id });
+        } else {
+          renderGame();
+        }
         if (onDone) onDone();
-      }, 180);
+      }, 140);
     }
-  }, 145);
+  }, 135);
 }
 
 function showEventToast(text) {
@@ -4108,7 +4385,11 @@ function runFullBoard3DDiceAnimation(finalD1, finalD2) {
           startTileByTileStepping(moverId, state.positions[moverId] || 0);
         } else {
           isAnimatingMove = false;
-          renderGame();
+          if (state && state.pendingArrival && (solo || host || state.pendingArrival.playerId === myId)) {
+            sendAct('COMPLETE_ARRIVAL', { arrivalId: state.pendingArrival.id });
+          } else {
+            renderGame();
+          }
         }
       }, 550);
     }
@@ -4182,13 +4463,17 @@ function renderBoardDomOnly() {
     const hasTokCls = herePlayers.length ? 'has-tokens' : '';
     let tokensHTML = '';
     if (herePlayers.length) {
-      tokensHTML = `<div class="cell-tokens">` + herePlayers.map(pid => {
+      const multiCls = herePlayers.length > 1 ? 'multi-tokens' : '';
+      tokensHTML = `<div class="cell-tokens ${multiCls}">` + herePlayers.map((pid, tIdx) => {
         const pObj = playerById(pid);
         const tCol = playerColor(pid);
         const actCls = (state.current === pid) ? 'active-token' : '';
         const hopCls = (steppingPlayerId === pid) ? 'hopping-step' : '';
         const shortN = (pObj?.name || 'P').slice(0, 6);
-        return `<div class="board-token ${actCls} ${hopCls}" style="--tcolor:${tCol};" title="${esc(pObj?.name||'Player')}"><span>${pObj?.avatar||'🎩'}</span><span class="token-name-tag">${esc(shortN)}</span></div>`;
+        const isLocked = !!state.inJail?.[pid];
+        const lockHtml = isLocked ? `<span class="token-jail-lock" title="Locked in Jail">🔒</span>` : '';
+        const staggerY = (herePlayers.length > 1 && tIdx % 2 === 1) ? 'margin-bottom: 6px;' : '';
+        return `<div class="board-token ${actCls} ${hopCls}" style="--tcolor:${tCol}; ${staggerY}" title="${esc(pObj?.name||'Player')}${isLocked?' (In Jail)':' (Active)'}"><span>${pObj?.avatar||'🎩'}</span><span class="token-name-tag">${esc(shortN)}</span>${lockHtml}</div>`;
       }).join('') + `</div>`;
     }
 
@@ -4216,26 +4501,41 @@ function renderBoardDomOnly() {
   const pendingSt = pendingPropId ? state.properties[pendingPropId] : null;
   const hasMandatoryDecision = !!(pendingDef && pendingSt && !pendingSt.ownerId);
 
-  let spaceSummaryHTML = `<div><strong>${esc(currDef ? currDef.name : currSp?.name || 'GO')}</strong> ${currDef?.country ? `<span style="font-size:0.7rem;color:#cbd5e1;">(${esc(currDef.country)})</span>` : ''}</div>`;
+  const isCurrInJail = !!(state.inJail && state.inJail[state.current]);
+  const spaceHeaderTitle = (currPos === 10)
+    ? (isCurrInJail ? '🔒 In Jail (Locked Up)' : '🚶 Just Visiting')
+    : (currDef ? currDef.name : currSp?.name || 'GO');
+  let spaceSummaryHTML = `<div><strong>${esc(spaceHeaderTitle)}</strong> ${currDef?.country ? `<span style="font-size:0.7rem;color:#cbd5e1;">(${esc(currDef.country)})</span>` : ''}</div>`;
   if (isAnimatingMove) {
     spaceSummaryHTML += `<div style="color:#fde047; font-weight:700;">🚶 Moving tile by tile...</div>`;
+  } else if (currPos === 10) {
+    if (isCurrInJail) {
+      spaceSummaryHTML += `<div style="color:#fca5a5; font-weight:700;">⛓️ Locked in Jail · Owned Rents Halved (50%)</div>`;
+    } else {
+      spaceSummaryHTML += `<div style="color:#86efac; font-weight:700;">Just Visiting · Full Rent Active</div>`;
+    }
   } else if (currDef && currDef.type !== 'tax' && currPropSt) {
     if (!currPropSt.ownerId) {
       spaceSummaryHTML += `<div style="color:#fde047; font-weight:700;">Unowned · List Price: ${fmt(currDef.price)} · Base Rent: ${fmt(currDef.type==='property'?currDef.rent[0]:currDef.type==='transport'?currDef.rentByCount[0]:currDef.soloMultiplier*7)}</div>`;
     } else {
       const oName = playerById(currPropSt.ownerId)?.name || 'Player';
-      const rNow = currentRent(currDef.id, d1 + d2);
-      spaceSummaryHTML += `<div style="color:#93c5fd;">Owner: <b>${esc(oName)}</b> · Current Rent: <b>${fmt(rNow)}</b></div>`;
+      const ownerLockedInJail = !!(state.inJail && state.inJail[currPropSt.ownerId]);
+      const baseR = currentRent(currDef.id, d1 + d2);
+      const rNow = ownerLockedInJail ? Math.floor(baseR / 2) : baseR;
+      spaceSummaryHTML += `<div style="color:#93c5fd;">Owner: <b>${esc(oName)}</b> · Rent: <b>${fmt(rNow)}</b>${ownerLockedInJail ? ' <span style="color:#fca5a5;">(50% In Jail)</span>' : ''}</div>`;
     }
   } else if (currSp?.sub) {
     spaceSummaryHTML += `<div style="color:#cbd5e1;">${esc(currSp.sub)}</div>`;
   }
 
-  const canRoll = myTurn && !isAnimatingMove && !hasMandatoryDecision && (!state.rolledThisTurn || state.canRollAgain);
-  const canBuy = myTurn && !isAnimatingMove && hasMandatoryDecision;
-  const canAuction = myTurn && !isAnimatingMove && hasMandatoryDecision;
-  const canEnd = myTurn && !isAnimatingMove && state.rolledThisTurn && !state.canRollAgain && !hasMandatoryDecision;
-  const canBail = myTurn && !isAnimatingMove && state.inJail?.[myId] && !state.rolledThisTurn;
+  const hasPendingFlow = !!(isAnimatingMove || state.pendingArrival || state.pendingCardMove);
+  const myCashNow = state.balances?.[myId] || 0;
+  const canAffordBuy = pendingDef ? (myCashNow >= pendingDef.price) : false;
+  const canRoll = myTurn && !hasPendingFlow && !hasMandatoryDecision && (!state.rolledThisTurn || state.canRollAgain);
+  const canBuy = myTurn && !hasPendingFlow && hasMandatoryDecision && canAffordBuy;
+  const canAuction = myTurn && !hasPendingFlow && hasMandatoryDecision;
+  const canEnd = myTurn && !hasPendingFlow && state.rolledThisTurn && !state.canRollAgain && !hasMandatoryDecision;
+  const canBail = myTurn && !hasPendingFlow && state.inJail?.[myId] && !state.rolledThisTurn && (myCashNow >= 500000 || (state.jailFreeCards?.[myId] || 0) > 0);
 
   cellsHTML += `<div class="board-center">
     <div class="center-world-watermark"></div>
@@ -4267,9 +4567,9 @@ function renderBoardDomOnly() {
 
       <div class="hub-space-card">${spaceSummaryHTML}</div>
 
-      ${(canBuy || canAuction) ? `
+      ${hasMandatoryDecision && myTurn && !hasPendingFlow ? `
       <div class="hub-decision-grid">
-        <button type="button" id="hubBuyBtn" class="btn-good">🏠 Buy (${fmt(pendingDef.price)})</button>
+        <button type="button" id="hubBuyBtn" class="btn-good" ${canBuy ? '' : 'disabled'} title="${canBuy ? 'Buy property' : 'Not enough cash — must Auction!'}">${canBuy ? `🏠 Buy (${fmt(pendingDef.price)})` : `🚫 Need ${fmt(pendingDef.price)}`}</button>
         <button type="button" id="hubAuctionBtn" class="btn-auction">🔨 Auction</button>
       </div>` : ''}
 
@@ -4313,34 +4613,33 @@ function renderGame() {
     isAnimatingMove = true;
   }
 
-  // Trigger compact side Purchased Badge when a property is bought or won at auction
-  if (state.lastPurchase && state.lastPurchase.id !== lastSeenPurchaseId) {
-    lastSeenPurchaseId = state.lastPurchase.id;
-    showPurchaseSideBadge(state.lastPurchase);
+  // If a player was sent directly to Jail (Go To Jail tile, Card, or 3 Doubles), snap their visualPosition directly to Jail (10) so they don't walk 20 tiles forward!
+  if (state.lastJailJumpSeq && state.lastJailJumpSeq !== lastSeenJailJumpSeq) {
+    lastSeenJailJumpSeq = state.lastJailJumpSeq;
+    if (state.lastJailJumpPlayerId) {
+      visualPositions[state.lastJailJumpPlayerId] = 10;
+    }
+  }
+
+  // Trigger animated side Money / Purchase / Rent / Pass GO banners for any new transaction
+  if (Array.isArray(state.moneyBanners)) {
+    state.moneyBanners.forEach(b => {
+      if (b.id > lastSeenBannerSeq) {
+        lastSeenBannerSeq = b.id;
+        showMoneySideBanner(b);
+      }
+    });
   }
 
   if (state.lastEventId && state.lastEventId !== lastSeenEventId) {
     lastSeenEventId = state.lastEventId;
-    if (state.lastEventText) {
-      if (isNewRoll) {
-        const txt = state.lastEventText;
-        setTimeout(() => showEventToast(txt), 1750);
-      } else {
-        showEventToast(state.lastEventText);
-      }
-    }
+    if (state.lastEventText) showEventToast(state.lastEventText);
   }
 
   if (state.lastCardEventId && state.lastCardEventId !== lastSeenCardId) {
     lastSeenCardId = state.lastCardEventId;
     const c = state.lastCardDrawn;
-    if (c) {
-      if (isNewRoll) {
-        setTimeout(() => showCompactCardPopover(c), 1850);
-      } else {
-        showCompactCardPopover(c);
-      }
-    }
+    if (c) showCompactCardPopover(c);
   }
 
   $('hudHousesLeft').textContent = String(availableHouses());
@@ -4377,10 +4676,18 @@ function renderGame() {
     lastAnimatedRollSeq = state.rollSeq;
     runFullBoard3DDiceAnimation(d1, d2);
   } else if (!isAnimatingMove) {
-    // Check if any player's position changed without a dice roll (e.g. card move)
+    // Check if any player's position changed (e.g. card move)
     const movedPid = state.players.find(pid => visualPositions[pid] !== undefined && visualPositions[pid] !== (state.positions?.[pid] || 0));
     if (movedPid) {
-      startTileByTileStepping(movedPid, state.positions[movedPid] || 0);
+      const dir = state.pendingArrival?.direction || 1;
+      startTileByTileStepping(movedPid, state.positions[movedPid] || 0, null, dir);
+    } else if (state.pendingCardMove && (solo || host || state.pendingCardMove.playerId === myId)) {
+      const moveId = state.pendingCardMove.id;
+      setTimeout(() => {
+        if (state && state.pendingCardMove && state.pendingCardMove.id === moveId) {
+          sendAct('START_CARD_MOVE', { moveId });
+        }
+      }, 1300);
     }
   }
 
@@ -4401,7 +4708,7 @@ function renderGame() {
 
   // Bot AI Turn Logic
   const isCurrentBot = host && !state.winner && currP && (currP.id === 'AI' || currP.isBot);
-  if (isCurrentBot && !state.auction && botActionRevision !== revision) {
+  if (isCurrentBot && !state.auction && !state.pendingArrival && !isAnimatingMove && botActionRevision !== revision) {
     botActionRevision = revision;
     const expectedRev = revision;
     const botId = state.current;
@@ -4527,19 +4834,23 @@ function renderAuctionModalContent() {
     </div>
 
     <div style="background:rgba(0,0,0,0.32); border-radius:12px; padding:12px;">
-      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-        <label style="font-size:0.78rem; color:#cbd5e1; white-space:nowrap;">Bidding As:</label>
-        <select id="auctionBidderSelect" style="flex:1; padding:6px 10px; font-size:0.84rem;">${bidderOpts}</select>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px; flex:1;">
+          <label style="font-size:0.78rem; color:#cbd5e1; white-space:nowrap;">Bidding As:</label>
+          <select id="auctionBidderSelect" style="flex:1; padding:6px 10px; font-size:0.84rem;">${bidderOpts}</select>
+        </div>
+        <span style="font-size:0.75rem; color:#86efac; font-weight:800;">Max Bid (Cash): ${fmt(state.balances[selectedAuctionBidderId]||0)}</span>
       </div>
       <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
-        <button type="button" class="btn-good" data-auc-inc="50000" style="flex:1; padding:7px 8px; font-size:0.78rem;">+$50k (${fmt(auc.highBid+50000)})</button>
-        <button type="button" class="btn-good" data-auc-inc="100000" style="flex:1; padding:7px 8px; font-size:0.78rem;">+$100k (${fmt(auc.highBid+100000)})</button>
-        <button type="button" class="btn-good" data-auc-inc="250000" style="flex:1; padding:7px 8px; font-size:0.78rem;">+$250k (${fmt(auc.highBid+250000)})</button>
-        <button type="button" class="btn-good" data-auc-inc="500000" style="flex:1; padding:7px 8px; font-size:0.78rem;">+$500k (${fmt(auc.highBid+500000)})</button>
+        ${[50000, 100000, 250000, 500000].map(inc => {
+          const targetBid = auc.highBid + inc;
+          const canAffordBid = targetBid <= (state.balances[selectedAuctionBidderId] || 0);
+          return `<button type="button" class="btn-good" data-auc-inc="${inc}" ${canAffordBid ? '' : 'disabled'} style="flex:1; padding:7px 8px; font-size:0.76rem;">+${shortLabel(inc)} (${fmt(targetBid)})</button>`;
+        }).join('')}
       </div>
       <div style="display:flex; gap:6px; margin-bottom:10px;">
-        <input type="text" id="auctionCustomBidInput" placeholder="Custom bid (e.g. 1.2m)" style="flex:1; padding:7px 10px; font-size:0.82rem;">
-        <button type="button" id="auctionCustomBidBtn" class="btn-alt" style="padding:7px 12px; font-size:0.8rem;">Place Custom Bid</button>
+        <input type="text" id="auctionCustomBidInput" placeholder="Custom bid (Max ${fmt(state.balances[selectedAuctionBidderId]||0)})" style="flex:1; padding:7px 10px; font-size:0.82rem;">
+        <button type="button" id="auctionCustomBidBtn" class="btn-alt" style="padding:7px 12px; font-size:0.8rem;">Place Bid</button>
       </div>
       <div style="display:flex; gap:8px;">
         <button type="button" id="auctionPassBtn" class="btn-alt" style="flex:1; padding:8px;">🏳️ Pass / Fold Selected Bidder</button>
@@ -4549,7 +4860,7 @@ function renderAuctionModalContent() {
   `;
 
   const sel = $('auctionBidderSelect');
-  if (sel) sel.onchange = e => { selectedAuctionBidderId = e.target.value; };
+  if (sel) sel.onchange = e => { selectedAuctionBidderId = e.target.value; renderAuctionModalContent(); };
 
   $('auctionModalBody').querySelectorAll('[data-auc-inc]').forEach(btn => {
     btn.onclick = () => {
@@ -4563,9 +4874,16 @@ function renderAuctionModalContent() {
     $('auctionCustomBidBtn').onclick = () => {
       const amt = parseAmount($('auctionCustomBidInput')?.value);
       const bidder = $('auctionBidderSelect')?.value || myId;
-      if (amt && amt > auc.highBid) {
-        sendAct('AUCTION_BID', { bidderId: bidder, amount: amt });
+      const maxCash = state.balances[bidder] || 0;
+      if (!amt || amt <= auc.highBid) {
+        showEventToast(`⚠️ Bid must be higher than ${fmt(auc.highBid)}`);
+        return;
       }
+      if (amt > maxCash) {
+        showEventToast(`🚫 Cannot bid ${fmt(amt)} — max available cash is ${fmt(maxCash)}!`);
+        return;
+      }
+      sendAct('AUCTION_BID', { bidderId: bidder, amount: amt });
     };
   }
   if ($('auctionPassBtn')) {
@@ -4826,21 +5144,31 @@ function openDeedInspectModal(idx) {
     <div class="deed-modal-body">${bodyRows}</div>
   </div>`;
 
-  // Action buttons if unowned
+  // Action buttons if unowned: ONLY allow buying/auctioning if the player actually landed on this property right now (or Setup Mode is active)
   if (st && !st.ownerId) {
-    const buyBtn = document.createElement('button');
-    buyBtn.type = 'button';
-    buyBtn.className = 'btn-good';
-    buyBtn.textContent = `🏠 Buy (${fmt(def.price)})`;
-    buyBtn.onclick = () => { sendAct('BUY_PROP', { propId: def.id, buyerId: myId }); $('deedModal').classList.add('hidden'); };
-    actions.appendChild(buyBtn);
+    const isLandedHere = state.pendingDecision?.propId === def.id && state.current === myId;
+    if (isLandedHere || state.setupMode) {
+      const canAfford = state.setupMode || (state.balances?.[myId] || 0) >= def.price;
+      const buyBtn = document.createElement('button');
+      buyBtn.type = 'button';
+      buyBtn.className = 'btn-good';
+      buyBtn.disabled = !canAfford;
+      buyBtn.textContent = canAfford ? `🏠 Buy (${fmt(def.price)})` : `🚫 Need ${fmt(def.price)}`;
+      buyBtn.onclick = () => { sendAct('BUY_PROP', { propId: def.id, buyerId: myId }); $('deedModal').classList.add('hidden'); };
+      actions.appendChild(buyBtn);
 
-    const aucBtn = document.createElement('button');
-    aucBtn.type = 'button';
-    aucBtn.className = 'btn-auction';
-    aucBtn.textContent = `🔨 Auction ${def.name}`;
-    aucBtn.onclick = () => { $('deedModal').classList.add('hidden'); sendAct('START_AUCTION', { propId: def.id, initiatorId: myId }); };
-    actions.appendChild(aucBtn);
+      const aucBtn = document.createElement('button');
+      aucBtn.type = 'button';
+      aucBtn.className = 'btn-auction';
+      aucBtn.textContent = `🔨 Auction ${def.name}`;
+      aucBtn.onclick = () => { $('deedModal').classList.add('hidden'); sendAct('START_AUCTION', { propId: def.id, initiatorId: myId }); };
+      actions.appendChild(aucBtn);
+    } else {
+      const infoSpan = document.createElement('div');
+      infoSpan.style.cssText = 'font-size:0.8rem; color:#fde047; font-weight:700; padding:4px 8px;';
+      infoSpan.textContent = '📍 Land on this property during your turn to Buy or Auction it.';
+      actions.appendChild(infoSpan);
+    }
   }
 
   // Action buttons if owned by current user or if in Setup Mode
@@ -5010,11 +5338,13 @@ function renderAllPropsModalContent() {
             <span class="roi-badge ${roiCls}" title="Lifetime Rent Collected: ${fmt(rec)}">${fmt(rec)} (${pct}%)</span>
           </div>
           <div class="tpc-controls">
-            ${!st.ownerId ? `
+            ${!st.ownerId ? (state.setupMode ? `
               <select data-assign-sel="${def.id}" style="flex:1; min-width:85px;">${playerOpts}</select>
-              <button type="button" class="btn-good" data-buy-prop="${def.id}">${state.setupMode ? 'Assign' : 'Buy ' + fmt(def.price)}</button>
-              <button type="button" class="btn-auction" data-auc-prop="${def.id}" title="Start Live Auction">🔨 Auction</button>
-            ` : ''}
+              <button type="button" class="btn-good" data-buy-prop="${def.id}">Assign (Setup)</button>
+            ` : (state.pendingDecision?.propId === def.id && state.current === myId ? `
+              <button type="button" class="btn-good" data-buy-prop="${def.id}" ${(state.balances?.[myId]||0) < def.price ? 'disabled' : ''}>🏠 Buy ${fmt(def.price)}</button>
+              <button type="button" class="btn-auction" data-auc-prop="${def.id}">🔨 Auction</button>
+            ` : `<span style="color:#94a3b8; font-size:0.72rem;">📍 Land on tile to buy or auction</span>`)) : ''}
             ${(st.ownerId && def.type==='property') ? `
               <button type="button" class="btn-good" data-build-prop="${def.id}" ${(st.mortgaged || st.houses>=5 || (!fullSet && !state.setupMode))?'disabled':''} title="Build House/Hotel (${fmt(def.houseCost)})">+🏠 Build</button>
               <button type="button" class="btn-alt" data-sell-prop="${def.id}" ${st.houses<=0?'disabled':''} title="Sell House/Hotel (+${fmt(Math.floor(def.houseCost/2))})">−🏠 Sell</button>
@@ -5369,6 +5699,115 @@ $('hubTabPlayers').addEventListener('change', e => {
     sendAct('RENAME_PLAYER', { targetId: renInput.dataset.renamePid, name: renInput.value });
   }
 });
+
+
+// === TRADE PROPERTIES & CASH MODAL ===
+function openTradeModal() {
+  if (!state) return;
+  const active = state.players.filter(pid => !state.bankrupt?.[pid]);
+  if (active.length < 2) {
+    showEventToast('⚠️ Need at least 2 active players to trade.');
+    return;
+  }
+  const selA = $('tradePlayerASelect'), selB = $('tradePlayerBSelect');
+  const opts = active.map(pid => `<option value="${esc(pid)}">${esc(playerById(pid)?.name||'Player')} (${fmt(state.balances[pid]||0)})</option>`).join('');
+  selA.innerHTML = opts;
+  selB.innerHTML = opts;
+  selA.value = active.includes(myId) ? myId : active[0];
+  selB.value = active.find(pid => pid !== selA.value) || active[0];
+  $('tradeCashAInput').value = '';
+  $('tradeCashBInput').value = '';
+  $('tradeStatusMsg').textContent = '';
+  renderTradeSideLists();
+  $('tradeModal').classList.remove('hidden');
+}
+
+function renderTradeSideLists() {
+  if (!state) return;
+  const pA = $('tradePlayerASelect').value;
+  const pB = $('tradePlayerBSelect').value;
+  $('tradeMaxCashA').textContent = fmt(state.balances[pA] || 0);
+  $('tradeMaxCashB').textContent = fmt(state.balances[pB] || 0);
+
+  const propsA = ownedPropsFor(pA).filter(d => (state.properties[d.id]?.houses || 0) === 0);
+  const propsB = ownedPropsFor(pB).filter(d => (state.properties[d.id]?.houses || 0) === 0);
+
+  $('tradePropsAList').innerHTML = propsA.length
+    ? propsA.map(d => `<label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;cursor:pointer;padding:3px 4px;border-radius:6px;background:rgba(255,255,255,0.05);">
+        <input type="checkbox" value="${esc(d.id)}" data-trade-prop-a>
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${GROUP_COLORS[d.group]};"></span>
+        <b>${esc(d.name)}</b> <small style="color:#cbd5e1;">(${fmt(d.price)})</small>
+      </label>`).join('')
+    : '<div style="font-size:0.75rem;color:#94a3b8;padding:4px;">No tradeable (unimproved) properties</div>';
+
+  $('tradePropsBList').innerHTML = propsB.length
+    ? propsB.map(d => `<label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;cursor:pointer;padding:3px 4px;border-radius:6px;background:rgba(255,255,255,0.05);">
+        <input type="checkbox" value="${esc(d.id)}" data-trade-prop-b>
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${GROUP_COLORS[d.group]};"></span>
+        <b>${esc(d.name)}</b> <small style="color:#cbd5e1;">(${fmt(d.price)})</small>
+      </label>`).join('')
+    : '<div style="font-size:0.75rem;color:#94a3b8;padding:4px;">No tradeable (unimproved) properties</div>';
+}
+
+$('openTradeModalBtn').onclick = openTradeModal;
+$('closeTradeModalBtn').onclick = () => $('tradeModal').classList.add('hidden');
+$('cancelTradeBtn').onclick = () => $('tradeModal').classList.add('hidden');
+$('tradeModal').onclick = e => { if (e.target === $('tradeModal')) $('tradeModal').classList.add('hidden'); };
+$('tradePlayerASelect').onchange = () => {
+  if ($('tradePlayerASelect').value === $('tradePlayerBSelect').value) {
+    const other = state.players.find(pid => !state.bankrupt?.[pid] && pid !== $('tradePlayerASelect').value);
+    if (other) $('tradePlayerBSelect').value = other;
+  }
+  renderTradeSideLists();
+};
+$('tradePlayerBSelect').onchange = () => {
+  if ($('tradePlayerBSelect').value === $('tradePlayerASelect').value) {
+    const other = state.players.find(pid => !state.bankrupt?.[pid] && pid !== $('tradePlayerBSelect').value);
+    if (other) $('tradePlayerASelect').value = other;
+  }
+  renderTradeSideLists();
+};
+
+$('executeTradeBtn').onclick = () => {
+  if (!state) return;
+  const pA = $('tradePlayerASelect').value;
+  const pB = $('tradePlayerBSelect').value;
+  if (!pA || !pB || pA === pB) {
+    $('tradeStatusMsg').textContent = '⚠️ Select two different players to trade.';
+    return;
+  }
+  const cashA = parseAmount($('tradeCashAInput').value) || 0;
+  const cashB = parseAmount($('tradeCashBInput').value) || 0;
+  if (cashA < 0 || cashB < 0) return;
+  if (cashA > (state.balances[pA] || 0)) {
+    $('tradeStatusMsg').textContent = `🚫 ${playerById(pA)?.name||'Player 1'} only has ${fmt(state.balances[pA]||0)}!`;
+    return;
+  }
+  if (cashB > (state.balances[pB] || 0)) {
+    $('tradeStatusMsg').textContent = `🚫 ${playerById(pB)?.name||'Player 2'} only has ${fmt(state.balances[pB]||0)}!`;
+    return;
+  }
+  const propsA = Array.from($('tradePropsAList').querySelectorAll('[data-trade-prop-a]:checked')).map(el => el.value);
+  const propsB = Array.from($('tradePropsBList').querySelectorAll('[data-trade-prop-b]:checked')).map(el => el.value);
+  if (cashA === 0 && cashB === 0 && propsA.length === 0 && propsB.length === 0) {
+    $('tradeStatusMsg').textContent = '⚠️ Select at least one property or cash amount to trade.';
+    return;
+  }
+
+  // If trading with an AI Bot, evaluate fairness so AI doesn't give away properties for free
+  const partnerObj = playerById(pB);
+  if (partnerObj && (partnerObj.isBot || partnerObj.id === 'AI')) {
+    const valOffered = cashA + propsA.reduce((s, id) => s + (propDef(id)?.price || 0), 0);
+    const valRequested = cashB + propsB.reduce((s, id) => s + (propDef(id)?.price || 0), 0);
+    if (valOffered < valRequested * 0.85) {
+      $('tradeStatusMsg').textContent = `🤖 ${partnerObj.name} declined: Offer (${fmt(valOffered)}) is too low for requested value (${fmt(valRequested)}).`;
+      return;
+    }
+  }
+
+  sendAct('EXECUTE_TRADE', { playerA: pA, playerB: pB, cashA, cashB, propsA, propsB });
+  $('tradeModal').classList.add('hidden');
+};
 
 // === TRANSFER MONEY MODAL ===
 function openTransferModal() {
