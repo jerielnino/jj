@@ -1905,6 +1905,18 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   </div>
 </div>
 
+<!-- PLAYER ELIMINATED ANNOUNCEMENT MODAL -->
+<div id="eliminatedModal" class="modal compact-card-popover hidden">
+  <div class="modal-box" style="border-color:#ef4444; background:linear-gradient(145deg, #7f1d1d 0%, #450a0a 100%);">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
+      <span style="background:#ef4444; color:#fff; padding:2px 10px; border-radius:99px; font-weight:900; font-size:0.72rem; letter-spacing:0.6px;">💀 BANKRUPT &amp; ELIMINATED</span>
+      <button id="closeEliminatedModalBtn" type="button" class="btn-alt" style="padding:2px 10px; font-size:0.72rem; border-radius:6px;">OK</button>
+    </div>
+    <h2 id="eliminatedModalTitle" style="font-size:1.1rem; margin:0 0 6px; color:#fecaca;">Player Eliminated!</h2>
+    <p id="eliminatedModalDesc" style="font-size:0.82rem; color:#fff; background:rgba(0,0,0,0.32); padding:9px 11px; border-radius:10px; margin:0; line-height:1.35;"></p>
+  </div>
+</div>
+
 <!-- WIN MODAL -->
 <div id="winModal" class="modal hidden">
   <div class="modal-box">
@@ -2659,6 +2671,119 @@ function awardPassGoIfEligible(playerId, reasonLabel='Passed GO') {
   return false;
 }
 
+
+function playerHasSellableHouses(pid) {
+  if (!state || !state.properties) return false;
+  return ownableDefs().some(d => d.type === 'property' && state.properties[d.id]?.ownerId === pid && (state.properties[d.id]?.houses || 0) > 0);
+}
+
+function playerHasUnmortgagedProps(pid) {
+  if (!state || !state.properties) return false;
+  return ownableDefs().some(d => state.properties[d.id]?.ownerId === pid && !state.properties[d.id]?.mortgaged && (state.properties[d.id]?.houses || 0) === 0);
+}
+
+function playerHasLiquidatableAssets(pid) {
+  if (!state || !state.properties) return false;
+  return ownableDefs().some(d => {
+    const st = state.properties[d.id];
+    if (!st || st.ownerId !== pid) return false;
+    return (d.type === 'property' && st.houses > 0) || !st.mortgaged;
+  });
+}
+
+function maxPotentialCashAfterLiquidation(pid) {
+  if (!state) return 0;
+  let total = state.balances?.[pid] || 0;
+  ownableDefs().forEach(d => {
+    const st = state.properties?.[d.id];
+    if (st && st.ownerId === pid) {
+      if (d.type === 'property' && st.houses > 0) {
+        total += st.houses * Math.floor(d.houseCost / 2);
+      }
+      if (!st.mortgaged) {
+        total += d.mortgageValue;
+      }
+    }
+  });
+  return total;
+}
+
+function autoEliminateBankruptPlayer(targetId, reasonNote) {
+  if (!state || !targetId || state.bankrupt?.[targetId]) return;
+  const tPlayer = playerById(targetId);
+  const tName = tPlayer?.name || 'Player';
+  const finalBal = state.balances?.[targetId] || 0;
+  const owned = ownedPropsFor(targetId);
+  owned.forEach(def => {
+    const pst = state.properties[def.id];
+    if (pst) { pst.ownerId = null; pst.houses = 0; pst.mortgaged = false; }
+  });
+  state.bankrupt[targetId] = true;
+  state.inJail[targetId] = false;
+  if (state.pendingDecision && state.pendingDecision.playerId === targetId) {
+    state.pendingDecision = null;
+  }
+  if (state.pendingArrival && state.pendingArrival.playerId === targetId) {
+    state.pendingArrival = null;
+  }
+  if (state.pendingCardMove && state.pendingCardMove.playerId === targetId) {
+    state.pendingCardMove = null;
+  }
+  const msgDesc = reasonNote || `${tName} has a negative balance (${fmt(finalBal)}) with no houses left to sell and no properties left to mortgage. ${tName} is eliminated!`;
+  state.lastEliminated = {
+    id: (state.lastEliminated?.id || 0) + 1,
+    playerId: targetId,
+    playerName: tName,
+    balance: finalBal,
+    desc: msgDesc
+  };
+  pushMoneyBanner({
+    kind: 'DEDUCT',
+    tag: '💀 PLAYER ELIMINATED',
+    title: `${tName} Eliminated (${fmt(finalBal)})`,
+    sub: 'Sold/mortgaged all assets & still negative',
+    color: '#ef4444',
+    icon: '💀'
+  });
+  state.history.push({
+    from: targetId,
+    to: BANK,
+    amount: 0,
+    note: `Eliminated (Negative balance ${fmt(finalBal)} with no assets left)`,
+    ts: Date.now()
+  });
+  state.lastEventText = `💀 ${tName} is eliminated! (Balance ${fmt(finalBal)} with no assets left)`;
+  state.lastEventId++;
+
+  const active = state.players.filter(pid => !state.bankrupt?.[pid]);
+  if (active.length <= 1) {
+    state.winner = active[0] || state.players[0];
+    stopGameClock();
+  } else if (state.current === targetId) {
+    state.current = getNextActivePlayer(targetId);
+    if (!state.doublesCountByPlayer) state.doublesCountByPlayer = {};
+    state.doublesCountByPlayer[state.current] = 0;
+    state.rolledThisTurn = false;
+    state.canRollAgain = false;
+    state.doublesCount = 0;
+    botActionRevision = -1;
+  }
+}
+
+function checkAllPlayersDebtAndEliminate() {
+  if (!state || state.winner) return;
+  state.players.forEach(pid => {
+    if (state.bankrupt?.[pid]) return;
+    const bal = state.balances?.[pid] || 0;
+    if (bal < 0) {
+      // If this player has NO sellable houses and NO unmortgaged properties left, eliminate them immediately!
+      if (!playerHasLiquidatableAssets(pid)) {
+        autoEliminateBankruptPlayer(pid);
+      }
+    }
+  });
+}
+
 function ownedPropsFor(playerId) {
   if (!state || !state.properties) return [];
   return ownableDefs().filter(def => state.properties[def.id]?.ownerId === playerId);
@@ -3373,6 +3498,7 @@ function startGame() {
 }
 
 function broadcastState(actionType='STATE') {
+  checkAllPlayersDebtAndEliminate();
   revision++;
   saveHostSession();
   for(const [, c] of connections) {
@@ -3858,6 +3984,40 @@ function handleAction(id, d) {
     return;
   }
 
+  // Auto-liquidate one house or mortgage one property to help clear negative balance
+  if(d.action === 'LIQUIDATE_ONE_FOR_DEBT') {
+    const targetId = d.targetId || id;
+    if ((state.balances[targetId] || 0) >= 0) return;
+    // First sell a house if the player has any houses
+    const propWithHouse = ownableDefs().find(def => def.type === 'property' && state.properties[def.id]?.ownerId === targetId && (state.properties[def.id]?.houses || 0) > 0);
+    if (propWithHouse) {
+      const st = state.properties[propWithHouse.id];
+      const wasHotel = st.houses === 5;
+      st.houses -= 1;
+      const refund = Math.floor(propWithHouse.houseCost / 2);
+      recordTransfer(BANK, targetId, refund, 'Sold ' + (wasHotel ? 'hotel' : 'house') + ': ' + propWithHouse.name, { propId: propWithHouse.id });
+      state.lastEventText = `🏚️ ${(playerById(targetId)?.name||'Player')} sold ${wasHotel?'Hotel':'House'} on ${propWithHouse.name} (+${fmt(refund)})`;
+      state.lastEventId++;
+      broadcastState('CASH');
+      return;
+    }
+    // Otherwise mortgage an unmortgaged property
+    const propToMort = ownableDefs().find(def => state.properties[def.id]?.ownerId === targetId && !state.properties[def.id]?.mortgaged && (state.properties[def.id]?.houses || 0) === 0);
+    if (propToMort) {
+      const st = state.properties[propToMort.id];
+      st.mortgaged = true;
+      recordTransfer(BANK, targetId, propToMort.mortgageValue, 'Mortgaged: ' + propToMort.name, { propId: propToMort.id });
+      state.lastEventText = `🏦 ${(playerById(targetId)?.name||'Player')} mortgaged ${propToMort.name} (+${fmt(propToMort.mortgageValue)})`;
+      state.lastEventId++;
+      broadcastState('CASH');
+      return;
+    }
+    // No assets left and still negative -> eliminate!
+    checkAllPlayersDebtAndEliminate();
+    broadcastState('FORFEIT');
+    return;
+  }
+
   // Execute Trade (Properties + Cash between two players)
   if(d.action === 'EXECUTE_TRADE') {
     const pA = d.playerA, pB = d.playerB;
@@ -4024,11 +4184,12 @@ function handleAction(id, d) {
     const def = propDef(d.propId);
     const st = state.properties[d.propId];
     if (!def || !st || st.houses <= 0) return;
+    if (!state.setupMode && st.ownerId !== id) return;
     const wasHotel = st.houses === 5;
     st.houses -= 1;
     if (!state.setupMode) {
       const refund = Math.floor(def.houseCost / 2);
-      recordTransfer(BANK, st.ownerId, refund, 'Sold ' + (wasHotel ? 'hotel' : 'house') + ': ' + def.name);
+      recordTransfer(BANK, st.ownerId, refund, 'Sold ' + (wasHotel ? 'hotel' : 'house') + ': ' + def.name, { propId: def.id });
     }
     broadcastState('CASH');
     return;
@@ -4084,8 +4245,9 @@ function handleAction(id, d) {
   }
 
   if(d.action === 'ROLL') {
-    // Cannot roll again if player hasn't resolved Buy-or-Auction on current unowned property!
-    if (state.pendingArrival || (state.pendingDecision && state.pendingDecision.propId)) return;
+    // Cannot roll while balance is negative (< 0) or while Buy-or-Auction is pending!
+    if ((state.balances[id] || 0) < 0) return;
+    if (state.pendingArrival || state.pendingCardMove || (state.pendingDecision && state.pendingDecision.propId)) return;
     if (state.rolledThisTurn && !state.canRollAgain) return;
     const d1 = Math.floor(Math.random() * 6) + 1;
     const d2 = Math.floor(Math.random() * 6) + 1;
@@ -4153,7 +4315,8 @@ function handleAction(id, d) {
 
   if(d.action === 'END_TURN') {
     if (!state.rolledThisTurn) return;
-    // Enforce rule: Cannot end turn while movement, card move, or Buy/Auction decision is pending!
+    // Enforce rule: Cannot end turn while balance is negative (< 0) or while movement / Buy-or-Auction is pending!
+    if ((state.balances[id] || 0) < 0) return;
     if (state.pendingArrival || state.pendingCardMove || (state.pendingDecision && state.pendingDecision.propId)) return;
     if (!state.doublesCountByPlayer) state.doublesCountByPlayer = {};
     state.doublesCountByPlayer[id] = 0;
@@ -4198,6 +4361,7 @@ function playStepHopSound(stepIndex) {
 
 let lastSeenBannerSeq = 0;
 let lastSeenJailJumpSeq = 0;
+let lastSeenEliminatedId = 0;
 
 function showMoneySideBanner(b) {
   if (!b) return;
@@ -4562,12 +4726,15 @@ function renderBoardDomOnly() {
 
   const hasPendingFlow = !!(isAnimatingMove || state.pendingArrival || state.pendingCardMove);
   const myCashNow = state.balances?.[myId] || 0;
-  const canAffordBuy = pendingDef ? (myCashNow >= pendingDef.price) : false;
-  const canRoll = myTurn && !hasPendingFlow && !hasMandatoryDecision && (!state.rolledThisTurn || state.canRollAgain);
-  const canBuy = myTurn && !hasPendingFlow && hasMandatoryDecision && canAffordBuy;
+  const currPlayerCash = state.balances?.[state.current] || 0;
+  const isInDebt = myCashNow < 0;
+  const isCurrInDebt = currPlayerCash < 0;
+  const canAffordBuy = pendingDef ? (myCashNow >= pendingDef.price && !isInDebt) : false;
+  const canRoll = myTurn && !isInDebt && !hasPendingFlow && !hasMandatoryDecision && (!state.rolledThisTurn || state.canRollAgain);
+  const canBuy = myTurn && !isInDebt && !hasPendingFlow && hasMandatoryDecision && canAffordBuy;
   const canAuction = myTurn && !hasPendingFlow && hasMandatoryDecision;
-  const canEnd = myTurn && !hasPendingFlow && state.rolledThisTurn && !state.canRollAgain && !hasMandatoryDecision;
-  const canBail = myTurn && !hasPendingFlow && state.inJail?.[myId] && !state.rolledThisTurn && (myCashNow >= 500000 || (state.jailFreeCards?.[myId] || 0) > 0);
+  const canEnd = myTurn && !isInDebt && !hasPendingFlow && state.rolledThisTurn && !state.canRollAgain && !hasMandatoryDecision;
+  const canBail = myTurn && !isInDebt && !hasPendingFlow && state.inJail?.[myId] && !state.rolledThisTurn && (myCashNow >= 500000 || (state.jailFreeCards?.[myId] || 0) > 0);
 
   cellsHTML += `<div class="board-center">
     <div class="center-world-watermark"></div>
@@ -4599,6 +4766,17 @@ function renderBoardDomOnly() {
 
       <div class="hub-space-card">${spaceSummaryHTML}</div>
 
+      ${isInDebt && !state.bankrupt?.[myId] && !hasPendingFlow ? `
+      <div style="width:100%; background:rgba(220,38,38,0.25); border:1.5px solid #f87171; border-radius:8px; padding:5px 8px; text-align:center;">
+        <div style="font-size:clamp(0.6rem, 1.15vmin, 0.76rem); font-weight:800; color:#fecaca; margin-bottom:4px;">
+          ⚠️ Balance Negative (${fmt(myCashNow)})! Sell houses &amp; mortgage properties to continue:
+        </div>
+        <div class="hub-decision-grid">
+          <button type="button" id="hubOpenLiquidateModalBtn" class="btn-danger">🏘️ Sell / Mortgage</button>
+          <button type="button" id="hubQuickLiquidateBtn" class="btn-auction">${playerHasSellableHouses(myId) ? '🏚️ Sell 1 House' : '🏦 Mortgage 1 Prop'}</button>
+        </div>
+      </div>` : ''}
+
       ${hasMandatoryDecision && myTurn && !hasPendingFlow ? `
       <div class="hub-decision-grid">
         <button type="button" id="hubBuyBtn" class="btn-good" ${canBuy ? '' : 'disabled'} title="${canBuy ? 'Buy property' : 'Not enough cash — must Auction!'}">${canBuy ? `🏠 Buy (${fmt(pendingDef.price)})` : `🚫 Need ${fmt(pendingDef.price)}`}</button>
@@ -4625,6 +4803,15 @@ function renderBoardDomOnly() {
   if ($('hubAuctionBtn') && pendingDef) $('hubAuctionBtn').onclick = () => sendAct('START_AUCTION', { propId: pendingDef.id, initiatorId: myId });
   if ($('hubEndTurnBtn')) $('hubEndTurnBtn').onclick = () => sendAct('END_TURN');
   if ($('hubBailBtn')) $('hubBailBtn').onclick = () => sendAct('PAY_BAIL');
+  if ($('hubOpenLiquidateModalBtn')) {
+    $('hubOpenLiquidateModalBtn').onclick = () => {
+      switchTrackerHubTab('props');
+      $('allPropsModal').classList.remove('hidden');
+    };
+  }
+  if ($('hubQuickLiquidateBtn')) {
+    $('hubQuickLiquidateBtn').onclick = () => sendAct('LIQUIDATE_ONE_FOR_DEBT', { targetId: myId });
+  }
 }
 
 function renderGame() {
@@ -4666,6 +4853,14 @@ function renderGame() {
   if (state.lastEventId && state.lastEventId !== lastSeenEventId) {
     lastSeenEventId = state.lastEventId;
     if (state.lastEventText) showEventToast(state.lastEventText);
+  }
+
+  if (state.lastEliminated && state.lastEliminated.id !== lastSeenEliminatedId) {
+    lastSeenEliminatedId = state.lastEliminated.id;
+    const elInfo = state.lastEliminated;
+    if ($('eliminatedModalTitle')) $('eliminatedModalTitle').textContent = `💀 ${elInfo.playerName} Eliminated!`;
+    if ($('eliminatedModalDesc')) $('eliminatedModalDesc').textContent = elInfo.desc;
+    if ($('eliminatedModal')) $('eliminatedModal').classList.remove('hidden');
   }
 
   if (state.lastCardEventId && state.lastCardEventId !== lastSeenCardId) {
@@ -4746,6 +4941,10 @@ function renderGame() {
     const botId = state.current;
     setTimeout(() => {
       if (!host || !state || state.winner || state.current !== botId || revision !== expectedRev) return;
+      if ((state.balances[botId] || 0) < 0) {
+        handleAction(botId, { action: 'LIQUIDATE_ONE_FOR_DEBT', targetId: botId, revision: expectedRev });
+        return;
+      }
       if (state.inJail[botId] && !state.rolledThisTurn && (state.balances[botId] || 0) > 2500000) {
         handleAction(botId, { action: 'PAY_BAIL', revision: expectedRev });
         return;
@@ -5396,8 +5595,11 @@ function renderAllPropsModalContent() {
             ` : ''}
             ${(st.ownerId === myId && def.type === 'property') ? (fullSet ? `
               <button type="button" class="btn-good" data-build-prop="${def.id}" ${!canBuildHouseOnProp(myId, def.id) ? 'disabled' : ''} title="Build ${st.houses===4?'Hotel':'House'} (${fmt(def.houseCost)})">+${st.houses===4?'🏨 Build Hotel':'🏠 Build House'} (${fmt(def.houseCost)})</button>
-              ${st.houses > 0 ? `<button type="button" class="btn-alt" data-sell-prop="${def.id}" title="Sell House/Hotel (+${fmt(Math.floor(def.houseCost/2))})">−🏠 Sell</button>` : ''}
-            ` : `<span style="color:#fde047; font-size:0.72rem; font-weight:700;">🔒 Need ${ownedCountInGroup(myId, def.group)}/${requiredColorMatchCount(def.group)} ${esc(GROUP_LABELS[def.group])} match to build houses</span>`) : ''}
+              ${st.houses > 0 ? `<button type="button" class="btn-alt" data-sell-prop="${def.id}" title="Sell House/Hotel (+${fmt(Math.floor(def.houseCost/2))})">−🏠 Sell (+${fmt(Math.floor(def.houseCost/2))})</button>` : ''}
+            ` : `
+              <span style="color:#fde047; font-size:0.72rem; font-weight:700;">🔒 Need ${ownedCountInGroup(myId, def.group)}/${requiredColorMatchCount(def.group)} ${esc(GROUP_LABELS[def.group])} match to build houses</span>
+              ${st.houses > 0 ? `<button type="button" class="btn-alt" data-sell-prop="${def.id}" title="Sell House/Hotel (+${fmt(Math.floor(def.houseCost/2))})">−🏠 Sell (+${fmt(Math.floor(def.houseCost/2))})</button>` : ''}
+            `) : ''}
             ${(st.ownerId === myId && st.houses === 0) ? `
               <button type="button" class="btn-alt" data-mort-prop="${def.id}">${st.mortgaged ? 'Unmortgage ' + fmt(def.unmortgageValue) : 'Mortgage +' + fmt(def.mortgageValue)}</button>
             ` : ''}
@@ -6000,6 +6202,7 @@ $('clearHistoryModalBtn').onclick = () => sendAct('CLEAR_HISTORY');
 
 if($('passGoQuickBtn')) $('passGoQuickBtn').onclick = () => sendAct('PASS_GO', { targetId: myId });
 $('closeCardDrawnBtn').onclick = () => $('cardDrawnModal').classList.add('hidden');
+$('closeEliminatedModalBtn').onclick = () => $('eliminatedModal').classList.add('hidden');
 $('cardDrawnModal').onclick = e => { if (e.target === $('cardDrawnModal')) $('cardDrawnModal').classList.add('hidden'); };
 
 // Top Scoreboard Click -> Opens Player Portfolio Modal (or handles Jail pill / Kick button)
