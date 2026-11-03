@@ -2377,7 +2377,7 @@ function syncTimerControlsUI(fromSetup=false) {
     timeLimitValue = Math.max(1, Number($('setupTimeLimitInput')?.value) || (timerMode === 'turn' ? 45 : 15));
     startingBalanceConfig = Number($('setupStartBalance')?.value) || 15000000;
     goMoneyMode = $('setupGoMoneyMode')?.value || 'throughout';
-  } else {
+  } else if (host) {
     timerMode = $('lobbyTimerMode')?.value || timerMode;
     timeLimitValue = Math.max(1, Number($('lobbyTimeLimitInput')?.value) || timeLimitValue);
     startingBalanceConfig = Number($('lobbyStartBalance')?.value) || startingBalanceConfig;
@@ -2654,17 +2654,18 @@ function unownedPropertiesCount() {
   return ownableDefs().filter(def => !state.properties[def.id]?.ownerId).length;
 }
 
-function canCollectPassGo() {
+function canCollectPassGo(forceFromCard=false) {
   if (!state) return true;
+  if (forceFromCard) return true;
   if (state.goMoneyMode === 'until_all_bought' && areAllPropertiesBought()) {
     return false;
   }
   return true;
 }
 
-function awardPassGoIfEligible(playerId, reasonLabel='Passed GO') {
+function awardPassGoIfEligible(playerId, reasonLabel='Passed GO', forceFromCard=false) {
   if (!state) return false;
-  if (canCollectPassGo()) {
+  if (canCollectPassGo(forceFromCard)) {
     recordTransfer(BANK, playerId, PASS_GO_AMOUNT, reasonLabel);
     return true;
   }
@@ -2948,7 +2949,7 @@ function lobbyBroadcast() {
   sendHost({
     type: 'LOBBY', roomCode, hostId,
     players: players.map(({id,name,avatar,connected,isBot})=>({id,name,avatar,connected,isBot})),
-    revision, participantLimit, startingBalanceConfig, timerMode, timeLimitValue
+    revision, participantLimit, startingBalanceConfig, goMoneyMode, timerMode, timeLimitValue
   });
   updatePlayers();
 }
@@ -3020,7 +3021,7 @@ function attachHostConnection(conn) {
       send(conn, {
         type: 'WELCOME', roomCode, hostId,
         players: players.map(({id,name,avatar,connected,isBot})=>({id,name,avatar,connected,isBot})),
-        state, revision, participantLimit, startingBalanceConfig, timerMode, timeLimitValue
+        state, revision, participantLimit, startingBalanceConfig, goMoneyMode, timerMode, timeLimitValue
       });
       lobbyBroadcast();
       if(state) broadcastState();
@@ -3062,7 +3063,7 @@ function saveHostSession() {
   if(host && !solo) try {
     localStorage.setItem('monHost:'+roomCode, JSON.stringify({
       roomCode, players: players.map(({id,name,avatar,connected,isBot})=>({id,name,avatar,connected,isBot})),
-      state, revision, participantLimit, startingBalanceConfig, timerMode, timeLimitValue, hostId, myId
+      state, revision, participantLimit, startingBalanceConfig, goMoneyMode, timerMode, timeLimitValue, hostId, myId
     }));
   } catch(e){}
 }
@@ -3171,6 +3172,7 @@ function resumeHostSession(saved) {
   revision = saved.revision || 0;
   participantLimit = saved.participantLimit || 4;
   startingBalanceConfig = saved.startingBalanceConfig || 15000000;
+  goMoneyMode = saved.goMoneyMode || 'throughout';
   timerMode = saved.timerMode || 'untimed';
   timeLimitValue = saved.timeLimitValue || 15;
   connections.clear(); transportPlayers.clear();
@@ -3282,6 +3284,7 @@ function handleClientMessage(data) {
     players = data.players||players; revision = data.revision??revision;
     participantLimit = data.participantLimit||participantLimit;
     startingBalanceConfig = data.startingBalanceConfig||startingBalanceConfig;
+    if(data.goMoneyMode) goMoneyMode = data.goMoneyMode;
     if(data.timerMode) timerMode = data.timerMode;
     if(data.timeLimitValue) timeLimitValue = data.timeLimitValue;
     syncTimerControlsUI(false);
@@ -3306,6 +3309,7 @@ function handleClientMessage(data) {
   } else if(data.type === 'SETTINGS') {
     participantLimit = data.participantLimit||participantLimit;
     startingBalanceConfig = data.startingBalanceConfig||startingBalanceConfig;
+    if(data.goMoneyMode) goMoneyMode = data.goMoneyMode;
     if(data.timerMode) timerMode = data.timerMode;
     if(data.timeLimitValue) timeLimitValue = data.timeLimitValue;
     syncTimerControlsUI(false);
@@ -3547,14 +3551,16 @@ function sendPlayerDirectlyToJail(playerId, reasonText) {
   state.lastEventId++;
 }
 
-function resolveSpaceLanding(playerId, spaceIdx, diceSum) {
+function resolveSpaceLanding(playerId, spaceIdx, diceSum, collectedGoNow=false) {
   const sp = BOARD_SPACES[spaceIdx];
   const p = playerById(playerId);
   const pName = p?.name || 'Player';
   if (!sp) return;
 
   if (sp.kind === 'go') {
-    state.lastEventText = `💰 ${pName} landed on GO!`;
+    state.lastEventText = collectedGoNow
+      ? `💰 ${pName} landed on GO and collected ${fmt(PASS_GO_AMOUNT)}!`
+      : `📍 ${pName} landed on GO (Regular Pass GO $2M ended; Card GO still pays).`;
     state.lastEventId++;
   } else if (sp.kind === 'jail') {
     state.lastEventText = `🚶 ${pName} is Just Visiting Jail (Not locked up).`;
@@ -3629,6 +3635,7 @@ function applyDrawnCardEffect(playerId, card, diceSum) {
       toPos: newPos,
       direction: 1,
       passedGo,
+      forcePassGo: true,
       diceSum,
       cardTitle: card.title
     };
@@ -3791,11 +3798,13 @@ function handleAction(id, d) {
     if (d.arrivalId && state.pendingArrival.id !== d.arrivalId) return;
     const arr = state.pendingArrival;
     state.pendingArrival = null;
+    let collectedGoNow = false;
     if (arr.passedGo) {
-      awardPassGoIfEligible(arr.playerId, 'Passed GO');
+      const goReason = arr.forcePassGo && arr.cardTitle ? `Passed GO (${arr.cardTitle})` : 'Passed GO';
+      collectedGoNow = awardPassGoIfEligible(arr.playerId, goReason, !!arr.forcePassGo);
     }
     inspectedSpaceIdx = arr.spaceIdx;
-    resolveSpaceLanding(arr.playerId, arr.spaceIdx, arr.diceSum);
+    resolveSpaceLanding(arr.playerId, arr.spaceIdx, arr.diceSum, collectedGoNow);
     botActionRevision = -1;
     broadcastState('ARRIVE');
     return;
@@ -3813,6 +3822,8 @@ function handleAction(id, d) {
       spaceIdx: cm.toPos,
       diceSum: cm.diceSum,
       passedGo: cm.passedGo,
+      forcePassGo: !!cm.forcePassGo,
+      cardTitle: cm.cardTitle || '',
       direction: cm.direction || 1
     };
     botActionRevision = -1;
@@ -4643,11 +4654,12 @@ function renderBoardDomOnly() {
       : (sp.sub || '');
 
     let ownerBadge = '';
-    if (st && st.ownerId === myId) {
+    if (st && st.ownerId) {
       const oCol = playerColor(st.ownerId);
       const oP = playerById(st.ownerId);
       const oInitial = (oP?.name || 'P').slice(0, 2).toUpperCase();
-      ownerBadge = `<span class="cell-owner-badge" style="background:${oCol};" title="Owned by You">${esc(oInitial)}</span>`;
+      const oTitle = st.ownerId === myId ? 'Owned by You' : `Owned by ${oP?.name || 'Player'}`;
+      ownerBadge = `<span class="cell-owner-badge" style="background:${oCol};" title="${esc(oTitle)}">${esc(oInitial)}</span>`;
     }
 
     // Use visualPositions[pid] so tokens step one tile at a time!
@@ -4878,7 +4890,7 @@ function renderGame() {
         $('hudGoRuleBadge').textContent = `💰 $2M GO: Until All Bought (${leftCount} left)`;
         $('hudGoRuleBadge').style.color = '#fde047';
       } else {
-        $('hudGoRuleBadge').textContent = `🚫 $2M GO: Ended (All Bought)`;
+        $('hudGoRuleBadge').textContent = `🚫 $2M GO: Ended (Card GO Still Pays)`;
         $('hudGoRuleBadge').style.color = '#fca5a5';
       }
     } else {
@@ -5332,10 +5344,7 @@ function openDeedInspectModal(idx) {
     return;
   }
 
-  if (st && st.ownerId && st.ownerId !== myId && !state.setupMode) {
-    showEventToast('🔒 Other players\' properties are hidden!');
-    return;
-  }
+
   const col = GROUP_COLORS[def.group] || '#334155';
   const ownerName = st?.ownerId ? (playerById(st.ownerId)?.name || 'Player') : 'Unowned (Bank)';
   const rec = st?.rentCollected || 0;
