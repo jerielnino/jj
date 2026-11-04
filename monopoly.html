@@ -1016,52 +1016,61 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
 }
 
 
-/* === COMPACT ANIMATED SIDE MONEY & PURCHASE BANNER STACK === */
+/* === BOTTOM TRANSACTION POPUPS (RED FOR DEDUCTION, GREEN FOR ADDITION) === */
 #purchaseBadgeContainer {
   position: absolute;
-  bottom: 14px;
-  left: 14px;
-  z-index: 260;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 280;
   display: flex;
   flex-direction: column-reverse;
+  align-items: center;
   gap: 8px;
   pointer-events: none;
-  max-width: min(300px, 88vw);
+  width: min(360px, 92vw);
 }
 .purchase-side-badge {
   position: relative;
-  width: clamp(225px, 30vw, 295px);
-  background: linear-gradient(145deg, rgba(6, 78, 59, 0.96) 0%, rgba(4, 47, 46, 0.98) 100%);
-  border: 2px solid #34d399;
-  border-radius: 15px;
-  padding: 9px 13px;
+  width: 100%;
+  background: linear-gradient(145deg, rgba(6, 95, 70, 0.96) 0%, rgba(4, 47, 46, 0.98) 100%);
+  border: 2px solid #22c55e;
+  border-radius: 14px;
+  padding: 9px 14px;
   color: #fff;
-  box-shadow: 0 12px 28px rgba(0,0,0,0.7), 0 0 18px rgba(52, 211, 153, 0.4);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.75), 0 0 18px rgba(34, 197, 94, 0.45);
   display: flex;
   align-items: center;
   gap: 10px;
   pointer-events: none;
-  transform-origin: bottom left;
+  transform-origin: bottom center;
   animation: purchaseBadgePopIn 3.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   overflow: hidden;
 }
 .purchase-side-badge.banner-deduct {
-  background: linear-gradient(145deg, rgba(127, 29, 29, 0.96) 0%, rgba(69, 10, 10, 0.98) 100%);
-  border-color: #f87171;
-  box-shadow: 0 12px 28px rgba(0,0,0,0.7), 0 0 18px rgba(248, 113, 113, 0.4);
+  background: linear-gradient(145deg, rgba(153, 27, 27, 0.96) 0%, rgba(69, 10, 10, 0.98) 100%);
+  border-color: #ef4444;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.75), 0 0 18px rgba(239, 68, 68, 0.45);
 }
 .purchase-side-badge.banner-deduct .psb-seal {
   background: radial-gradient(circle at 30% 30%, #fca5a5, #ef4444 65%, #991b1b);
+  border-color: #fca5a5;
 }
 .purchase-side-badge.banner-deduct .psb-tag {
-  background: rgba(248, 113, 113, 0.22);
+  background: rgba(239, 68, 68, 0.25);
   border-color: #fca5a5;
   color: #fecaca;
 }
+.purchase-side-badge.banner-deduct .psb-prop {
+  color: #fecaca;
+}
 .purchase-side-badge.banner-add {
-  background: linear-gradient(145deg, rgba(6, 95, 70, 0.96) 0%, rgba(6, 78, 59, 0.98) 100%);
-  border-color: #fde047;
-  box-shadow: 0 12px 28px rgba(0,0,0,0.7), 0 0 20px rgba(253, 224, 71, 0.45);
+  background: linear-gradient(145deg, rgba(6, 95, 70, 0.96) 0%, rgba(4, 47, 46, 0.98) 100%);
+  border-color: #22c55e;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.75), 0 0 20px rgba(34, 197, 94, 0.45);
+}
+.purchase-side-badge.banner-add .psb-prop {
+  color: #86efac;
 }
 .purchase-side-badge::before {
   content: "";
@@ -2841,40 +2850,52 @@ function recordTransfer(fromId, toId, amount, note, extra={}) {
     ts: Date.now(),
     ...extra
   });
-  // Emit animated money banner for every cash addition or deduction (including Pass GO, Rent, Tax, Cards, Purchases, Bail, Builds)!
+
+  // Emit animated RED (Deduction) and GREEN (Addition) bottom popups for all transactions
   if (amount > 0 && !extra.suppressAutoBanner) {
     if (fromId === BANK && toId !== BANK) {
-      const p = playerById(toId);
+      const pTo = playerById(toId);
       pushMoneyBanner({
         kind: 'ADD',
-        tag: note && note.toLowerCase().includes('go') ? '💰 PASS GO BONUS' : '💵 MONEY ADDED',
+        tag: note && note.toLowerCase().includes('go') ? '💰 PASS GO (+ADDITION)' : '💵 MONEY ADDED',
         title: `+${fmt(amount)} · ${note || 'Bank Payout'}`,
-        sub: `${p?.avatar||'🎩'} ${p?.name||'Player'} (Bal: ${fmt(state.balances[toId]||0)})`,
-        color: '#fde047',
-        icon: '💰'
+        sub: `${pTo?.avatar||'🎩'} ${pTo?.name||'Player'} · Bal: ${fmt(state.balances[toId]||0)}`,
+        color: '#22c55e',
+        icon: '📈',
+        propId: extra.propId || null
       });
     } else if (fromId !== BANK && toId === BANK) {
-      const p = playerById(fromId);
-      const isBuy = note && (note.startsWith('Bought ') || note.startsWith('Won Auction:') || note.startsWith('House:') || note.startsWith('Hotel:'));
+      const pFrom = playerById(fromId);
       pushMoneyBanner({
-        kind: isBuy ? 'PURCHASE' : 'DEDUCT',
-        tag: isBuy ? '✓ PURCHASED' : '💸 MONEY DEDUCTED',
+        kind: 'DEDUCT',
+        tag: '💸 MONEY DEDUCTED',
         title: `-${fmt(amount)} · ${note || 'Paid Bank'}`,
-        sub: `${p?.avatar||'🎩'} ${p?.name||'Player'} (Bal: ${fmt(state.balances[fromId]||0)})`,
-        color: isBuy ? '#10b981' : '#ef4444',
-        icon: isBuy ? '✓' : '💸',
+        sub: `${pFrom?.avatar||'🎩'} ${pFrom?.name||'Player'} · Bal: ${fmt(state.balances[fromId]||0)}`,
+        color: '#ef4444',
+        icon: '📉',
         propId: extra.propId || null
       });
     } else if (fromId !== BANK && toId !== BANK) {
       const pFrom = playerById(fromId);
       const pTo = playerById(toId);
+      // 1. Red Deduction popup for payer
       pushMoneyBanner({
         kind: 'DEDUCT',
-        tag: note && note.startsWith('Rent:') ? '🏠 AUTO RENT PAID' : '💸 PLAYER TRANSFER',
-        title: `${fmt(amount)} · ${note || 'Transfer'}`,
-        sub: `${pFrom?.avatar||'🎩'} ${pFrom?.name||'P1'} → ${pTo?.avatar||'🎩'} ${pTo?.name||'P2'}`,
-        color: '#f59e0b',
-        icon: '💸',
+        tag: `💸 DEDUCTED (${pFrom?.name||'Payer'})`,
+        title: `-${fmt(amount)} · ${note || 'Transfer'}`,
+        sub: `${pFrom?.avatar||'🎩'} ${pFrom?.name||'P1'} → ${pTo?.name||'P2'} · Bal: ${fmt(state.balances[fromId]||0)}`,
+        color: '#ef4444',
+        icon: '📉',
+        propId: extra.propId || null
+      });
+      // 2. Green Addition popup for receiver
+      pushMoneyBanner({
+        kind: 'ADD',
+        tag: `💵 ADDED (${pTo?.name||'Receiver'})`,
+        title: `+${fmt(amount)} · ${note || 'Transfer'}`,
+        sub: `${pTo?.avatar||'🎩'} ${pTo?.name||'P2'} ← ${pFrom?.name||'P1'} · Bal: ${fmt(state.balances[toId]||0)}`,
+        color: '#22c55e',
+        icon: '📈',
         propId: extra.propId || null
       });
     }
@@ -3483,6 +3504,9 @@ function startGame() {
   };
 
   lastWinnerTracker = null;
+  lastSeenBannerSeq = 0;
+  lastSeenJailJumpSeq = 0;
+  lastSeenEliminatedId = 0;
   botActionRevision = -1;
   inspectedSpaceIdx = 0;
   visualPositions = Object.fromEntries(players.map(p => [p.id, 0]));
@@ -4852,7 +4876,10 @@ function renderGame() {
     }
   }
 
-  // Trigger animated side Money / Purchase / Rent / Pass GO banners for any new transaction
+  // Trigger animated bottom Money / Purchase / Rent / Pass GO banners for any new transaction
+  if ((state.lastBannerSeq || 0) < lastSeenBannerSeq) {
+    lastSeenBannerSeq = 0;
+  }
   if (Array.isArray(state.moneyBanners)) {
     state.moneyBanners.forEach(b => {
       if (b.id > lastSeenBannerSeq) {
