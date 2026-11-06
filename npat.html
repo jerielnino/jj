@@ -419,17 +419,28 @@ body.kb-open .step-meta p { display: none; }
   word-break: break-word;
 }
 
-/* ADMIN SPELL CHECK TABLE */
-.admin-review-row {
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.14);
-  border-radius: 12px;
-  padding: 10px 12px;
+/* CLOSE CALL HOST CARD */
+.close-call-card {
+  background: rgba(0,0,0,0.32);
+  border: 1.5px solid rgba(255, 214, 111, 0.35);
+  border-radius: 14px;
+  padding: 14px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 10px;
+}
+.close-call-entries {
+  display: flex;
+  gap: 8px;
   flex-wrap: wrap;
+}
+.close-call-chip {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 10px;
+  padding: 8px 12px;
+  flex: 1;
+  min-width: 140px;
 }
 
 @media (max-width: 600px) {
@@ -555,7 +566,6 @@ body.kb-open .step-meta p { display: none; }
       <button id="copyInviteBtn" type="button" class="btn-alt" style="padding:6px 12px; font-size:0.8rem;">📋 Copy Link</button>
     </div>
 
-    <!-- Live Profile Editor inside Lobby so players can change Name/Avatar anytime -->
     <div style="background: rgba(255,255,255,0.06); padding: 10px; border-radius: 12px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.12);">
       <div style="font-size:0.78rem; color:#94a3b8; margin-bottom:6px;">Your Profile (Change Name or Avatar):</div>
       <div class="avatar-grid" id="lobbyAvatarPicker" style="margin-bottom:8px;"></div>
@@ -635,7 +645,6 @@ body.kb-open .step-meta p { display: none; }
             <p id="stepPrompt">Person or celebrity name</p>
           </div>
         </div>
-        <!-- Always visible inline Letter + Timer even when mobile keyboard covers the top bar -->
         <div class="inline-hud-pills">
           <span class="inline-letter-pill" id="inlineLetterBadge">🔤 A</span>
           <span class="timer-badge" id="inlineTimerBadge">⏱️ 1:00</span>
@@ -672,7 +681,7 @@ body.kb-open .step-meta p { display: none; }
 
 <!-- STEP-BY-STEP ONE-BY-ONE VOTING MODAL (Happens BEFORE Final Scoreboard) -->
 <div class="modal hidden" id="votingModal">
-  <div class="modal-box" style="max-width: 520px; text-align: center;">
+  <div class="modal-box" style="max-width: 540px; text-align: center;">
     <div style="display:flex; justify-content:space-between; align-items:center;">
       <span style="font-size:0.8rem; font-weight:700; color:#93c5fd; background:rgba(59,130,246,0.2); padding:4px 10px; border-radius:99px;" id="voteCounterBadge">Doubtful 1 of 3</span>
       <span style="font-size:0.8rem; color:#94a3b8;">Strict Majority Required</span>
@@ -686,29 +695,37 @@ body.kb-open .step-meta p { display: none; }
       <div class="vote-word-big" id="voteWordDisplay">Cha</div>
       <div id="voteSubmittedBy" style="font-size:0.8rem; color:#94a3b8; margin-bottom:14px;">Submitted in round</div>
 
-      <div id="voteButtonsRow" class="row" style="gap:12px; margin-bottom:0;">
+      <div id="voteButtonsRow" class="row" style="gap:12px; margin-bottom:10px;">
         <button id="voteYesBtn" type="button" class="btn-good" style="flex:1; padding:13px;">👍 Valid (Yes)</button>
         <button id="voteNoBtn" type="button" class="btn-danger" style="flex:1; padding:13px;">👎 Invalid (No)</button>
       </div>
-      <div id="voteWaitStatus" class="hidden" style="color:#fde68a; font-weight:700; margin-top:10px; font-size:0.9rem;">
+      <div id="voteWaitStatus" class="hidden" style="color:#fde68a; font-weight:700; margin-top:8px; font-size:0.9rem;">
         ⏳ Vote recorded! Waiting for other players... (<span id="voteProgressCount">1/2</span>)
+      </div>
+
+      <!-- Live per-player voting status chips -->
+      <div id="voteLiveTracker" style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:12px;"></div>
+
+      <!-- Host Force Next Button in case any player lags -->
+      <div id="hostForceVoteWrap" class="hidden" style="margin-top:12px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
+        <button id="hostForceVoteBtn" type="button" class="btn-alt" style="font-size:0.78rem; padding:6px 12px;">⚡ Tally Current Votes &amp; Next (Host)</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ADMIN POST-VOTE SPELL CHECK & MERGE MODAL (Host Only) -->
+<!-- HOST CLOSE-CALL RESOLVER MODAL (Only shown if close spellings like Rishi / Rashi exist!) -->
 <div class="modal hidden" id="adminReviewModal">
-  <div class="modal-box" style="max-width: 720px;">
-    <h2 style="margin:0; color:#ffe7a5; font-size:1.45rem; text-align:center;">🛡️ Admin Spell Check &amp; Validation</h2>
-    <p style="margin:0; color:#cbd5e1; font-size:0.86rem; text-align:center;">
-      Review all submitted answers before the scoreboard is shown. Fix typos to merge identical words, or keep distinct words (like <em>udumb</em> vs <em>urumb</em>) separate. Toggle Valid/Invalid if needed.
+  <div class="modal-box" style="max-width: 680px;">
+    <h2 style="margin:0; color:#ffe7a5; font-size:1.45rem; text-align:center;">🔍 Close Calls Detected! (Host Decision)</h2>
+    <p style="margin:0; color:#cbd5e1; font-size:0.88rem; text-align:center;">
+      No need to validate every word! Only close spellings (like <em>Rishi / Rashi</em> or <em>Udumb / Urumb</em>) are shown below. Choose whether they are <strong>Different Valid Words (10 pts each)</strong> or the <strong>Same Matched Word (5 pts each)</strong>:
     </p>
 
-    <div id="adminReviewList" style="display:flex; flex-direction:column; gap:8px; max-height:55vh; overflow-y:auto; padding-right:4px;"></div>
+    <div id="adminReviewList" style="display:flex; flex-direction:column; gap:12px; max-height:58vh; overflow-y:auto; padding-right:4px;"></div>
 
     <div class="row" style="margin-bottom:0; margin-top:8px;">
-      <button id="adminFinalizeBtn" type="button" class="btn-good" style="width:100%; padding:13px; font-size:1.05rem;">✅ Confirm &amp; Publish Final Scoreboard</button>
+      <button id="adminFinalizeBtn" type="button" class="btn-good" style="width:100%; padding:13px; font-size:1.05rem;">✅ Confirm Close Calls &amp; Show Scoreboard</button>
     </div>
   </div>
 </div>
@@ -731,7 +748,7 @@ body.kb-open .step-meta p { display: none; }
 
     <!-- Dedicated Matched Words Section -->
     <div class="matched-section-box hidden" id="matchedWordsSection">
-      <h3>🤝 Matched Words Breakdown (Tiered Points: 2p=5, 3p=4, 4p=3, 5p=2, 6+p=1)</h3>
+      <h3>🤝 Matched Words Breakdown (Same Word = 5 pts each)</h3>
       <div class="matched-chips-list" id="matchedWordsList"></div>
     </div>
 
@@ -752,14 +769,12 @@ body.kb-open .step-meta p { display: none; }
       <ul style="padding-left: 18px; display:flex; flex-direction:column; gap:8px; margin:0;">
         <li><strong>Random 1 &amp; 2 Letter Starts:</strong> Rounds can draw single letters (e.g. <strong>A, M, S</strong>) or 2-letter combos (e.g. <strong>AN, CH, TH, SH, PR</strong>).</li>
         <li><strong>Category-Specific Online Check:</strong> Animals are verified against creatures/species, Places against geography, Movies against cinema/films, and Things against physical objects/items.</li>
-        <li><strong>One-by-One Voting:</strong> Any doubtful word is voted on sequentially before scores are shown. Only a strict majority (<strong>Yes &gt; No</strong>) passes.</li>
-        <li><strong>Admin Spell Check:</strong> After voting, the Host can adjust spellings (e.g., keeping <em>udumb</em> and <em>urumb</em> distinct or merging typos) and override validity.</li>
-        <li><strong>Tiered Matching Points:</strong>
+        <li><strong>One-by-One Voting:</strong> Any doubtful word is voted on sequentially by all players before scores are shown. Only a strict majority (<strong>Yes &gt; No</strong>) passes.</li>
+        <li><strong>Smart Close-Call Check Only:</strong> Host never has to validate every word! Only if two players write close spellings (like <em>Rishi / Rashi</em>) does the Host choose <strong>Valid 10 pts each</strong> or <strong>Same Matched 5 pts each</strong>.</li>
+        <li><strong>Points System:</strong>
           <ul>
-            <li><span style="color:#34d399; font-weight:bold;">10 pts</span> — Unique valid word</li>
-            <li><span style="color:#fbbf24; font-weight:bold;">5 pts</span> — Matched by 2 players</li>
-            <li><span style="color:#fbbf24; font-weight:bold;">4 pts</span> — Matched by 3 players</li>
-            <li><span style="color:#fbbf24; font-weight:bold;">3 pts</span> — Matched by 4 players (decreases down to 1 pt)</li>
+            <li><span style="color:#34d399; font-weight:bold;">10 pts</span> — Unique valid word (or close call marked as distinct valid words)</li>
+            <li><span style="color:#fbbf24; font-weight:bold;">5 pts</span> — Same / Matched valid word (for each matching player)</li>
             <li><span style="color:#fca5a5; font-weight:bold;">0 pts</span> — Empty or Invalid</li>
           </ul>
         </li>
@@ -797,7 +812,6 @@ const TWO_LETTER_COMBOS = [
   'TA', 'TE', 'TH', 'TI', 'TO', 'TR', 'VA', 'VI', 'WA', 'WH', 'WI', 'WO'
 ];
 
-// Curated Offline Fallback Dictionary supporting both 1-letter and 2-letter prefixes
 const LOCAL_DICT = {
   place: ['Amsterdam','Athens','Argentina','Australia','Austin','Atlanta','Antwerp','Andorra','ankara','Berlin','Boston','Brazil','Beijing','Bangkok','Barcelona','Bhopal','Chennai','Chicago','China','Chile','Chandigarh','Chemnad','Cochin','Coimbatore','Colombo','Delhi','Dubai','Dublin','Denmark','Doha','Egypt','England','France','Finland','Florida','Germany','Goa','Geneva','Greece','Hungary','Hyderabad','Holland','India','Indonesia','Iran','Iraq','Italy','Japan','Jakarta','Jaipur','Jordan','Kerala','Kasaragod','Kochi','Kolkata','kanpur','Kenya','Kuwait','London','Lisbon','Lahore','Lucknow','Madrid','Mumbai','Malaysia','Mexico','Manila','Mangalore','Moscow','Nepal','Norway','New York','Oman','Oslo','Paris','Poland','Portugal','Pune','Patna','Prague','Qatar','Rome','Russia','Riyadh','Spain','Singapore','Sydney','Seoul','Sweden','Switzerland','Shimla','Surat','Thailand','Tokyo','Turkey','Taiwan','Trivandrum','Thrissur','Toronto','Uganda','Ukraine','Vietnam','Venice','Vienna','Warsaw','Washington','Yemen','Zambia','Zurich'],
   animal: ['Alligator','Ant','Antelope','Ape','Armadillo','Anaconda','Albatross','Bear','Bat','Beaver','Bee','Bison','Butterfly','Buffalo','Baboon','Camel','Cat','Cheetah','Chimpanzee','Cobra','Chameleon','Chicken','Crab','Crocodile','Crow','Deer','Dog','Dolphin','Donkey','Dragonfly','Duck','Eagle','Elephant','Emu','Falcon','Ferret','Fish','Flamingo','Fox','Frog','Giraffe','Goat','Gorilla','Grasshopper','Hamster','Hawk','Hedgehog','Hippopotamus','Horse','Hyena','Iguana','Impala','Jackal','Jaguar','Jellyfish','Kangaroo','Koala','Kingfisher','Komodo Dragon','Leopard','Lion','Lizard','Llama','Lobster','Monkey','Moose','Mosquito','Mouse','Mongoose','Nightingale','Octopus','Ostrich','Otter','Owl','Oyster','Panda','Panther','Parrot','Peacock','Pelican','Penguin','Pig','Pigeon','Python','Quail','Rabbit','Raccoon','Rat','Raven','Reindeer','Rhinoceros','Robin','Salamander','Salmon','Scorpion','Seahorse','Seal','Shark','Sheep','Shrimp','Skunk','Sloth','Snail','Snake','Sparrow','Spider','Squirrel','Starfish','Swan','Tiger','Toad','Tortoise','Toucan','Turkey','Turtle','Vulture','Walrus','Wasp','Whale','Wolf','Wombat','Woodpecker','Yak','Zebra'],
@@ -879,16 +893,40 @@ function areAnswersSame(w1, w2) {
   return !!c1 && c1 === c2;
 }
 
-// Tiered Matched Points Rule:
-// 1 player (unique) = 10 pts
-// 2 players match = 5 pts
-// 3 players match = 4 pts
-// 4 players match = 3 pts
-// 5 players match = 2 pts
-// 6+ players match = 1 pt
+// Points Rule:
+// Unique valid word = 10 pts
+// Same / Matched word = 5 pts for each matching player
 function getMatchedPoints(matchCount) {
   if (matchCount <= 1) return 10;
-  return Math.max(1, 7 - matchCount);
+  return 5;
+}
+
+// Levenshtein Edit Distance for Detecting Close Calls (e.g. rishi/rashi, udumb/urumb)
+function editDistance(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+    }
+  }
+  return dp[m][n];
+}
+
+function areWordsCloseCall(w1, w2) {
+  const s1 = normalizeWord(w1);
+  const s2 = normalizeWord(w2);
+  if (!s1 || !s2 || s1 === s2) return false;
+  if (s1.length < 3 || s2.length < 3) return false;
+  const dist = editDistance(s1, s2);
+  const maxLen = Math.max(s1.length, s2.length);
+  if (dist === 1) return true; // e.g., rishi vs rashi, udumb vs urumb
+  if (dist === 2 && maxLen >= 5) return true; // e.g., 2-letter variation on longer words
+  if (Math.min(s1.length, s2.length) >= 4 && (s1.startsWith(s2) || s2.startsWith(s1))) return true;
+  return false;
 }
 
 // Category-Specific Online Lookup & Validation
@@ -914,7 +952,6 @@ async function lookupEntity(word, category) {
   const cacheKey = category + ':' + clean.toLowerCase();
   if (entityCache.has(cacheKey)) return entityCache.get(cacheKey);
 
-  // Reject single-character or gibberish/very short non-words immediately to Doubtful
   const alphaOnly = clean.replace(/[^a-zA-Z]/g, '');
   if (alphaOnly.length < 2 || (alphaOnly.length < 3 && !isLocalWordKnown(clean, category))) {
     const res = { exists: false, title: clean, description: 'Too short / needs player vote', thumbnail: null };
@@ -922,14 +959,12 @@ async function lookupEntity(word, category) {
     return res;
   }
 
-  // Fast check in curated local category dictionary
   if (isLocalWordKnown(clean, category)) {
     const res = { exists: true, title: clean, description: `Verified ${CATEGORY_DATA[category].label}`, thumbnail: null };
     entityCache.set(cacheKey, res);
     return res;
   }
 
-  // Names: require at least 3 letters and valid vowel/consonant structure; if online, check Wikipedia or send to vote if suspicious
   if (category === 'name') {
     const hasVowel = /[aeiouy]/i.test(alphaOnly);
     if (alphaOnly.length >= 3 && hasVowel) {
@@ -943,7 +978,6 @@ async function lookupEntity(word, category) {
     }
   }
 
-  // Online category-specific Wikipedia search
   if (navigator.onLine && (state?.onlineCheck ?? true)) {
     try {
       const suffixMap = {
@@ -971,7 +1005,6 @@ async function lookupEntity(word, category) {
 
           const combinedText = `${hit.title} ${hit.snippet || ''}`.replace(/<[^>]+>/g, ' ');
           if (CATEGORY_KEYWORDS[category].test(combinedText)) {
-            // Fetch summary for thumbnail if possible
             let thumb = null;
             let desc = combinedText.slice(0, 90) + '...';
             try {
@@ -991,7 +1024,6 @@ async function lookupEntity(word, category) {
       }
     } catch (e) {}
 
-    // Secondary check for Thing or Animal via Dictionary API (strictly checking noun definition & category relevance)
     if (category === 'thing' || category === 'animal') {
       try {
         const ctrl = new AbortController();
@@ -1010,7 +1042,6 @@ async function lookupEntity(word, category) {
                 return verified;
               }
               if (category === 'thing' && clean.length >= 3 && !NON_THING_DISQUALIFIERS.test(allDefs) && (CATEGORY_KEYWORDS.thing.test(allDefs) || nounMeaning.definitions.length >= 1)) {
-                // Ensure slang/interjections like "cha" aren't accepted as physical things
                 if (!/\b(interjection|exclamation|slang|informal|abbreviation|dialect|tea)\b/i.test(allDefs) || CATEGORY_KEYWORDS.thing.test(allDefs)) {
                   const verified = { exists: true, title: clean, description: nounMeaning.definitions[0].definition.slice(0, 85), thumbnail: null };
                   entityCache.set(cacheKey, verified);
@@ -1060,7 +1091,7 @@ function getSavedSessionInfo() {
     const raw = localStorage.getItem('npat_last_session');
     if (!raw) return null;
     const data = JSON.parse(raw);
-    if (Date.now() - data.ts > 3 * 60 * 60 * 1000) return null; // expire after 3 hours
+    if (Date.now() - data.ts > 3 * 60 * 60 * 1000) return null;
     return data;
   } catch (e) { return null; }
 }
@@ -1097,7 +1128,7 @@ const PEER_OPTS = {
 };
 
 let peer = null;
-let connections = new Map(); // playerId -> conn
+let connections = new Map();
 let host = false;
 let solo = false;
 let roomCode = '';
@@ -1112,7 +1143,7 @@ let myAnswers = {};
 let hasSubmitted = false;
 let gameTimerInterval = null;
 let heartbeatTimer = null;
-let reconnectLoopTimer = null;
+let pendingClientAction = null;
 let selectedTab = 'all';
 
 function getActiveCategories() {
@@ -1149,7 +1180,6 @@ function pickRandomLetterCombo(mode = 'mixed', usedSet = new Set()) {
   if (mode === 'single') pool = SINGLE_LETTERS;
   else if (mode === 'double') pool = TWO_LETTER_COMBOS;
   else {
-    // 55% single letters, 45% 2-letter combinations for variety
     pool = Math.random() < 0.45 ? TWO_LETTER_COMBOS : SINGLE_LETTERS;
   }
   const available = pool.filter(l => !usedSet.has(l));
@@ -1158,10 +1188,11 @@ function pickRandomLetterCombo(mode = 'mixed', usedSet = new Set()) {
 }
 
 function send(conn, obj) {
-  if (!conn) return;
+  if (!conn) return false;
   if (conn.open) {
-    try { conn.send(obj); } catch (e) {}
+    try { conn.send(obj); return true; } catch (e) { return false; }
   }
+  return false;
 }
 
 function sendHost(obj) {
@@ -1170,8 +1201,12 @@ function sendHost(obj) {
 }
 
 function sendToHost(obj) {
+  const payload = { ...obj, playerId: myId };
   if (window._hostConn && window._hostConn.open) {
-    send(window._hostConn, { ...obj, playerId: myId });
+    send(window._hostConn, payload);
+  } else {
+    pendingClientAction = payload;
+    attemptClientReconnect();
   }
 }
 
@@ -1198,8 +1233,9 @@ function createInitialState(timeLimit, onlineCheck, letterMode, includeMovie, pr
     timeRemaining: timeLimit,
     submissions: {},
     completed: new Set(),
-    voting: null, // { items: [], currentIndex: 0, votesForCurrent: {}, decisions: {} }
+    voting: null, // { items: [], currentIndex: 0, votesForCurrent: {}, votedPlayerIds: [] }
     adminOverrides: {}, // key: `${playerId}:${cat}` -> { word, valid }
+    closeCallGroups: [], // [{ id, category, entries: [{ key, playerId, playerName, avatar, word }], mode: 'separate' | 'same' }]
     results: null,
     matchedGroups: [],
     roundWinner: null,
@@ -1251,6 +1287,10 @@ function connectClientToHostPeer() {
     window._reconnectingNow = false;
     msg('');
     send(conn, { type: 'JOIN', playerId: myId, name: myName, avatar: myAvatar });
+    if (pendingClientAction) {
+      send(conn, pendingClientAction);
+      pendingClientAction = null;
+    }
   });
   conn.on('data', data => handleClientMessage(data));
   conn.on('close', () => { window._reconnectingNow = false; });
@@ -1279,7 +1319,6 @@ function hostGame(restoreRoomCode = null) {
   host = true; solo = false;
   hostPeerId = peerIdForRoom(roomCode);
 
-  // Check if restoring a host backup
   let restored = false;
   if (restoreRoomCode) {
     try {
@@ -1396,13 +1435,18 @@ function playSolo() {
   startNewRound();
 }
 
-// Host Message Handler (with Seamless Reconnect Sync)
+// Host Message Handler
 function handleHostMessage(conn, data) {
   if (!data) return;
   const pid = data.playerId || conn.peer;
 
-  if (data.type === 'JOIN' || data.type === 'UPDATE_PROFILE') {
+  if (pid) {
     connections.set(pid, conn);
+    const existingPlayer = players.find(p => p.id === pid);
+    if (existingPlayer) existingPlayer.online = true;
+  }
+
+  if (data.type === 'JOIN' || data.type === 'UPDATE_PROFILE') {
     let existing = players.find(p => p.id === pid);
     if (existing) {
       existing.name = data.name || existing.name;
@@ -1418,7 +1462,6 @@ function handleHostMessage(conn, data) {
     updateTopScoreboard();
     broadcastLobbyState();
 
-    // Send full state snapshot so reconnecting player lands directly in active game/voting/results
     send(conn, {
       type: 'SYNC_STATE',
       roomCode,
@@ -1444,6 +1487,7 @@ function handleHostMessage(conn, data) {
 
 function serializeStateForClient(targetPlayerId) {
   if (!state) return null;
+  const votesObj = state.voting?.votesForCurrent || {};
   return {
     letter: state.letter,
     letterMode: state.letterMode,
@@ -1459,9 +1503,10 @@ function serializeStateForClient(targetPlayerId) {
     voting: state.voting ? {
       items: state.voting.items,
       currentIndex: state.voting.currentIndex,
-      votedCount: Object.keys(state.voting.votesForCurrent || {}).length,
+      votedCount: Object.keys(votesObj).length,
+      votedPlayerIds: Object.keys(votesObj),
       totalVoters: getEligibleVoterCount(),
-      hasVoted: !!(state.voting.votesForCurrent && state.voting.votesForCurrent[targetPlayerId] !== undefined)
+      hasVoted: votesObj[targetPlayerId] !== undefined
     } : null,
     results: state.results,
     matchedGroups: state.matchedGroups,
@@ -1545,15 +1590,26 @@ function handleClientMessage(data) {
   } else if (data.type === 'VOTE_ITEM_PROMPT') {
     if (!state) state = {};
     state.phase = 'voting';
-    state.voting = {
-      items: data.items,
-      currentIndex: data.currentIndex,
-      votedCount: data.votedCount || 0,
-      totalVoters: data.totalVoters || players.length
-    };
-    renderSingleVoteStep(false);
+    // CRITICAL FIX: Never overwrite host's votesForCurrent map if called on host!
+    if (!host) {
+      state.voting = {
+        items: data.items,
+        currentIndex: data.currentIndex,
+        votedCount: data.votedCount || 0,
+        votedPlayerIds: data.votedPlayerIds || [],
+        totalVoters: data.totalVoters || players.length,
+        hasVoted: (data.votedPlayerIds || []).includes(myId)
+      };
+    }
+    renderSingleVoteStep(state.voting?.hasVoted || false);
   } else if (data.type === 'VOTE_PROGRESS') {
+    if (state && state.voting) {
+      state.voting.votedCount = data.votedCount;
+      state.voting.totalVoters = data.totalVoters;
+      state.voting.votedPlayerIds = data.votedPlayerIds || [];
+    }
     $('voteProgressCount').textContent = `${data.votedCount}/${data.totalVoters}`;
+    renderVoteLiveTracker(data.votedPlayerIds || []);
   } else if (data.type === 'CLOSE_VOTING') {
     $('votingModal').classList.add('hidden');
   } else if (data.type === 'FINAL_RESULTS') {
@@ -1599,13 +1655,16 @@ function restoreUIForCurrentPhase() {
       updateStepCard();
     }
   } else if (state.phase === 'voting' && state.voting) {
-    renderSingleVoteStep(state.voting.hasVoted);
+    const hasVotedAlready = host
+      ? (state.voting.votesForCurrent && state.voting.votesForCurrent[myId] !== undefined)
+      : !!state.voting.hasVoted;
+    renderSingleVoteStep(hasVotedAlready);
   } else if (state.phase === 'admin_review') {
     if (host) showAdminReviewModal();
     else {
       $('stepCard').classList.add('hidden');
       $('waitingBox').classList.remove('hidden');
-      $('waitingTitle').textContent = '🛡️ Host Reviewing Spellings...';
+      $('waitingTitle').textContent = '🔍 Host Checking Close Calls...';
       $('waitingSub').textContent = 'Final scoreboard will appear in a moment!';
     }
   } else if (state.phase === 'results' && state.results) {
@@ -1834,7 +1893,7 @@ function checkIfAllCompleted() {
   }
 }
 
-// PHASE 1 AFTER ROUND: Category Verification -> Sequential Voting -> Admin Review -> Scoreboard
+// PHASE 1 AFTER ROUND: Category Verification -> Sequential Voting -> Close-Call Check Only -> Scoreboard
 async function beginPostRoundVerification() {
   if (!host || !state || state.phase !== 'playing') return;
   state.phase = 'verifying';
@@ -1846,7 +1905,11 @@ async function beginPostRoundVerification() {
     subtitle: 'Validating Places, Animals, Things & Movies...'
   };
   sendHost(statusMsg);
-  handleClientMessage(statusMsg);
+  $('stepCard').classList.add('hidden');
+  $('waitingBox').classList.remove('hidden');
+  $('editAnswersBtn').classList.add('hidden');
+  $('waitingTitle').textContent = statusMsg.title;
+  $('waitingSub').textContent = statusMsg.subtitle;
 
   const prefix = state.letter.toUpperCase();
   const cats = getActiveCategories();
@@ -1884,23 +1947,33 @@ async function beginPostRoundVerification() {
   });
 
   if (doubtfulList.length > 0) {
-    // Start sequential one-by-one voting
     state.phase = 'voting';
     state.voting = {
       items: doubtfulList,
       currentIndex: 0,
       votesForCurrent: {},
-      decisions: {} // key `${cat}:${normWord}` -> boolean
+      votedPlayerIds: [],
+      totalVoters: getEligibleVoterCount()
     };
     saveHostBackupState();
     promptCurrentDoubtfulVoteItem();
   } else {
-    proceedToAdminSpellReview();
+    proceedToCloseCallCheck();
   }
 }
 
 function getEligibleVoterCount() {
-  return players.filter(p => p.online !== false || p.isBot).length;
+  if (!host) return state?.voting?.totalVoters || players.length || 1;
+  let count = 1; // Host
+  players.forEach(p => {
+    if (p.id === myId) return;
+    if (p.isBot) count++;
+    else {
+      const c = connections.get(p.id);
+      if (p.online !== false && c && c.open) count++;
+    }
+  });
+  return Math.max(1, count);
 }
 
 function promptCurrentDoubtfulVoteItem() {
@@ -1911,31 +1984,50 @@ function promptCurrentDoubtfulVoteItem() {
   if (idx >= items.length) {
     sendHost({ type: 'CLOSE_VOTING' });
     $('votingModal').classList.add('hidden');
-    proceedToAdminSpellReview();
+    proceedToCloseCallCheck();
     return;
   }
 
   state.voting.votesForCurrent = {};
+  state.voting.votedPlayerIds = [];
+  state.voting.votedCount = 0;
+  state.voting.totalVoters = getEligibleVoterCount();
+
   const payload = {
     type: 'VOTE_ITEM_PROMPT',
     items: items,
     currentIndex: idx,
     votedCount: 0,
-    totalVoters: getEligibleVoterCount()
+    votedPlayerIds: [],
+    totalVoters: state.voting.totalVoters
   };
   sendHost(payload);
-  handleClientMessage(payload);
+  renderSingleVoteStep(false);
 
   // Trigger AI Bot votes for this single item
   players.filter(p => p.isBot).forEach(bot => {
     setTimeout(() => {
       if (state?.phase === 'voting' && state.voting?.currentIndex === idx) {
         const currentWord = items[idx].word;
-        // Bots reject very short 2-3 letter doubtful words like "cha"
         const botApproves = currentWord.length >= 4 && Math.random() > 0.45;
         handleSingleVoteCast(bot.id, idx, botApproves);
       }
-    }, 900 + Math.random() * 900);
+    }, 800 + Math.random() * 800);
+  });
+}
+
+function renderVoteLiveTracker(votedIds = []) {
+  const tracker = $('voteLiveTracker');
+  if (!tracker) return;
+  tracker.innerHTML = '';
+  const votedSet = new Set(votedIds);
+
+  players.forEach(p => {
+    const done = votedSet.has(p.id);
+    const chip = document.createElement('div');
+    chip.style.cssText = `font-size:0.75rem; padding:3px 9px; border-radius:99px; display:inline-flex; align-items:center; gap:4px; font-weight:700; border:1px solid ${done ? '#10b981' : 'rgba(255,255,255,0.18)'}; background:${done ? 'rgba(16,185,129,0.22)' : 'rgba(255,255,255,0.06)'}; color:${done ? '#6ee7b7' : '#cbd5e1'};`;
+    chip.innerHTML = `<span>${p.avatar}</span> <span>${esc(p.name)}</span> <span>${done ? '✓ Voted' : '⏳'}</span>`;
+    tracker.appendChild(chip);
   });
 }
 
@@ -1954,7 +2046,15 @@ function renderSingleVoteStep(alreadyVoted = false) {
 
   $('voteButtonsRow').classList.toggle('hidden', alreadyVoted);
   $('voteWaitStatus').classList.toggle('hidden', !alreadyVoted);
-  $('voteProgressCount').textContent = `${state.voting.votedCount || 0}/${state.voting.totalVoters || players.length}`;
+  $('hostForceVoteWrap').classList.toggle('hidden', !host);
+
+  const votedIds = host
+    ? Object.keys(state.voting.votesForCurrent || {})
+    : (state.voting.votedPlayerIds || []);
+  const totalV = state.voting.totalVoters || getEligibleVoterCount();
+  $('voteProgressCount').textContent = `${votedIds.length}/${totalV}`;
+  renderVoteLiveTracker(votedIds);
+
   $('votingModal').classList.remove('hidden');
 }
 
@@ -1962,56 +2062,73 @@ function castMySingleVote(voteYes) {
   playClickSound();
   $('voteButtonsRow').classList.add('hidden');
   $('voteWaitStatus').classList.remove('hidden');
-  const idx = state?.voting?.currentIndex || 0;
+  const idx = state?.voting?.currentIndex ?? 0;
+
   if (host) {
     handleSingleVoteCast(myId, idx, voteYes);
   } else {
+    if (state && state.voting) state.voting.hasVoted = true;
     sendToHost({ type: 'CAST_SINGLE_VOTE', itemIndex: idx, voteYes });
   }
 }
 
 function handleSingleVoteCast(playerId, itemIndex, voteYes) {
   if (!host || !state || state.phase !== 'voting' || !state.voting) return;
-  if (itemIndex !== state.voting.currentIndex) return;
+  if (itemIndex !== undefined && Number(itemIndex) !== state.voting.currentIndex) return;
 
+  if (!state.voting.votesForCurrent) state.voting.votesForCurrent = {};
   state.voting.votesForCurrent[playerId] = !!voteYes;
-  const votedCount = Object.keys(state.voting.votesForCurrent).length;
+
+  const votedPlayerIds = Object.keys(state.voting.votesForCurrent);
+  const votedCount = votedPlayerIds.length;
   const totalVoters = getEligibleVoterCount();
 
-  sendHost({ type: 'VOTE_PROGRESS', votedCount, totalVoters });
+  state.voting.votedPlayerIds = votedPlayerIds;
+  state.voting.votedCount = votedCount;
+  state.voting.totalVoters = totalVoters;
+
+  sendHost({ type: 'VOTE_PROGRESS', votedCount, totalVoters, votedPlayerIds });
   $('voteProgressCount').textContent = `${votedCount}/${totalVoters}`;
+  renderVoteLiveTracker(votedPlayerIds);
 
   if (votedCount >= totalVoters) {
-    // Tally strict majority (Yes > No)
-    let yes = 0, no = 0;
-    Object.values(state.voting.votesForCurrent).forEach(v => { if (v) yes++; else no++; });
-    const item = state.voting.items[itemIndex];
-    const isAccepted = yes > no; // Strict maximum majority vote required!
-
-    const cacheKey = item.category + ':' + item.word.toLowerCase();
-    entityCache.set(cacheKey, {
-      exists: isAccepted,
-      title: item.word,
-      description: isAccepted ? `✅ Vote Accepted (${yes}-${no})` : `❌ Vote Rejected (${yes}-${no})`,
-      thumbnail: null
-    });
-
-    state.voting.currentIndex++;
-    saveHostBackupState();
-    setTimeout(() => promptCurrentDoubtfulVoteItem(), 350);
+    tallyAndAdvanceCurrentVote();
   }
 }
 
-// PHASE 2 AFTER VOTING: Admin Spell Check & Validation Override
-function proceedToAdminSpellReview() {
+function tallyAndAdvanceCurrentVote() {
+  if (!host || !state || state.phase !== 'voting' || !state.voting) return;
+  const itemIndex = state.voting.currentIndex;
+  const item = state.voting.items[itemIndex];
+  if (!item) return;
+
+  let yes = 0, no = 0;
+  Object.values(state.voting.votesForCurrent || {}).forEach(v => { if (v) yes++; else no++; });
+  const isAccepted = yes > no;
+
+  const cacheKey = item.category + ':' + item.word.toLowerCase();
+  entityCache.set(cacheKey, {
+    exists: isAccepted,
+    title: item.word,
+    description: isAccepted ? `✅ Vote Accepted (${yes}-${no})` : `❌ Vote Rejected (${yes}-${no})`,
+    thumbnail: null
+  });
+
+  state.voting.currentIndex++;
+  saveHostBackupState();
+  setTimeout(() => promptCurrentDoubtfulVoteItem(), 300);
+}
+
+// PHASE 2 AFTER VOTING: Smart Close-Call Detector (e.g., Rishi / Rashi)
+// Skips Host review entirely if no close calls exist!
+function proceedToCloseCallCheck() {
   if (!host || !state) return;
-  state.phase = 'admin_review';
   state.adminOverrides = {};
+  state.closeCallGroups = [];
 
   const prefix = state.letter.toUpperCase();
   const cats = getActiveCategories();
 
-  // Pre-populate admin review table with current validity & spellings
   players.forEach(p => {
     const sub = state.submissions[p.id]?.answers || {};
     cats.forEach(cat => {
@@ -2026,18 +2143,81 @@ function proceedToAdminSpellReview() {
       const isValid = startsOk && (cached ? cached.exists : false);
       state.adminOverrides[key] = {
         word: raw,
+        originalWord: raw,
         valid: isValid,
         reason: !startsOk ? `Wrong start (needs ${prefix})` : (cached?.description || (isValid ? 'Verified' : 'Invalid'))
       };
     });
   });
 
-  // Notify non-host clients that Admin is reviewing spellings
+  // Detect close calls among VALID answers in each category
+  cats.forEach(cat => {
+    const validEntries = [];
+    players.forEach(p => {
+      const key = `${p.id}:${cat}`;
+      const entry = state.adminOverrides[key];
+      if (entry && entry.valid && entry.word) {
+        validEntries.push({
+          key,
+          playerId: p.id,
+          playerName: p.name,
+          avatar: p.avatar,
+          word: entry.word,
+          norm: normalizeWord(entry.word)
+        });
+      }
+    });
+
+    // Build connected components of entries that are close calls (similar spelling, but not identical)
+    const visited = new Set();
+    for (let i = 0; i < validEntries.length; i++) {
+      if (visited.has(i)) continue;
+      const component = [validEntries[i]];
+      visited.add(i);
+
+      let added = true;
+      while (added) {
+        added = false;
+        for (let j = 0; j < validEntries.length; j++) {
+          if (visited.has(j)) continue;
+          const cand = validEntries[j];
+          // Check if cand is identical or close-call to any member in component
+          const isLinked = component.some(member =>
+            member.norm === cand.norm || areWordsCloseCall(member.word, cand.word)
+          );
+          if (isLinked) {
+            component.push(cand);
+            visited.add(j);
+            added = true;
+          }
+        }
+      }
+
+      // Only prompt Host if the group contains at least 2 distinct normalized spellings (a true close call like rishi/rashi)
+      const distinctNorms = new Set(component.map(c => c.norm));
+      if (component.length >= 2 && distinctNorms.size >= 2) {
+        state.closeCallGroups.push({
+          id: `cc_${cat}_${i}`,
+          category: cat,
+          entries: component,
+          decision: 'separate' // default: 10 pts valid separate words
+        });
+      }
+    }
+  });
+
+  // If NO close calls exist, skip host modal completely and publish final scoreboard!
+  if (state.closeCallGroups.length === 0) {
+    finalizeScoreboardAfterAdminReview();
+    return;
+  }
+
+  state.phase = 'admin_review';
   sendHost({
     type: 'PHASE_STATUS',
     phase: 'admin_review',
-    title: '🛡️ Admin Spell Check & Validation...',
-    subtitle: 'Host is verifying spellings and word matches before showing the scoreboard.'
+    title: '🔍 Host Resolving Close Calls...',
+    subtitle: 'Checking similar answers (10 pts separate vs 5 pts matched).'
   });
 
   showAdminReviewModal();
@@ -2046,61 +2226,67 @@ function proceedToAdminSpellReview() {
 function showAdminReviewModal() {
   const list = $('adminReviewList');
   list.innerHTML = '';
-  const cats = getActiveCategories();
 
-  cats.forEach(cat => {
-    const catMeta = CATEGORY_DATA[cat];
-    const header = document.createElement('div');
-    header.style.cssText = 'font-weight:800; color:#ffd66f; font-size:0.9rem; margin-top:6px; text-transform:uppercase;';
-    header.textContent = `${catMeta.icon} ${catMeta.label}`;
-    list.appendChild(header);
+  (state.closeCallGroups || []).forEach((group, idx) => {
+    const catMeta = CATEGORY_DATA[group.category];
+    const card = document.createElement('div');
+    card.className = 'close-call-card';
 
-    let hasAnyInCat = false;
-    players.forEach(p => {
-      const key = `${p.id}:${cat}`;
-      const entry = state.adminOverrides[key];
-      if (!entry || !entry.word) return;
-      hasAnyInCat = true;
+    const chipsHtml = group.entries.map(e => `
+      <div class="close-call-chip">
+        <div style="font-size:0.75rem; color:#94a3b8;">${e.avatar} ${esc(e.playerName)}</div>
+        <div style="font-size:1.1rem; font-weight:800; color:#ffe7a5; margin-top:2px;">${esc(e.word)}</div>
+      </div>
+    `).join('');
 
-      const row = document.createElement('div');
-      row.className = 'admin-review-row';
-      row.innerHTML = `
-        <div style="min-width:110px;">
-          <div style="font-size:0.78rem; color:#94a3b8;">${p.avatar} ${esc(p.name)}</div>
-          <div style="font-size:0.7rem; color:#cbd5e1;">${esc(entry.reason || '')}</div>
-        </div>
-        <div style="flex:1; min-width:140px;">
-          <input type="text" class="admin-spell-input" data-key="${esc(key)}" value="${esc(entry.word)}" title="Edit spelling to merge or separate words" style="padding:6px 10px; font-size:0.9rem;">
-        </div>
-        <div>
-          <button type="button" class="admin-valid-toggle ${entry.valid ? 'btn-good' : 'btn-danger'}" data-key="${esc(key)}" style="padding:7px 12px; font-size:0.8rem; min-width:92px;">
-            ${entry.valid ? '✓ Valid' : '✕ Invalid'}
-          </button>
-        </div>
-      `;
-      list.appendChild(row);
-    });
+    const isSeparate = group.decision === 'separate';
+    const isSame = group.decision === 'same';
 
-    if (!hasAnyInCat) {
-      const emptyNote = document.createElement('div');
-      emptyNote.style.cssText = 'font-size:0.78rem; color:#64748b; padding-left:8px;';
-      emptyNote.textContent = 'No answers submitted.';
-      list.appendChild(emptyNote);
-    }
+    card.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-weight:800; color:#60a5fa; font-size:0.86rem; text-transform:uppercase;">
+          ${catMeta.icon} ${catMeta.label} — Close Call #${idx + 1}
+        </span>
+        <span style="font-size:0.76rem; color:#cbd5e1;">Choose points rule</span>
+      </div>
+      <div class="close-call-entries">${chipsHtml}</div>
+      <div class="row" style="margin-bottom:0; gap:10px;">
+        <button type="button" class="cc-choice-btn ${isSeparate ? 'btn-good' : 'btn-alt'}" data-group="${idx}" data-choice="separate" style="flex:1; padding:10px;">
+          ⭐ Valid Separate Words (10 pts each)
+        </button>
+        <button type="button" class="cc-choice-btn ${isSame ? 'btn-warn' : 'btn-alt'}" data-group="${idx}" data-choice="same" style="flex:1; padding:10px;">
+          🤝 Same / Matched Word (5 pts each)
+        </button>
+      </div>
+    `;
+    list.appendChild(card);
   });
 
   $('adminReviewModal').classList.remove('hidden');
 }
 
-// PHASE 3: Final Score Calculation (with Tiered Matched Points & Separate Matched Breakdown)
+// PHASE 3: Final Score Calculation (10 pts Unique, 5 pts Matched)
 function finalizeScoreboardAfterAdminReview() {
   if (!host || !state) return;
 
-  // Read admin spelling adjustments
-  document.querySelectorAll('.admin-spell-input').forEach(inp => {
-    const key = inp.getAttribute('data-key');
-    if (state.adminOverrides[key]) {
-      state.adminOverrides[key].word = inp.value.trim();
+  // Apply Host's Close Call decisions
+  (state.closeCallGroups || []).forEach(group => {
+    if (group.decision === 'same' && group.entries.length >= 2) {
+      // Unify canonical group key so all related players match and get 5 pts each
+      const canonicalWord = group.entries[0].word;
+      group.entries.forEach(e => {
+        if (state.adminOverrides[e.key]) {
+          state.adminOverrides[e.key].matchKey = normalizeWord(canonicalWord);
+          state.adminOverrides[e.key].valid = true;
+        }
+      });
+    } else if (group.decision === 'separate') {
+      group.entries.forEach(e => {
+        if (state.adminOverrides[e.key]) {
+          state.adminOverrides[e.key].matchKey = normalizeWord(e.word);
+          state.adminOverrides[e.key].valid = true;
+        }
+      });
     }
   });
 
@@ -2123,26 +2309,25 @@ function finalizeScoreboardAfterAdminReview() {
   });
 
   cats.forEach(cat => {
-    // Group valid answers by normalized word to detect 2, 3, 4+ player matches
-    const validGroups = new Map(); // normWord -> [{ playerId, playerName, word }]
+    const validGroups = new Map();
 
     players.forEach(p => {
       const key = `${p.id}:${cat}`;
       const over = state.adminOverrides[key] || { word: '', valid: false };
       if (over.word && over.valid) {
-        const norm = normalizeWord(over.word);
+        const norm = over.matchKey || normalizeWord(over.word);
         if (!validGroups.has(norm)) validGroups.set(norm, []);
         validGroups.get(norm).push({ playerId: p.id, playerName: p.name, word: over.word });
       }
     });
 
-    // Record matched groups (where 2 or more players wrote the same valid word)
     for (const [norm, group] of validGroups.entries()) {
       if (group.length >= 2) {
-        const ptsEach = getMatchedPoints(group.length);
+        const ptsEach = getMatchedPoints(group.length); // 5 pts each
+        const distinctWords = Array.from(new Set(group.map(g => g.word))).join(' / ');
         matchedGroups.push({
           category: cat,
-          word: group[0].word,
+          word: distinctWords,
           count: group.length,
           pointsEach: ptsEach,
           players: group.map(g => g.playerName)
@@ -2150,7 +2335,6 @@ function finalizeScoreboardAfterAdminReview() {
       }
     }
 
-    // Assign points per player
     players.forEach(p => {
       const key = `${p.id}:${cat}`;
       const over = state.adminOverrides[key] || { word: '', valid: false };
@@ -2171,7 +2355,7 @@ function finalizeScoreboardAfterAdminReview() {
         return;
       }
 
-      const norm = normalizeWord(over.word);
+      const norm = over.matchKey || normalizeWord(over.word);
       const group = validGroups.get(norm) || [];
       const matchCount = group.length;
       const pts = getMatchedPoints(matchCount);
@@ -2201,7 +2385,6 @@ function finalizeScoreboardAfterAdminReview() {
     });
   });
 
-  // Determine Round Winner & Cumulative Total Winner
   let maxRoundScore = -1, roundWinnerId = null;
   let maxTotalScore = -1, totalWinnerId = null;
 
@@ -2244,7 +2427,6 @@ function showResultsModal() {
   if (!state || !state.results) return;
   playWinFanfare();
 
-  // Round Winner Banner
   const rWinner = players.find(p => p.id === state.roundWinner);
   const rData = state.results[state.roundWinner];
   if (rWinner && rData) {
@@ -2252,7 +2434,6 @@ function showResultsModal() {
     $('roundWinnerSub').textContent = `+${rData.roundScore} pts this round`;
   }
 
-  // Overall Total Winner Banner
   const tWinner = players.find(p => p.id === state.totalWinner);
   const tData = state.results[state.totalWinner];
   if (tWinner && tData) {
@@ -2260,7 +2441,6 @@ function showResultsModal() {
     $('totalWinnerSub').textContent = `Total Score: ${tData.totalScore} pts`;
   }
 
-  // Matched Words Breakdown Section
   const matchedBox = $('matchedWordsSection');
   const matchedList = $('matchedWordsList');
   matchedList.innerHTML = '';
@@ -2286,7 +2466,6 @@ function showResultsModal() {
     matchedBox.classList.add('hidden');
   }
 
-  // Render Category Filter Tabs
   const tabsEl = $('resultsTabs');
   tabsEl.innerHTML = `<button class="tab-btn ${selectedTab === 'all' ? 'active' : ''}" data-tab="all">All Categories</button>`;
   getActiveCategories().forEach(cat => {
@@ -2490,7 +2669,6 @@ function bindUI() {
   syncAvatarPickers();
   setupMobileViewportListener();
 
-  // Check if previous active session exists for 1-tap Reconnect
   const savedSession = getSavedSessionInfo();
   if (savedSession && savedSession.roomCode) {
     $('reconnectBanner').classList.remove('hidden');
@@ -2561,16 +2739,23 @@ function bindUI() {
 
   $('voteYesBtn').onclick = () => castMySingleVote(true);
   $('voteNoBtn').onclick = () => castMySingleVote(false);
+  $('hostForceVoteBtn').onclick = () => {
+    if (host && state?.phase === 'voting') {
+      playClickSound();
+      tallyAndAdvanceCurrentVote();
+    }
+  };
 
   $('adminReviewList').addEventListener('click', e => {
-    const btn = e.target.closest('.admin-valid-toggle');
+    const btn = e.target.closest('.cc-choice-btn');
     if (!btn) return;
-    const key = btn.getAttribute('data-key');
-    if (!state?.adminOverrides?.[key]) return;
-    state.adminOverrides[key].valid = !state.adminOverrides[key].valid;
-    const isVal = state.adminOverrides[key].valid;
-    btn.className = `admin-valid-toggle ${isVal ? 'btn-good' : 'btn-danger'}`;
-    btn.textContent = isVal ? '✓ Valid' : '✕ Invalid';
+    const gIdx = parseInt(btn.getAttribute('data-group'), 10);
+    const choice = btn.getAttribute('data-choice');
+    if (state?.closeCallGroups?.[gIdx]) {
+      state.closeCallGroups[gIdx].decision = choice;
+      playClickSound();
+      showAdminReviewModal();
+    }
   });
 
   $('adminFinalizeBtn').onclick = () => {
@@ -2608,7 +2793,6 @@ function bindUI() {
     $('heroLetter').textContent = sample[Math.floor(Math.random() * sample.length)];
   };
 
-  // Pre-fill room code from QR/invite link, but let player review/edit Name & Avatar before clicking Join!
   const urlParams = new URLSearchParams(location.search);
   const joinParam = urlParams.get('join') || urlParams.get('room');
   if (joinParam && $('joinCode')) {
