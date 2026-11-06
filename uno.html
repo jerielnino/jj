@@ -940,6 +940,40 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   box-shadow: 0 0 10px rgba(255, 214, 111, 0.5);
 }
 
+
+/* Turn flow visualizer and prominent next-player notice */
+.turn-cycle-wrap { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:-5px; }
+.turn-cycle { position:relative; width:116px; height:116px; border:2px dashed rgba(255,231,165,.65); border-radius:50%; flex:0 0 auto; }
+.turn-cycle::before { content:""; position:absolute; inset:12px; border:1px solid rgba(255,255,255,.2); border-radius:50%; }
+.turn-cycle-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#ffe7a5; font-weight:900; font-size:1.55rem; text-shadow:0 2px 5px #000; }
+.turn-cycle-center small { font-size:.55rem; letter-spacing:.5px; }
+.turn-cycle-player { position:absolute; width:31px; height:31px; margin:-15px 0 0 -15px; display:flex; align-items:center; justify-content:center; border-radius:50%; background:#173b58; border:2px solid rgba(255,255,255,.75); font-size:1rem; box-shadow:0 2px 8px #0008; }
+.turn-cycle-player.current { background:#facc15; border:3px solid #fff; color:#111; transform:scale(1.2); box-shadow:0 0 13px #ffe7a5; z-index:2; }
+.turn-cycle-caption { color:#ffe7a5; font-size:.78rem; font-weight:800; max-width:110px; }
+.next-turn-notice { position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:260; display:flex; align-items:center; gap:12px; padding:12px 20px; border:2px solid #ffe7a5; border-radius:18px; background:linear-gradient(135deg,rgba(8,25,43,.97),rgba(25,75,105,.97)); box-shadow:0 8px 28px #000b,0 0 20px #ffd66f88; color:#fff; min-width:min(310px,90vw); justify-content:center; text-align:center; animation:turnNoticeIn .25s ease-out; pointer-events:none; }
+.next-turn-notice .notice-avatar { font-size:2rem; }
+.next-turn-notice strong { display:block; color:#ffe7a5; font-size:1.1rem; }
+.next-turn-notice small { display:block; color:#dbeafe; font-size:.76rem; }
+@keyframes turnNoticeIn { from {opacity:0; transform:translate(-50%,-12px) scale(.92)} to {opacity:1;transform:translate(-50%,0) scale(1)} }
+@media(max-width:600px) { .turn-cycle {width:94px;height:94px} .turn-cycle-player {width:27px;height:27px;margin:-13px 0 0 -13px;font-size:.85rem} .turn-cycle-caption {max-width:82px;font-size:.7rem} .next-turn-notice {top:7px;padding:9px 14px} }
+
+
+/* Turn flow visualizer and prominent next-player notice */
+.turn-cycle-wrap { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:-5px; }
+.turn-cycle { position:relative; width:116px; height:116px; border:2px dashed rgba(255,231,165,.65); border-radius:50%; flex:0 0 auto; }
+.turn-cycle::before { content:""; position:absolute; inset:12px; border:1px solid rgba(255,255,255,.2); border-radius:50%; }
+.turn-cycle-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#ffe7a5; font-weight:900; font-size:1.55rem; text-shadow:0 2px 5px #000; }
+.turn-cycle-center small { font-size:.55rem; letter-spacing:.5px; }
+.turn-cycle-player { position:absolute; width:31px; height:31px; margin:-15px 0 0 -15px; display:flex; align-items:center; justify-content:center; border-radius:50%; background:#173b58; border:2px solid rgba(255,255,255,.75); font-size:1rem; box-shadow:0 2px 8px #0008; }
+.turn-cycle-player.current { background:#facc15; border:3px solid #fff; color:#111; transform:scale(1.2); box-shadow:0 0 13px #ffe7a5; z-index:2; }
+.turn-cycle-caption { color:#ffe7a5; font-size:.78rem; font-weight:800; max-width:110px; }
+.next-turn-notice { position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:260; display:flex; align-items:center; gap:12px; padding:12px 20px; border:2px solid #ffe7a5; border-radius:18px; background:linear-gradient(135deg,rgba(8,25,43,.97),rgba(25,75,105,.97)); box-shadow:0 8px 28px #000b,0 0 20px #ffd66f88; color:#fff; min-width:min(310px,90vw); justify-content:center; text-align:center; animation:turnNoticeIn .25s ease-out; pointer-events:none; }
+.next-turn-notice .notice-avatar { font-size:2rem; }
+.next-turn-notice strong { display:block; color:#ffe7a5; font-size:1.1rem; }
+.next-turn-notice small { display:block; color:#dbeafe; font-size:.76rem; }
+@keyframes turnNoticeIn { from {opacity:0; transform:translate(-50%,-12px) scale(.92)} to {opacity:1;transform:translate(-50%,0) scale(1)} }
+@media(max-width:600px) { .turn-cycle {width:94px;height:94px} .turn-cycle-player {width:27px;height:27px;margin:-13px 0 0 -13px;font-size:.85rem} .turn-cycle-caption {max-width:82px;font-size:.7rem} .next-turn-notice {top:7px;padding:9px 14px} }
+
 @media (max-width: 600px) {
   .wrap { padding: 12px 10px; }
   .panel { padding: 20px 14px; border-radius: 16px; }
@@ -1161,6 +1195,7 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
   
   <div class="game-core" id="tableViewport">
     <div id="drawToastContainer"></div>
+    <div id="nextTurnNotice" class="next-turn-notice hidden" aria-live="polite"></div>
     <div class="uno-arena">
       <!-- Direction & Active Color Status -->
       <div class="arena-status-bar">
@@ -1173,6 +1208,13 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
           <span id="activeColorText">RED</span>
         </div>
         <span id="stackPenaltyPill" class="hidden" style="background:linear-gradient(135deg,#ef4444,#f59e0b);color:#fff;font-weight:900;padding:4px 12px;border-radius:99px;box-shadow:0 0 14px rgba(239,68,68,.7);animation:urgentPulse .65s infinite alternate;"></span>
+      </div>
+
+      <div class="turn-cycle-wrap">
+        <div id="turnCycle" class="turn-cycle" aria-label="Player turn order">
+          <div class="turn-cycle-center"><span id="cycleArrow">↻</span><small>TURN FLOW</small></div>
+        </div>
+        <div id="turnCycleCaption" class="turn-cycle-caption">Clockwise<br>turn order</div>
       </div>
 
       <!-- Draw Pile & Discard Pile -->
@@ -2933,20 +2975,16 @@ function handleAction(id, d) {
 function finishRound(wId) {
   state.prevScores = {...(state.scores || {})};
   state.roundGained = {};
-  let winnerGain = 0;
+  // Each player receives only the points left in their own hand; the round winner has zero.
   state.players.forEach(pid => {
-    if (pid !== wId) {
-      const pts = (state.hands[pid] || []).reduce((sum, c) => sum + (c.points || 0), 0);
-      winnerGain += pts;
-      state.roundGained[pid] = 0;
-    }
+    const pts = pid === wId ? 0 : (state.hands[pid] || []).reduce((sum, c) => sum + (c.points || 0), 0);
+    state.roundGained[pid] = pts;
+    state.scores[pid] = (state.scores[pid] || 0) + pts;
   });
-  state.roundGained[wId] = winnerGain;
-  state.scores[wId] = (state.scores[wId] || 0) + winnerGain;
   state.winner = wId;
-
-  if (state.scores[wId] >= state.winningScore) {
-    state.matchWinner = wId;
+  const reachedTarget = state.players.some(pid => (state.scores[pid] || 0) >= state.winningScore);
+  if (reachedTarget) {
+    state.matchWinner = [...state.players].sort((a,b) => (state.scores[a] || 0) - (state.scores[b] || 0))[0] || wId;
   } else {
     state.matchWinner = null;
   }
@@ -2957,22 +2995,14 @@ function finishTimedOutMatch() {
   if (!state || state.winner) return;
   state.prevScores = {...(state.scores || {})};
   state.roundGained = {};
-  // Award round points to player with lowest remaining hand points
-  const handTotals = state.players.map(pid => ({
-    id: pid,
-    pts: (state.hands[pid] || []).reduce((s, c) => s + (c.points || 0), 0)
-  })).sort((a, b) => a.pts - b.pts);
-  const roundW = handTotals[0]?.id || state.players[0];
-  let gain = 0;
+  // At the deadline, add each player's own remaining hand points, never transfer them.
   state.players.forEach(pid => {
-    if (pid !== roundW) gain += (state.hands[pid] || []).reduce((s, c) => s + (c.points || 0), 0);
-    state.roundGained[pid] = 0;
+    const pts = (state.hands[pid] || []).reduce((sum, c) => sum + (c.points || 0), 0);
+    state.roundGained[pid] = pts;
+    state.scores[pid] = (state.scores[pid] || 0) + pts;
   });
-  state.roundGained[roundW] = gain;
-  state.scores[roundW] = (state.scores[roundW] || 0) + gain;
-
-  const sorted = [...state.players].sort((a, b) => (state.scores[b] || 0) - (state.scores[a] || 0));
-  const wId = sorted[0] || roundW;
+  const sorted = [...state.players].sort((a,b) => (state.scores[a] || 0) - (state.scores[b] || 0));
+  const wId = sorted[0] || state.players[0];
   state.timedOut = true;
   state.winner = wId;
   state.matchWinner = wId;
@@ -3076,7 +3106,7 @@ function renderWinModalContent() {
       if (a === state.forfeitedBy) return 1;
       if (b === state.forfeitedBy) return -1;
     }
-    return (state.scores[b] || 0) - (state.scores[a] || 0);
+    return (state.scores[a] || 0) - (state.scores[b] || 0);
   });
 
   let scHtml = '';
@@ -3130,6 +3160,46 @@ function renderWinModalContent() {
   $('nextRoundBtn').classList.toggle('hidden', !host);
 }
 
+let lastTurnNoticeKey = null;
+let turnNoticeTimer = null;
+
+function renderTurnFlow() {
+  if (!state) return;
+  const cycle = $('turnCycle');
+  if (!cycle) return;
+  const ids = state.players || [];
+  const n = ids.length;
+  cycle.querySelectorAll('.turn-cycle-player').forEach(el => el.remove());
+  ids.forEach((pid, i) => {
+    const p = playerById(pid);
+    const angle = (-90 + (360 * i / Math.max(1,n))) * Math.PI / 180;
+    const radius = 48;
+    const node = document.createElement('div');
+    node.className = 'turn-cycle-player' + (pid === state.current ? ' current' : '');
+    node.style.left = (58 + Math.cos(angle) * radius) + 'px';
+    node.style.top = (58 + Math.sin(angle) * radius) + 'px';
+    node.textContent = p?.avatar || '😎';
+    node.title = (p?.name || 'Player') + (pid === state.current ? ' — current turn' : '');
+    cycle.appendChild(node);
+  });
+  const clockwise = state.direction !== -1;
+  if ($('cycleArrow')) $('cycleArrow').textContent = clockwise ? '↻' : '↺';
+  if ($('turnCycleCaption')) $('turnCycleCaption').innerHTML = (clockwise ? 'Clockwise' : 'Counter-clockwise') + '<br>pass direction';
+  const current = playerById(state.current);
+  const key = state.round + ':' + state.current + ':' + state.direction + ':' + !!state.winner;
+  if (!state.winner && state.current && key !== lastTurnNoticeKey) {
+    lastTurnNoticeKey = key;
+    const notice = $('nextTurnNotice');
+    if (notice) {
+      notice.innerHTML = `<span class="notice-avatar">${esc(current?.avatar || '😎')}</span><span><strong>${esc(current?.name || 'Next player')}'s turn</strong><small>${state.current === myId ? 'It is your turn — play a card!' : 'Get ready to play'} · ${clockwise ? '↻ Clockwise' : '↺ Counter-clockwise'}</small></span>`;
+      notice.classList.remove('hidden');
+      if (turnNoticeTimer) clearTimeout(turnNoticeTimer);
+      turnNoticeTimer = setTimeout(() => notice.classList.add('hidden'), 2600);
+    }
+  }
+  if (state.winner && $('nextTurnNotice')) $('nextTurnNotice').classList.add('hidden');
+}
+
 function renderGame() {
   if(!state) return;
   showPanel('gamePanel');
@@ -3143,6 +3213,7 @@ function renderGame() {
   }
 
   updatePlayers();
+  renderTurnFlow();
   const myTurn = state.current === myId && !state.winner;
   const p = playerById(state.current);
   const myPlayer = playerById(myId);
