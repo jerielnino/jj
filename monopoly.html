@@ -1825,10 +1825,21 @@ input, select { background: #fffaf0; color: #1b2c23; font-weight: 600; }
       </div>
       <div id="tradeStatusMsg" style="font-size:0.84rem; color:#ffe7a5; margin-bottom:10px; text-align:center; min-height:1.2em;"></div>
       <div style="display:flex; gap:8px;">
-        <button id="executeTradeBtn" type="button" class="btn-good" style="flex:2; padding:10px;">🤝 Execute Trade</button>
+        <button id="executeTradeBtn" type="button" class="btn-good" style="flex:2; padding:10px;">📨 Send Trade Offer</button>
         <button id="cancelTradeBtn" type="button" class="btn-alt" style="flex:1; padding:10px;">Cancel</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- INCOMING / PENDING TRADE OFFER MODAL (Accept / Deny / Counter) -->
+<div id="tradeOfferModal" class="modal hidden">
+  <div class="modal-box" style="width: 560px; max-width: 96%;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-shrink:0;">
+      <h2 id="tradeOfferModalTitle" style="margin:0; font-size:1.4rem; color:#ffe7a5;">🤝 Trade Offer</h2>
+      <span id="tradeOfferStatusPill" style="background:rgba(56,189,248,0.22); border:1px solid #38bdf8; color:#bae6fd; font-size:0.74rem; font-weight:800; padding:3px 10px; border-radius:99px;">Awaiting Response</span>
+    </div>
+    <div class="modal-scroll-body" id="tradeOfferModalBody" style="text-align:left;"></div>
   </div>
 </div>
 
@@ -2951,8 +2962,8 @@ function updatePlayers() {
       const avatar = p?.avatar || '🎩';
       const kickBtn = (host && pid !== myId) ? `<button class="kick-btn" data-kick="${esc(pid)}" type="button" title="Remove">✕</button>` : '';
       const jailTag = inJail ? `<span class="ts-jail-pill" title="Click to toggle Jail" data-toggle-jail="${esc(pid)}">⛓️ JAIL</span>` : '';
-      const propBadgeHtml = isMe ? `<span class="ts-prop-count" title="Click to view your ${propCount} owned properties">🏠 ${propCount}</span>` : '';
-      sbHtml += `<div class="ts-player ${isCurr?'active':''} ${isBankrupt?'bankrupt':''}" style="border-left: 4px solid ${pColor};" data-portfolio-pid="${esc(pid)}" title="${isMe ? 'Click to view your owned properties' : name}">
+      const propBadgeHtml = `<span class="ts-prop-count" title="Click to view ${isMe ? 'your' : name + "'s"} ${propCount} owned properties">🏠 ${propCount}</span>`;
+      sbHtml += `<div class="ts-player ${isCurr?'active':''} ${isBankrupt?'bankrupt':''}" style="border-left: 4px solid ${pColor};" data-portfolio-pid="${esc(pid)}" title="Click to view ${isMe ? 'your' : name + "'s"} owned properties">
         <span class="ts-avatar">${avatar}</span>
         <strong class="ts-name">${name}</strong>
         <span style="color:${bal<0?'#fca5a5':'#86efac'};font-weight:800;">${fmt(bal)}</span>
@@ -3489,6 +3500,7 @@ function startGame() {
     pendingCardMove: null,
     pendingDecision: null, // { propId, playerId } when landing on unowned property (must Buy or Auction!)
     auction: null,         // { propId, initiatorId, highBid, highBidderId, passedIds: [], minIncrement: 50000 }
+    pendingTrade: null,    // { id, fromId, toId, cashFrom, cashTo, propsFrom, propsTo, isCounter }
     moneyBanners: [],
     lastBannerSeq: 0,
     setupMode: false,
@@ -4053,35 +4065,143 @@ function handleAction(id, d) {
     return;
   }
 
-  // Execute Trade (Properties + Cash between two players)
-  if(d.action === 'EXECUTE_TRADE') {
-    const pA = d.playerA, pB = d.playerB;
+  // Propose, Accept, Reject, or Counter Trade (Properties + Cash between two players)
+  if(d.action === 'PROPOSE_TRADE') {
+    const pA = d.playerA || id, pB = d.playerB;
     if (!pA || !pB || pA === pB) return;
     const cashA = Math.max(0, Number(d.cashA) || 0);
     const cashB = Math.max(0, Number(d.cashB) || 0);
     const propsA = Array.isArray(d.propsA) ? d.propsA : [];
     const propsB = Array.isArray(d.propsB) ? d.propsB : [];
     if (cashA > (state.balances[pA] || 0) || cashB > (state.balances[pB] || 0)) return;
-    // Verify ownership
     if (!propsA.every(pid => state.properties[pid]?.ownerId === pA && (state.properties[pid]?.houses || 0) === 0)) return;
     if (!propsB.every(pid => state.properties[pid]?.ownerId === pB && (state.properties[pid]?.houses || 0) === 0)) return;
+
+    const nameA = playerById(pA)?.name || 'Player 1';
+    const nameB = playerById(pB)?.name || 'Player 2';
+    const partnerObj = playerById(pB);
+
+    // If partner is an AI Bot, evaluate immediately (Accept, Counter, or Deny)
+    if (partnerObj && (partnerObj.isBot || partnerObj.id === 'AI')) {
+      const valOffered = cashA + propsA.reduce((s, pid) => s + (propDef(pid)?.price || 0), 0);
+      const valRequested = cashB + propsB.reduce((s, pid) => s + (propDef(pid)?.price || 0), 0);
+      if (valOffered >= valRequested * 0.9) {
+        // AI Accepts!
+        propsA.forEach(pid => { state.properties[pid].ownerId = pB; });
+        propsB.forEach(pid => { state.properties[pid].ownerId = pA; });
+        if (cashA > 0) recordTransfer(pA, pB, cashA, 'Trade Cash');
+        if (cashB > 0) recordTransfer(pB, pA, cashB, 'Trade Cash');
+        state.pendingTrade = null;
+        pushMoneyBanner({
+          kind: 'ADD',
+          tag: '🤝 AI ACCEPTED TRADE',
+          title: `${nameA} ⇄ ${nameB}`,
+          sub: `${propsA.length + propsB.length} propert(ies) swapped`,
+          color: '#22c55e',
+          icon: '🤝'
+        });
+        state.lastEventText = `🤖 ${nameB} accepted ${nameA}'s trade offer!`;
+        state.lastEventId++;
+        broadcastState('BUY');
+        return;
+      } else if (valOffered >= valRequested * 0.65 && (state.balances[pA] || 0) >= cashA + Math.round((valRequested - valOffered) * 0.9)) {
+        // AI sends a Counter-Offer asking for extra cash to balance the deal!
+        const extraCashNeeded = Math.min(state.balances[pA] || 0, cashA + Math.max(100000, Math.round((valRequested - valOffered) / 100000) * 100000));
+        state.pendingTrade = {
+          id: Date.now(),
+          fromId: pB,
+          toId: pA,
+          cashFrom: cashB,
+          cashTo: extraCashNeeded,
+          propsFrom: propsB,
+          propsTo: propsA,
+          isCounter: true
+        };
+        state.lastEventText = `🤖 ${nameB} sent a Counter-Offer to ${nameA}!`;
+        state.lastEventId++;
+        broadcastState('STATE');
+        return;
+      } else {
+        state.pendingTrade = null;
+        state.lastEventText = `🚫 ${nameB} declined ${nameA}'s trade offer.`;
+        state.lastEventId++;
+        broadcastState('STATE');
+        return;
+      }
+    }
+
+    state.pendingTrade = {
+      id: Date.now(),
+      fromId: pA,
+      toId: pB,
+      cashFrom: cashA,
+      cashTo: cashB,
+      propsFrom: propsA,
+      propsTo: propsB,
+      isCounter: !!d.isCounter
+    };
+    state.lastEventText = `📨 ${nameA} ${d.isCounter ? 'sent a counter-offer' : 'proposed a trade'} to ${nameB}!`;
+    state.lastEventId++;
+    broadcastState('STATE');
+    return;
+  }
+
+  if(d.action === 'ACCEPT_TRADE') {
+    const tr = state.pendingTrade;
+    if (!tr) return;
+    // Only the recipient (or host/solo) can accept the trade
+    if (!solo && id !== tr.toId && !host) return;
+    const pA = tr.fromId, pB = tr.toId;
+    const cashA = Math.max(0, Number(tr.cashFrom) || 0);
+    const cashB = Math.max(0, Number(tr.cashTo) || 0);
+    const propsA = Array.isArray(tr.propsFrom) ? tr.propsFrom : [];
+    const propsB = Array.isArray(tr.propsTo) ? tr.propsTo : [];
+    if (cashA > (state.balances[pA] || 0) || cashB > (state.balances[pB] || 0)) {
+      state.pendingTrade = null;
+      state.lastEventText = `⚠️ Trade cancelled — insufficient cash balance.`;
+      state.lastEventId++;
+      broadcastState('STATE');
+      return;
+    }
+    if (!propsA.every(pid => state.properties[pid]?.ownerId === pA && (state.properties[pid]?.houses || 0) === 0) ||
+        !propsB.every(pid => state.properties[pid]?.ownerId === pB && (state.properties[pid]?.houses || 0) === 0)) {
+      state.pendingTrade = null;
+      state.lastEventText = `⚠️ Trade cancelled — property ownership changed.`;
+      state.lastEventId++;
+      broadcastState('STATE');
+      return;
+    }
     propsA.forEach(pid => { state.properties[pid].ownerId = pB; });
     propsB.forEach(pid => { state.properties[pid].ownerId = pA; });
     if (cashA > 0) recordTransfer(pA, pB, cashA, 'Trade Cash');
     if (cashB > 0) recordTransfer(pB, pA, cashB, 'Trade Cash');
     const nameA = playerById(pA)?.name || 'Player 1';
     const nameB = playerById(pB)?.name || 'Player 2';
+    state.pendingTrade = null;
     pushMoneyBanner({
       kind: 'ADD',
-      tag: '🤝 TRADE COMPLETED',
+      tag: '🤝 TRADE ACCEPTED',
       title: `${nameA} ⇄ ${nameB}`,
       sub: `${propsA.length + propsB.length} propert(ies) swapped`,
-      color: '#38bdf8',
+      color: '#22c55e',
       icon: '🤝'
     });
-    state.lastEventText = `🤝 Trade completed between ${nameA} and ${nameB}!`;
+    state.lastEventText = `🤝 ${nameB} accepted the trade with ${nameA}!`;
     state.lastEventId++;
     broadcastState('BUY');
+    return;
+  }
+
+  if(d.action === 'REJECT_TRADE') {
+    const tr = state.pendingTrade;
+    if (!tr) return;
+    const fromName = playerById(tr.fromId)?.name || 'Player 1';
+    const toName = playerById(tr.toId)?.name || 'Player 2';
+    const byName = playerById(id)?.name || toName;
+    state.pendingTrade = null;
+    state.lastEventText = `🚫 Trade between ${fromName} and ${toName} was ${id === tr.fromId ? 'withdrawn' : 'declined by ' + byName}.`;
+    state.lastEventId++;
+    broadcastState('STATE');
     return;
   }
 
@@ -4296,16 +4416,20 @@ function handleAction(id, d) {
       if (isDoubles) {
         state.inJail[id] = false;
         state.jailTurns[id] = 0;
-        state.canRollAgain = false;
-        state.lastEventText = `🎲 ${pName} rolled doubles (${d1}+${d2}) and escaped Jail!`;
+        if (!state.doublesCountByPlayer) state.doublesCountByPlayer = {};
+        state.doublesCountByPlayer[id] = 1;
+        state.doublesCount = 1;
+        state.canRollAgain = true;
+        state.lastEventText = `🎲 ${pName} rolled doubles (${d1}+${d2}), escaped Jail, and plays again!`;
         state.lastEventId++;
       } else {
         state.jailTurns[id] = (state.jailTurns[id] || 0) + 1;
         if (state.jailTurns[id] >= 3) {
-          recordTransfer(id, BANK, 500000, 'Mandatory Jail Bail (3 turns)');
           state.inJail[id] = false;
           state.jailTurns[id] = 0;
           state.canRollAgain = false;
+          state.lastEventText = `🔓 ${pName} completed 3 turns in Jail and is released for free!`;
+          state.lastEventId++;
         } else {
           state.canRollAgain = false;
           state.lastEventText = `⛓️ ${pName} rolled ${d1}+${d2} (no doubles — stays in Jail)`;
@@ -4465,7 +4589,7 @@ function startTileByTileStepping(pid, targetPos, onDone, direction=1) {
         steppingTileIdx = -1;
         isAnimatingMove = false;
         inspectedSpaceIdx = targetPos;
-        if (state && state.pendingArrival && (solo || host || state.pendingArrival.playerId === myId)) {
+        if (state && state.pendingArrival && (solo || state.pendingArrival.playerId === myId || (host && playerById(state.pendingArrival.playerId)?.isBot))) {
           sendAct('COMPLETE_ARRIVAL', { arrivalId: state.pendingArrival.id });
         } else {
           renderGame();
@@ -4486,14 +4610,16 @@ function showEventToast(text) {
 
 let fullBoardDiceRAF = null;
 let fullBoardHideTimer = null;
+let isRollingDice3D = false;
 
 function runFullBoard3DDiceAnimation(finalD1, finalD2) {
   const stage = $('fullBoardDiceStage');
   const board = $('monopolyBoard');
-  if (!stage || !board) return;
+  if (!stage || !board) { isRollingDice3D = false; return; }
   if (fullBoardDiceRAF) cancelAnimationFrame(fullBoardDiceRAF);
   if (fullBoardHideTimer) clearTimeout(fullBoardHideTimer);
 
+  isRollingDice3D = true;
   stage.classList.remove('hidden');
   const playHub = board.querySelector('.center-play-hub');
   if (playHub) playHub.classList.add('board-rolling-hide');
@@ -4606,17 +4732,20 @@ function runFullBoard3DDiceAnimation(finalD1, finalD2) {
       fullBoardDiceRAF = null;
       if (banner) banner.classList.add('show');
       fullBoardHideTimer = setTimeout(() => {
+        isRollingDice3D = false;
         const stg = $('fullBoardDiceStage');
         if (stg) stg.classList.add('hidden');
         const ph = board.querySelector('.center-play-hub');
         if (ph) ph.classList.remove('board-rolling-hide');
+        // Flush any queued event toast or jail snap now that dice roll has finished
+        flushPostRollPopups();
         // Now step the moving player's avatar one tile at a time to their new board position!
         const moverId = state?.players?.find(pid => visualPositions[pid] !== undefined && visualPositions[pid] !== (state.positions?.[pid] || 0));
         if (moverId) {
           startTileByTileStepping(moverId, state.positions[moverId] || 0);
         } else {
           isAnimatingMove = false;
-          if (state && state.pendingArrival && (solo || host || state.pendingArrival.playerId === myId)) {
+          if (state && state.pendingArrival && (solo || state.pendingArrival.playerId === myId || (host && playerById(state.pendingArrival.playerId)?.isBot))) {
             sendAct('COMPLETE_ARRIVAL', { arrivalId: state.pendingArrival.id });
           } else {
             renderGame();
@@ -4827,12 +4956,20 @@ function renderBoardDomOnly() {
     </div>
   </div>`;
 
-  cellsHTML += `<div class="fullboard-dice-stage hidden" id="fullBoardDiceStage">
-    ${render3DCubeHTML('realDie1')}
-    ${render3DCubeHTML('realDie2')}
-    <div class="fullboard-roll-banner" id="fullBoardRollBanner">🎲 Rolled ${d1 + d2}!</div>
-  </div>`;
+  const existingDiceStage = isRollingDice3D ? $('fullBoardDiceStage') : null;
+  if (!existingDiceStage) {
+    cellsHTML += `<div class="fullboard-dice-stage hidden" id="fullBoardDiceStage">
+      ${render3DCubeHTML('realDie1')}
+      ${render3DCubeHTML('realDie2')}
+      <div class="fullboard-roll-banner" id="fullBoardRollBanner">🎲 Rolled ${d1 + d2}!</div>
+    </div>`;
+  }
   boardEl.innerHTML = cellsHTML;
+  if (existingDiceStage) {
+    boardEl.appendChild(existingDiceStage);
+    const ph = boardEl.querySelector('.center-play-hub');
+    if (ph) ph.classList.add('board-rolling-hide');
+  }
 
   if ($('hubRollBtn')) $('hubRollBtn').onclick = () => sendAct('ROLL');
   if ($('hubBuyBtn') && pendingDef) $('hubBuyBtn').onclick = () => sendAct('BUY_PROP', { propId: pendingDef.id, buyerId: myId });
@@ -4847,6 +4984,52 @@ function renderBoardDomOnly() {
   }
   if ($('hubQuickLiquidateBtn')) {
     $('hubQuickLiquidateBtn').onclick = () => sendAct('LIQUIDATE_ONE_FOR_DEBT', { targetId: myId });
+  }
+}
+
+function flushPostRollPopups() {
+  if (!state) return;
+
+  // If a player was sent directly to Jail (Go To Jail tile, Card, or 3 Doubles), snap their visualPosition directly to Jail (10) after the dice roll finishes!
+  if (state.lastJailJumpSeq && state.lastJailJumpSeq !== lastSeenJailJumpSeq) {
+    lastSeenJailJumpSeq = state.lastJailJumpSeq;
+    if (state.lastJailJumpPlayerId) {
+      visualPositions[state.lastJailJumpPlayerId] = 10;
+    }
+  }
+
+  // Only show money deduction/addition popups, card popovers, and elimination modals once both dice rolling AND tile stepping have finished
+  if (!isAnimatingMove) {
+    if ((state.lastBannerSeq || 0) < lastSeenBannerSeq) {
+      lastSeenBannerSeq = 0;
+    }
+    if (Array.isArray(state.moneyBanners)) {
+      state.moneyBanners.forEach(b => {
+        if (b.id > lastSeenBannerSeq) {
+          lastSeenBannerSeq = b.id;
+          showMoneySideBanner(b);
+        }
+      });
+    }
+
+    if (state.lastEliminated && state.lastEliminated.id !== lastSeenEliminatedId) {
+      lastSeenEliminatedId = state.lastEliminated.id;
+      const elInfo = state.lastEliminated;
+      if ($('eliminatedModalTitle')) $('eliminatedModalTitle').textContent = `💀 ${elInfo.playerName} Eliminated!`;
+      if ($('eliminatedModalDesc')) $('eliminatedModalDesc').textContent = elInfo.desc;
+      if ($('eliminatedModal')) $('eliminatedModal').classList.remove('hidden');
+    }
+
+    if (state.lastCardEventId && state.lastCardEventId !== lastSeenCardId) {
+      lastSeenCardId = state.lastCardEventId;
+      const c = state.lastCardDrawn;
+      if (c) showCompactCardPopover(c);
+    }
+  }
+
+  if (state.lastEventId && state.lastEventId !== lastSeenEventId) {
+    lastSeenEventId = state.lastEventId;
+    if (state.lastEventText) showEventToast(state.lastEventText);
   }
 }
 
@@ -4866,46 +5049,12 @@ function renderGame() {
   const isNewRoll = !!(state.rollSeq && state.rollSeq !== lastAnimatedRollSeq);
   if (isNewRoll) {
     isAnimatingMove = true;
+    isRollingDice3D = true;
   }
 
-  // If a player was sent directly to Jail (Go To Jail tile, Card, or 3 Doubles), snap their visualPosition directly to Jail (10) so they don't walk 20 tiles forward!
-  if (state.lastJailJumpSeq && state.lastJailJumpSeq !== lastSeenJailJumpSeq) {
-    lastSeenJailJumpSeq = state.lastJailJumpSeq;
-    if (state.lastJailJumpPlayerId) {
-      visualPositions[state.lastJailJumpPlayerId] = 10;
-    }
-  }
-
-  // Trigger animated bottom Money / Purchase / Rent / Pass GO banners for any new transaction
-  if ((state.lastBannerSeq || 0) < lastSeenBannerSeq) {
-    lastSeenBannerSeq = 0;
-  }
-  if (Array.isArray(state.moneyBanners)) {
-    state.moneyBanners.forEach(b => {
-      if (b.id > lastSeenBannerSeq) {
-        lastSeenBannerSeq = b.id;
-        showMoneySideBanner(b);
-      }
-    });
-  }
-
-  if (state.lastEventId && state.lastEventId !== lastSeenEventId) {
-    lastSeenEventId = state.lastEventId;
-    if (state.lastEventText) showEventToast(state.lastEventText);
-  }
-
-  if (state.lastEliminated && state.lastEliminated.id !== lastSeenEliminatedId) {
-    lastSeenEliminatedId = state.lastEliminated.id;
-    const elInfo = state.lastEliminated;
-    if ($('eliminatedModalTitle')) $('eliminatedModalTitle').textContent = `💀 ${elInfo.playerName} Eliminated!`;
-    if ($('eliminatedModalDesc')) $('eliminatedModalDesc').textContent = elInfo.desc;
-    if ($('eliminatedModal')) $('eliminatedModal').classList.remove('hidden');
-  }
-
-  if (state.lastCardEventId && state.lastCardEventId !== lastSeenCardId) {
-    lastSeenCardId = state.lastCardEventId;
-    const c = state.lastCardDrawn;
-    if (c) showCompactCardPopover(c);
+  // Only show popups, deductions/additions, card modals, and jail snaps AFTER the 3D dice roll finishes!
+  if (!isNewRoll && !isRollingDice3D) {
+    flushPostRollPopups();
   }
 
   $('hudHousesLeft').textContent = String(availableHouses());
@@ -4965,6 +5114,14 @@ function renderGame() {
     $('auctionModal').classList.add('hidden');
   }
 
+  // Show/Refresh Incoming/Pending Trade Offer Modal if a trade proposal is active
+  if (state.pendingTrade && (state.pendingTrade.toId === myId || state.pendingTrade.fromId === myId)) {
+    renderTradeOfferModalContent();
+    $('tradeOfferModal').classList.remove('hidden');
+  } else if ($('tradeOfferModal')) {
+    $('tradeOfferModal').classList.add('hidden');
+  }
+
   // Refresh open modals if visible
   if (!$('allPropsModal').classList.contains('hidden')) renderTrackerHubModal();
   if (!$('ledgerModal').classList.contains('hidden')) renderLedgerModalContent();
@@ -4974,7 +5131,7 @@ function renderGame() {
 
   // Bot AI Turn Logic
   const isCurrentBot = host && !state.winner && currP && (currP.id === 'AI' || currP.isBot);
-  if (isCurrentBot && !state.auction && !state.pendingArrival && !isAnimatingMove && botActionRevision !== revision) {
+  if (isCurrentBot && !state.auction && !state.pendingArrival && !isAnimatingMove && !isRollingDice3D && botActionRevision !== revision) {
     botActionRevision = revision;
     const expectedRev = revision;
     const botId = state.current;
@@ -5170,10 +5327,6 @@ function renderAuctionModalContent() {
 // === PLAYER PORTFOLIO MODAL (Triggered when clicking top player bar!) ===
 function openPlayerPortfolioModal(pid) {
   if (!state || !pid) return;
-  if (pid !== myId) {
-    showEventToast('🔒 Other players\' properties are private! Click your own bar to view yours.');
-    return;
-  }
   inspectedPortfolioPlayerId = pid;
   renderPlayerPortfolioModal(pid);
   $('playerPortfolioModal').classList.remove('hidden');
@@ -5182,6 +5335,7 @@ function openPlayerPortfolioModal(pid) {
 function renderPlayerPortfolioModal(pid) {
   const p = playerById(pid);
   if (!p || !state) return;
+  const isMyPortfolio = (pid === myId || state.setupMode);
   const pCol = playerColor(pid);
   const cash = state.balances?.[pid] || 0;
   const nw = computePlayerNetWorth(pid);
@@ -5192,14 +5346,14 @@ function renderPlayerPortfolioModal(pid) {
   const totalHotels = owned.filter(d => state.properties[d.id]?.houses === 5).length;
   const lifetimeRent = owned.reduce((s, d) => s + (state.properties[d.id]?.rentCollected || 0), 0);
 
-  $('portfolioTitle').innerHTML = `<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${pCol};margin-right:6px;"></span>${p.avatar||'🎩'} ${esc(p.name)}'s Portfolio &amp; Properties`;
+  $('portfolioTitle').innerHTML = `<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${pCol};margin-right:6px;"></span>${p.avatar||'🎩'} ${esc(p.name)}'s Portfolio &amp; Properties ${!isMyPortfolio ? '<span style="font-size:0.72rem;background:rgba(255,255,255,0.14);color:#cbd5e1;padding:2px 8px;border-radius:99px;margin-left:6px;vertical-align:middle;">👁️ View Only</span>' : ''}`;
 
   let propsSectionHTML = '';
   if (owned.length === 0) {
     propsSectionHTML = `<div style="background:rgba(0,0,0,0.28); border:1px dashed rgba(255,255,255,0.2); border-radius:12px; padding:20px; text-align:center; color:#cbd5e1;">
       <div style="font-size:1.8rem; margin-bottom:6px;">🏘️</div>
       <div><b>${esc(p.name)}</b> does not own any properties yet.</div>
-      <button type="button" id="portfolioOpenAllPropsBtn" class="btn-alt" style="margin-top:10px; font-size:0.8rem;">Browse All 28 Properties &amp; Assign/Buy</button>
+      ${isMyPortfolio ? `<button type="button" id="portfolioOpenAllPropsBtn" class="btn-alt" style="margin-top:10px; font-size:0.8rem;">Browse Properties</button>` : ''}
     </div>`;
   } else {
     propsSectionHTML = `<div class="group-cards-grid" style="padding:0;">` + owned.map(def => {
@@ -5232,11 +5386,13 @@ function renderPlayerPortfolioModal(pid) {
             <span class="roi-badge ${roiCls}">ROI ${pct}%</span>
           </div>
           <div class="tpc-controls">
-            ${def.type === 'property' ? (fullSet ? `
-              <button type="button" class="btn-good" data-pf-build="${def.id}" ${!canBuildHouseOnProp(pid, def.id) ? 'disabled' : ''}>+${st.houses === 4 ? '🏨 Hotel' : '🏠 House'} (${fmt(def.houseCost)})</button>
-              ${st.houses > 0 ? `<button type="button" class="btn-alt" data-pf-sell="${def.id}">−🏠 Sell</button>` : ''}
-            ` : `<span style="font-size:0.7rem; color:#fde047; font-weight:700;">🔒 Need ${ownedCountInGroup(pid, def.group)}/${requiredColorMatchCount(def.group)} ${esc(GROUP_LABELS[def.group])} match to build</span>`) : ''}
-            ${st.houses === 0 ? `<button type="button" class="btn-alt" data-pf-mort="${def.id}">${st.mortgaged ? 'Unmortgage ' + fmt(def.unmortgageValue) : 'Mortgage +' + fmt(def.mortgageValue)}</button>` : ''}
+            ${isMyPortfolio ? `
+              ${def.type === 'property' ? (fullSet ? `
+                <button type="button" class="btn-good" data-pf-build="${def.id}" ${!canBuildHouseOnProp(pid, def.id) ? 'disabled' : ''}>+${st.houses === 4 ? '🏨 Hotel' : '🏠 House'} (${fmt(def.houseCost)})</button>
+                ${st.houses > 0 ? `<button type="button" class="btn-alt" data-pf-sell="${def.id}">−🏠 Sell</button>` : ''}
+              ` : `<span style="font-size:0.7rem; color:#fde047; font-weight:700;">🔒 Need ${ownedCountInGroup(pid, def.group)}/${requiredColorMatchCount(def.group)} ${esc(GROUP_LABELS[def.group])} match to build</span>`) : ''}
+              ${st.houses === 0 ? `<button type="button" class="btn-alt" data-pf-mort="${def.id}">${st.mortgaged ? 'Unmortgage ' + fmt(def.unmortgageValue) : 'Mortgage +' + fmt(def.mortgageValue)}</button>` : ''}
+            ` : `<span style="font-size:0.72rem; color:#94a3b8;">👁️ Owned by ${esc(p.name)}</span>`}
             <button type="button" class="btn-alt" data-pf-deed="${def.id}">📜 Deed</button>
           </div>
         </div>
@@ -5264,6 +5420,7 @@ function renderPlayerPortfolioModal(pid) {
       </div>
     </div>
 
+    ${isMyPortfolio ? `
     <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:10px 12px; margin-bottom:14px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between;">
       <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
         <button type="button" class="btn-good" id="pfPassGoBtn" style="padding:6px 10px; font-size:0.76rem;">+ $2M Pass GO</button>
@@ -5279,6 +5436,7 @@ function renderPlayerPortfolioModal(pid) {
         <button type="button" class="btn-good" id="pfReceiveBankBtn" style="padding:5px 9px; font-size:0.75rem;">Receive</button>
       </div>
     </div>
+    ` : ''}
 
     <h3 style="margin:0 0 8px; font-size:0.95rem; color:#ffe7a5;">🏘️ Properties Owned by ${esc(p.name)} (${owned.length})</h3>
     ${propsSectionHTML}
@@ -5748,13 +5906,11 @@ function renderPlayersTrackerTabContent() {
     const inJail = !!state.inJail?.[pid];
     const owned = ownedPropsFor(pid);
 
-    const chips = (pid === myId)
-      ? owned.map(def => {
-          const pst = state.properties[def.id];
-          const hIcon = def.type === 'property' && pst.houses > 0 ? ' ' + (pst.houses === 5 ? '🏨' : '🏠'.repeat(pst.houses)) : '';
-          return `<span class="prop-mini-chip" data-chip-prop="${def.id}" style="background:${GROUP_COLORS[def.group]}; ${pst.mortgaged?'opacity:0.55;text-decoration:line-through;':''}">${esc(def.name)}${hIcon}</span>`;
-        }).join('')
-      : '<span style="font-size:0.72rem; color:#94a3b8;">🔒 Opponent properties hidden</span>';
+    const chips = owned.map(def => {
+      const pst = state.properties[def.id];
+      const hIcon = def.type === 'property' && pst.houses > 0 ? ' ' + (pst.houses === 5 ? '🏨' : '🏠'.repeat(pst.houses)) : '';
+      return `<span class="prop-mini-chip" data-chip-prop="${def.id}" style="background:${GROUP_COLORS[def.group]}; ${pst.mortgaged?'opacity:0.55;text-decoration:line-through;':''}">${esc(def.name)}${hIcon}</span>`;
+    }).join('');
 
     cardsHtml += `<div class="tracker-pcard" style="--pcolor:${pCol}; ${isElim?'opacity:0.6;border-style:dashed;':''}">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
@@ -5995,8 +6151,10 @@ $('hubTabPlayers').addEventListener('change', e => {
 });
 
 
-// === TRADE PROPERTIES & CASH MODAL ===
-function openTradeModal() {
+// === TRADE PROPERTIES & CASH MODAL (WITH ACCEPT / DENY / COUNTER-OFFER) ===
+let isCounterOfferMode = false;
+
+function openTradeModal(prefill=null) {
   if (!state) return;
   const active = state.players.filter(pid => !state.bankrupt?.[pid]);
   if (active.length < 2) {
@@ -6007,16 +6165,30 @@ function openTradeModal() {
   const opts = active.map(pid => `<option value="${esc(pid)}">${esc(playerById(pid)?.name||'Player')} (${fmt(state.balances[pid]||0)})</option>`).join('');
   selA.innerHTML = opts;
   selB.innerHTML = opts;
-  selA.value = active.includes(myId) ? myId : active[0];
-  selB.value = active.find(pid => pid !== selA.value) || active[0];
-  $('tradeCashAInput').value = '';
-  $('tradeCashBInput').value = '';
-  $('tradeStatusMsg').textContent = '';
-  renderTradeSideLists();
+
+  if (prefill && prefill.fromId && prefill.toId) {
+    isCounterOfferMode = !!prefill.isCounter;
+    selA.value = prefill.fromId;
+    selB.value = prefill.toId;
+    $('tradeCashAInput').value = prefill.cashFrom ? shortLabel(prefill.cashFrom) : '';
+    $('tradeCashBInput').value = prefill.cashTo ? shortLabel(prefill.cashTo) : '';
+    $('tradeStatusMsg').textContent = isCounterOfferMode ? '🔄 Adjust the terms below and send your Counter-Offer!' : '';
+    $('executeTradeBtn').textContent = isCounterOfferMode ? '🔄 Send Counter-Offer' : '📨 Send Trade Offer';
+    renderTradeSideLists(prefill.propsFrom || [], prefill.propsTo || []);
+  } else {
+    isCounterOfferMode = false;
+    selA.value = active.includes(myId) ? myId : active[0];
+    selB.value = active.find(pid => pid !== selA.value) || active[0];
+    $('tradeCashAInput').value = '';
+    $('tradeCashBInput').value = '';
+    $('tradeStatusMsg').textContent = '';
+    $('executeTradeBtn').textContent = '📨 Send Trade Offer';
+    renderTradeSideLists([], []);
+  }
   $('tradeModal').classList.remove('hidden');
 }
 
-function renderTradeSideLists() {
+function renderTradeSideLists(preCheckedA=[], preCheckedB=[]) {
   if (!state) return;
   const pA = $('tradePlayerASelect').value;
   const pB = $('tradePlayerBSelect').value;
@@ -6028,7 +6200,7 @@ function renderTradeSideLists() {
 
   $('tradePropsAList').innerHTML = propsA.length
     ? propsA.map(d => `<label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;cursor:pointer;padding:3px 4px;border-radius:6px;background:rgba(255,255,255,0.05);">
-        <input type="checkbox" value="${esc(d.id)}" data-trade-prop-a>
+        <input type="checkbox" value="${esc(d.id)}" data-trade-prop-a ${preCheckedA.includes(d.id)?'checked':''}>
         <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${GROUP_COLORS[d.group]};"></span>
         <b>${esc(d.name)}</b> <small style="color:#cbd5e1;">(${fmt(d.price)})</small>
       </label>`).join('')
@@ -6036,14 +6208,106 @@ function renderTradeSideLists() {
 
   $('tradePropsBList').innerHTML = propsB.length
     ? propsB.map(d => `<label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;cursor:pointer;padding:3px 4px;border-radius:6px;background:rgba(255,255,255,0.05);">
-        <input type="checkbox" value="${esc(d.id)}" data-trade-prop-b>
+        <input type="checkbox" value="${esc(d.id)}" data-trade-prop-b ${preCheckedB.includes(d.id)?'checked':''}>
         <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${GROUP_COLORS[d.group]};"></span>
         <b>${esc(d.name)}</b> <small style="color:#cbd5e1;">(${fmt(d.price)})</small>
       </label>`).join('')
     : '<div style="font-size:0.75rem;color:#94a3b8;padding:4px;">No tradeable (unimproved) properties</div>';
 }
 
-$('openTradeModalBtn').onclick = openTradeModal;
+function renderTradeOfferModalContent() {
+  if (!state || !state.pendingTrade) return;
+  const tr = state.pendingTrade;
+  const fromP = playerById(tr.fromId);
+  const toP = playerById(tr.toId);
+  const isRecipient = (myId === tr.toId);
+  const isSender = (myId === tr.fromId);
+
+  $('tradeOfferModalTitle').textContent = tr.isCounter ? '🔄 Counter-Offer Received!' : '🤝 Trade Proposal';
+  $('tradeOfferStatusPill').textContent = isRecipient ? 'Your Decision' : `Waiting for ${toP?.name || 'Partner'}...`;
+
+  const formatSideItems = (cashAmt, propIds) => {
+    const items = [];
+    if (cashAmt > 0) {
+      items.push(`<div style="padding:4px 8px;background:rgba(34,197,94,0.18);border:1px solid rgba(74,222,128,0.4);border-radius:6px;color:#86efac;font-weight:800;">💵 Cash: ${fmt(cashAmt)}</div>`);
+    }
+    (propIds || []).forEach(pid => {
+      const def = propDef(pid);
+      if (def) {
+        const gCol = GROUP_COLORS[def.group] || '#334155';
+        items.push(`<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:rgba(255,255,255,0.07);border-radius:6px;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${gCol};"></span>
+          <b>${esc(def.name)}</b> <small style="color:#cbd5e1;">(${fmt(def.price)})</small>
+        </div>`);
+      }
+    });
+    if (!items.length) return `<div style="color:#94a3b8;font-size:0.78rem;padding:4px;">Nothing (${fmt(0)})</div>`;
+    return items.join('');
+  };
+
+  $('tradeOfferModalBody').innerHTML = `
+    <div style="font-size:0.88rem; color:#e2e8f0; margin-bottom:12px; text-align:center;">
+      <b>${fromP?.avatar||'🎩'} ${esc(fromP?.name||'Player 1')}</b> ${tr.isCounter ? 'sent a counter-offer to' : 'wants to trade with'} <b>${toP?.avatar||'🎩'} ${esc(toP?.name||'Player 2')}</b>:
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:10px; margin-bottom:14px;">
+      <div style="background:rgba(0,0,0,0.32); border:1.5px solid rgba(255,214,111,0.35); border-radius:12px; padding:10px;">
+        <div style="font-size:0.78rem; color:#ffe7a5; font-weight:800; margin-bottom:6px;">📤 ${esc(fromP?.name||'Proposer')} Gives:</div>
+        <div style="display:flex; flex-direction:column; gap:5px;">
+          ${formatSideItems(tr.cashFrom, tr.propsFrom)}
+        </div>
+      </div>
+      <div style="background:rgba(0,0,0,0.32); border:1.5px solid rgba(147,197,253,0.35); border-radius:12px; padding:10px;">
+        <div style="font-size:0.78rem; color:#93c5fd; font-weight:800; margin-bottom:6px;">📥 ${esc(toP?.name||'Partner')} Gives:</div>
+        <div style="display:flex; flex-direction:column; gap:5px;">
+          ${formatSideItems(tr.cashTo, tr.propsTo)}
+        </div>
+      </div>
+    </div>
+
+    ${isRecipient ? `
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" id="acceptTradeOfferBtn" class="btn-good" style="flex:1.2; padding:10px;">✅ Accept Trade</button>
+        <button type="button" id="counterTradeOfferBtn" class="btn-auction" style="flex:1.2; padding:10px;">🔄 Counter Offer</button>
+        <button type="button" id="denyTradeOfferBtn" class="btn-danger" style="flex:1; padding:10px;">✕ Deny</button>
+      </div>
+    ` : `
+      <div style="text-align:center; padding:8px; background:rgba(0,0,0,0.25); border-radius:10px; margin-bottom:10px; color:#fde047; font-size:0.84rem; font-weight:700;">
+        ⏳ Waiting for ${esc(toP?.name||'Partner')} to Accept, Deny, or Counter...
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" id="withdrawTradeOfferBtn" class="btn-danger" style="flex:1; padding:9px;">✕ Withdraw Offer</button>
+      </div>
+    `}
+  `;
+
+  if ($('acceptTradeOfferBtn')) {
+    $('acceptTradeOfferBtn').onclick = () => sendAct('ACCEPT_TRADE');
+  }
+  if ($('denyTradeOfferBtn')) {
+    $('denyTradeOfferBtn').onclick = () => sendAct('REJECT_TRADE');
+  }
+  if ($('withdrawTradeOfferBtn')) {
+    $('withdrawTradeOfferBtn').onclick = () => sendAct('REJECT_TRADE');
+  }
+  if ($('counterTradeOfferBtn')) {
+    $('counterTradeOfferBtn').onclick = () => {
+      // Open Trade Modal pre-filled with swapped sides so recipient can modify & send back a Counter-Offer!
+      const prefillCounter = {
+        fromId: tr.toId,
+        toId: tr.fromId,
+        cashFrom: tr.cashTo,
+        cashTo: tr.cashFrom,
+        propsFrom: [...(tr.propsTo || [])],
+        propsTo: [...(tr.propsFrom || [])],
+        isCounter: true
+      };
+      $('tradeOfferModal').classList.add('hidden');
+      openTradeModal(prefillCounter);
+    };
+  }
+}
+
+$('openTradeModalBtn').onclick = () => openTradeModal(null);
 $('closeTradeModalBtn').onclick = () => $('tradeModal').classList.add('hidden');
 $('cancelTradeBtn').onclick = () => $('tradeModal').classList.add('hidden');
 $('tradeModal').onclick = e => { if (e.target === $('tradeModal')) $('tradeModal').classList.add('hidden'); };
@@ -6088,18 +6352,7 @@ $('executeTradeBtn').onclick = () => {
     return;
   }
 
-  // If trading with an AI Bot, evaluate fairness so AI doesn't give away properties for free
-  const partnerObj = playerById(pB);
-  if (partnerObj && (partnerObj.isBot || partnerObj.id === 'AI')) {
-    const valOffered = cashA + propsA.reduce((s, id) => s + (propDef(id)?.price || 0), 0);
-    const valRequested = cashB + propsB.reduce((s, id) => s + (propDef(id)?.price || 0), 0);
-    if (valOffered < valRequested * 0.85) {
-      $('tradeStatusMsg').textContent = `🤖 ${partnerObj.name} declined: Offer (${fmt(valOffered)}) is too low for requested value (${fmt(valRequested)}).`;
-      return;
-    }
-  }
-
-  sendAct('EXECUTE_TRADE', { playerA: pA, playerB: pB, cashA, cashB, propsA, propsB });
+  sendAct('PROPOSE_TRADE', { playerA: pA, playerB: pB, cashA, cashB, propsA, propsB, isCounter: isCounterOfferMode });
   $('tradeModal').classList.add('hidden');
 };
 
