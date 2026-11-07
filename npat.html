@@ -419,7 +419,7 @@ body.kb-open .step-meta p { display: none; }
   word-break: break-word;
 }
 
-/* CLOSE CALL HOST CARD */
+/* CLOSE CALL HOST CARD & VOTING BREAKDOWN */
 .close-call-card {
   background: rgba(0,0,0,0.32);
   border: 1.5px solid rgba(255, 214, 111, 0.35);
@@ -441,6 +441,41 @@ body.kb-open .step-meta p { display: none; }
   padding: 8px 12px;
   flex: 1;
   min-width: 140px;
+}
+.voting-section-box {
+  background: rgba(59, 130, 246, 0.12);
+  border: 1.5px solid rgba(96, 165, 250, 0.45);
+  border-radius: 16px;
+  padding: 14px;
+}
+.voting-section-box h3 {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+  color: #93c5fd;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.vote-result-row {
+  background: rgba(0,0,0,0.32);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-left: 4px solid transparent;
+}
+.vote-result-row.accepted { border-left-color: #10b981; }
+.vote-result-row.rejected { border-left-color: #ef4444; }
+.voter-badge-for {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(16, 185, 129, 0.22); border: 1px solid rgba(16, 185, 129, 0.45);
+  color: #6ee7b7; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 700;
+}
+.voter-badge-against {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(239, 68, 68, 0.22); border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #fca5a5; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 700;
 }
 
 @media (max-width: 600px) {
@@ -566,6 +601,7 @@ body.kb-open .step-meta p { display: none; }
       <button id="copyInviteBtn" type="button" class="btn-alt" style="padding:6px 12px; font-size:0.8rem;">📋 Copy Link</button>
     </div>
 
+    <!-- Live Profile Editor inside Lobby so players can change Name/Avatar anytime -->
     <div style="background: rgba(255,255,255,0.06); padding: 10px; border-radius: 12px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.12);">
       <div style="font-size:0.78rem; color:#94a3b8; margin-bottom:6px;">Your Profile (Change Name or Avatar):</div>
       <div class="avatar-grid" id="lobbyAvatarPicker" style="margin-bottom:8px;"></div>
@@ -645,6 +681,7 @@ body.kb-open .step-meta p { display: none; }
             <p id="stepPrompt">Person or celebrity name</p>
           </div>
         </div>
+        <!-- Always visible inline Letter + Timer even when mobile keyboard covers the top bar -->
         <div class="inline-hud-pills">
           <span class="inline-letter-pill" id="inlineLetterBadge">🔤 A</span>
           <span class="timer-badge" id="inlineTimerBadge">⏱️ 1:00</span>
@@ -746,6 +783,12 @@ body.kb-open .step-meta p { display: none; }
       </div>
     </div>
 
+    <!-- Dedicated Voting Results Breakdown Section (Who voted For and Against) -->
+    <div class="voting-section-box hidden" id="votingResultsSection">
+      <h3>🗳️ Doubtful Words Voting Results (Who Voted For &amp; Against)</h3>
+      <div class="matched-chips-list" id="votingResultsList"></div>
+    </div>
+
     <!-- Dedicated Matched Words Section -->
     <div class="matched-section-box hidden" id="matchedWordsSection">
       <h3>🤝 Matched Words Breakdown (Same Word = 5 pts each)</h3>
@@ -769,7 +812,7 @@ body.kb-open .step-meta p { display: none; }
       <ul style="padding-left: 18px; display:flex; flex-direction:column; gap:8px; margin:0;">
         <li><strong>Random 1 &amp; 2 Letter Starts:</strong> Rounds can draw single letters (e.g. <strong>A, M, S</strong>) or 2-letter combos (e.g. <strong>AN, CH, TH, SH, PR</strong>).</li>
         <li><strong>Category-Specific Online Check:</strong> Animals are verified against creatures/species, Places against geography, Movies against cinema/films, and Things against physical objects/items.</li>
-        <li><strong>One-by-One Voting:</strong> Any doubtful word is voted on sequentially by all players before scores are shown. Only a strict majority (<strong>Yes &gt; No</strong>) passes.</li>
+        <li><strong>One-by-One Voting &amp; Full Transparency:</strong> Any doubtful word is voted on sequentially by all players before scores are shown. The final scoreboard displays the complete voting breakdown showing who voted <strong>For (👍)</strong> and <strong>Against (👎)</strong> each word.</li>
         <li><strong>Smart Close-Call Check Only:</strong> Host never has to validate every word! Only if two players write close spellings (like <em>Rishi / Rashi</em>) does the Host choose <strong>Valid 10 pts each</strong> or <strong>Same Matched 5 pts each</strong>.</li>
         <li><strong>Points System:</strong>
           <ul>
@@ -812,6 +855,7 @@ const TWO_LETTER_COMBOS = [
   'TA', 'TE', 'TH', 'TI', 'TO', 'TR', 'VA', 'VI', 'WA', 'WH', 'WI', 'WO'
 ];
 
+// Curated Offline Fallback Dictionary supporting both 1-letter and 2-letter prefixes
 const LOCAL_DICT = {
   place: ['Amsterdam','Athens','Argentina','Australia','Austin','Atlanta','Antwerp','Andorra','ankara','Berlin','Boston','Brazil','Beijing','Bangkok','Barcelona','Bhopal','Chennai','Chicago','China','Chile','Chandigarh','Chemnad','Cochin','Coimbatore','Colombo','Delhi','Dubai','Dublin','Denmark','Doha','Egypt','England','France','Finland','Florida','Germany','Goa','Geneva','Greece','Hungary','Hyderabad','Holland','India','Indonesia','Iran','Iraq','Italy','Japan','Jakarta','Jaipur','Jordan','Kerala','Kasaragod','Kochi','Kolkata','kanpur','Kenya','Kuwait','London','Lisbon','Lahore','Lucknow','Madrid','Mumbai','Malaysia','Mexico','Manila','Mangalore','Moscow','Nepal','Norway','New York','Oman','Oslo','Paris','Poland','Portugal','Pune','Patna','Prague','Qatar','Rome','Russia','Riyadh','Spain','Singapore','Sydney','Seoul','Sweden','Switzerland','Shimla','Surat','Thailand','Tokyo','Turkey','Taiwan','Trivandrum','Thrissur','Toronto','Uganda','Ukraine','Vietnam','Venice','Vienna','Warsaw','Washington','Yemen','Zambia','Zurich'],
   animal: ['Alligator','Ant','Antelope','Ape','Armadillo','Anaconda','Albatross','Bear','Bat','Beaver','Bee','Bison','Butterfly','Buffalo','Baboon','Camel','Cat','Cheetah','Chimpanzee','Cobra','Chameleon','Chicken','Crab','Crocodile','Crow','Deer','Dog','Dolphin','Donkey','Dragonfly','Duck','Eagle','Elephant','Emu','Falcon','Ferret','Fish','Flamingo','Fox','Frog','Giraffe','Goat','Gorilla','Grasshopper','Hamster','Hawk','Hedgehog','Hippopotamus','Horse','Hyena','Iguana','Impala','Jackal','Jaguar','Jellyfish','Kangaroo','Koala','Kingfisher','Komodo Dragon','Leopard','Lion','Lizard','Llama','Lobster','Monkey','Moose','Mosquito','Mouse','Mongoose','Nightingale','Octopus','Ostrich','Otter','Owl','Oyster','Panda','Panther','Parrot','Peacock','Pelican','Penguin','Pig','Pigeon','Python','Quail','Rabbit','Raccoon','Rat','Raven','Reindeer','Rhinoceros','Robin','Salamander','Salmon','Scorpion','Seahorse','Seal','Shark','Sheep','Shrimp','Skunk','Sloth','Snail','Snake','Sparrow','Spider','Squirrel','Starfish','Swan','Tiger','Toad','Tortoise','Toucan','Turkey','Turtle','Vulture','Walrus','Wasp','Whale','Wolf','Wombat','Woodpecker','Yak','Zebra'],
@@ -952,6 +996,7 @@ async function lookupEntity(word, category) {
   const cacheKey = category + ':' + clean.toLowerCase();
   if (entityCache.has(cacheKey)) return entityCache.get(cacheKey);
 
+  // Reject single-character or gibberish/very short non-words immediately to Doubtful
   const alphaOnly = clean.replace(/[^a-zA-Z]/g, '');
   if (alphaOnly.length < 2 || (alphaOnly.length < 3 && !isLocalWordKnown(clean, category))) {
     const res = { exists: false, title: clean, description: 'Too short / needs player vote', thumbnail: null };
@@ -959,12 +1004,14 @@ async function lookupEntity(word, category) {
     return res;
   }
 
+  // Fast check in curated local category dictionary
   if (isLocalWordKnown(clean, category)) {
     const res = { exists: true, title: clean, description: `Verified ${CATEGORY_DATA[category].label}`, thumbnail: null };
     entityCache.set(cacheKey, res);
     return res;
   }
 
+  // Names: require at least 3 letters and valid vowel/consonant structure; if online, check Wikipedia or send to vote if suspicious
   if (category === 'name') {
     const hasVowel = /[aeiouy]/i.test(alphaOnly);
     if (alphaOnly.length >= 3 && hasVowel) {
@@ -978,6 +1025,7 @@ async function lookupEntity(word, category) {
     }
   }
 
+  // Online category-specific Wikipedia search
   if (navigator.onLine && (state?.onlineCheck ?? true)) {
     try {
       const suffixMap = {
@@ -1005,6 +1053,7 @@ async function lookupEntity(word, category) {
 
           const combinedText = `${hit.title} ${hit.snippet || ''}`.replace(/<[^>]+>/g, ' ');
           if (CATEGORY_KEYWORDS[category].test(combinedText)) {
+            // Fetch summary for thumbnail if possible
             let thumb = null;
             let desc = combinedText.slice(0, 90) + '...';
             try {
@@ -1024,6 +1073,7 @@ async function lookupEntity(word, category) {
       }
     } catch (e) {}
 
+    // Secondary check for Thing or Animal via Dictionary API (strictly checking noun definition & category relevance)
     if (category === 'thing' || category === 'animal') {
       try {
         const ctrl = new AbortController();
@@ -1042,6 +1092,7 @@ async function lookupEntity(word, category) {
                 return verified;
               }
               if (category === 'thing' && clean.length >= 3 && !NON_THING_DISQUALIFIERS.test(allDefs) && (CATEGORY_KEYWORDS.thing.test(allDefs) || nounMeaning.definitions.length >= 1)) {
+                // Ensure slang/interjections like "cha" aren't accepted as physical things
                 if (!/\b(interjection|exclamation|slang|informal|abbreviation|dialect|tea)\b/i.test(allDefs) || CATEGORY_KEYWORDS.thing.test(allDefs)) {
                   const verified = { exists: true, title: clean, description: nounMeaning.definitions[0].definition.slice(0, 85), thumbnail: null };
                   entityCache.set(cacheKey, verified);
@@ -1091,7 +1142,7 @@ function getSavedSessionInfo() {
     const raw = localStorage.getItem('npat_last_session');
     if (!raw) return null;
     const data = JSON.parse(raw);
-    if (Date.now() - data.ts > 3 * 60 * 60 * 1000) return null;
+    if (Date.now() - data.ts > 3 * 60 * 60 * 1000) return null; // expire after 3 hours
     return data;
   } catch (e) { return null; }
 }
@@ -1128,7 +1179,7 @@ const PEER_OPTS = {
 };
 
 let peer = null;
-let connections = new Map();
+let connections = new Map(); // playerId -> conn
 let host = false;
 let solo = false;
 let roomCode = '';
@@ -1233,9 +1284,10 @@ function createInitialState(timeLimit, onlineCheck, letterMode, includeMovie, pr
     timeRemaining: timeLimit,
     submissions: {},
     completed: new Set(),
-    voting: null, // { items: [], currentIndex: 0, votesForCurrent: {}, votedPlayerIds: [] }
+    voting: null, // { items: [], currentIndex: 0, votesForCurrent: {}, votedPlayerIds: [], history: [] }
+    votingHistory: [], // [{ word, category, submittedBy, isAccepted, yesCount, noCount, votersFor: [], votersAgainst: [] }]
     adminOverrides: {}, // key: `${playerId}:${cat}` -> { word, valid }
-    closeCallGroups: [], // [{ id, category, entries: [{ key, playerId, playerName, avatar, word }], mode: 'separate' | 'same' }]
+    closeCallGroups: [], // [{ id, category, entries: [{ key, playerId, playerName, avatar, word }], decision: 'separate' | 'same' }]
     results: null,
     matchedGroups: [],
     roundWinner: null,
@@ -1508,6 +1560,7 @@ function serializeStateForClient(targetPlayerId) {
       totalVoters: getEligibleVoterCount(),
       hasVoted: votesObj[targetPlayerId] !== undefined
     } : null,
+    votingHistory: state.votingHistory || [],
     results: state.results,
     matchedGroups: state.matchedGroups,
     roundWinner: state.roundWinner,
@@ -1561,6 +1614,7 @@ function handleClientMessage(data) {
       timeRemaining: data.timeLimit,
       submissions: {},
       completed: new Set(),
+      votingHistory: [],
       results: null,
       matchedGroups: [],
       cumulativeScores: data.cumulativeScores || {}
@@ -1590,7 +1644,6 @@ function handleClientMessage(data) {
   } else if (data.type === 'VOTE_ITEM_PROMPT') {
     if (!state) state = {};
     state.phase = 'voting';
-    // CRITICAL FIX: Never overwrite host's votesForCurrent map if called on host!
     if (!host) {
       state.voting = {
         items: data.items,
@@ -1619,6 +1672,7 @@ function handleClientMessage(data) {
       state.phase = 'results';
       state.results = data.results;
       state.matchedGroups = data.matchedGroups || [];
+      state.votingHistory = data.votingHistory || [];
       state.roundWinner = data.roundWinner;
       state.totalWinner = data.totalWinner;
       state.cumulativeScores = data.cumulativeScores || {};
@@ -1897,6 +1951,7 @@ function checkIfAllCompleted() {
 async function beginPostRoundVerification() {
   if (!host || !state || state.phase !== 'playing') return;
   state.phase = 'verifying';
+  state.votingHistory = [];
 
   const statusMsg = {
     type: 'PHASE_STATUS',
@@ -2103,14 +2158,59 @@ function tallyAndAdvanceCurrentVote() {
   if (!item) return;
 
   let yes = 0, no = 0;
-  Object.values(state.voting.votesForCurrent || {}).forEach(v => { if (v) yes++; else no++; });
+  const votersFor = [];
+  const votersAgainst = [];
+
+  Object.entries(state.voting.votesForCurrent || {}).forEach(([pid, v]) => {
+    const pObj = players.find(pl => pl.id === pid);
+    const label = pObj ? `${pObj.avatar} ${pObj.name}` : pid;
+    if (v) {
+      yes++;
+      votersFor.push(label);
+    } else {
+      no++;
+      votersAgainst.push(label);
+    }
+  });
+
   const isAccepted = yes > no;
+
+  if (!state.votingHistory) state.votingHistory = [];
+  state.votingHistory.push({
+    word: item.word,
+    category: item.category,
+    submittedBy: item.players || [],
+    isAccepted,
+    yesCount: yes,
+    noCount: no,
+    votersFor,
+    votersAgainst
+  });
+
+  const forNames = votersFor.length ? votersFor.join(', ') : 'None';
+  const againstNames = votersAgainst.length ? votersAgainst.join(', ') : 'None';
+  const voteSummaryDesc = isAccepted
+    ? `✅ Vote Accepted (${yes}-${no}) • 👍 For: ${forNames} | 👎 Against: ${againstNames}`
+    : `❌ Vote Rejected (${yes}-${no}) • 👍 For: ${forNames} | 👎 Against: ${againstNames}`;
+
+  // Apply vote result to all matching answers in that category (case/spelling variations)
+  players.forEach(p => {
+    const raw = (state.submissions[p.id]?.answers?.[item.category] || '').trim();
+    if (raw && areAnswersSame(raw, item.word)) {
+      entityCache.set(item.category + ':' + raw.toLowerCase(), {
+        exists: isAccepted,
+        title: raw,
+        description: voteSummaryDesc,
+        thumbnail: null
+      });
+    }
+  });
 
   const cacheKey = item.category + ':' + item.word.toLowerCase();
   entityCache.set(cacheKey, {
     exists: isAccepted,
     title: item.word,
-    description: isAccepted ? `✅ Vote Accepted (${yes}-${no})` : `❌ Vote Rejected (${yes}-${no})`,
+    description: voteSummaryDesc,
     thumbnail: null
   });
 
@@ -2168,7 +2268,6 @@ function proceedToCloseCallCheck() {
       }
     });
 
-    // Build connected components of entries that are close calls (similar spelling, but not identical)
     const visited = new Set();
     for (let i = 0; i < validEntries.length; i++) {
       if (visited.has(i)) continue;
@@ -2181,7 +2280,6 @@ function proceedToCloseCallCheck() {
         for (let j = 0; j < validEntries.length; j++) {
           if (visited.has(j)) continue;
           const cand = validEntries[j];
-          // Check if cand is identical or close-call to any member in component
           const isLinked = component.some(member =>
             member.norm === cand.norm || areWordsCloseCall(member.word, cand.word)
           );
@@ -2193,7 +2291,6 @@ function proceedToCloseCallCheck() {
         }
       }
 
-      // Only prompt Host if the group contains at least 2 distinct normalized spellings (a true close call like rishi/rashi)
       const distinctNorms = new Set(component.map(c => c.norm));
       if (component.length >= 2 && distinctNorms.size >= 2) {
         state.closeCallGroups.push({
@@ -2206,7 +2303,6 @@ function proceedToCloseCallCheck() {
     }
   });
 
-  // If NO close calls exist, skip host modal completely and publish final scoreboard!
   if (state.closeCallGroups.length === 0) {
     finalizeScoreboardAfterAdminReview();
     return;
@@ -2269,10 +2365,8 @@ function showAdminReviewModal() {
 function finalizeScoreboardAfterAdminReview() {
   if (!host || !state) return;
 
-  // Apply Host's Close Call decisions
   (state.closeCallGroups || []).forEach(group => {
     if (group.decision === 'same' && group.entries.length >= 2) {
-      // Unify canonical group key so all related players match and get 5 pts each
       const canonicalWord = group.entries[0].word;
       group.entries.forEach(e => {
         if (state.adminOverrides[e.key]) {
@@ -2415,6 +2509,7 @@ function finalizeScoreboardAfterAdminReview() {
     type: 'FINAL_RESULTS',
     results,
     matchedGroups,
+    votingHistory: state.votingHistory || [],
     roundWinner: roundWinnerId,
     totalWinner: totalWinnerId,
     cumulativeScores
@@ -2441,6 +2536,54 @@ function showResultsModal() {
     $('totalWinnerSub').textContent = `Total Score: ${tData.totalScore} pts`;
   }
 
+  // Render Doubtful Words Voting Results Breakdown (Who Voted For & Against)
+  const votingBox = $('votingResultsSection');
+  const votingList = $('votingResultsList');
+  votingList.innerHTML = '';
+  const vHistory = state.votingHistory || [];
+
+  if (vHistory.length > 0) {
+    votingBox.classList.remove('hidden');
+    vHistory.forEach(vh => {
+      const catMeta = CATEGORY_DATA[vh.category] || { icon: '❓', label: vh.category };
+      const row = document.createElement('div');
+      row.className = 'vote-result-row ' + (vh.isAccepted ? 'accepted' : 'rejected');
+
+      const forBadges = (vh.votersFor && vh.votersFor.length > 0)
+        ? vh.votersFor.map(name => `<span class="voter-badge-for">👍 ${esc(name)}</span>`).join(' ')
+        : `<span style="font-size:0.75rem; color:#64748b;">None</span>`;
+
+      const againstBadges = (vh.votersAgainst && vh.votersAgainst.length > 0)
+        ? vh.votersAgainst.map(name => `<span class="voter-badge-against">👎 ${esc(name)}</span>`).join(' ')
+        : `<span style="font-size:0.75rem; color:#64748b;">None</span>`;
+
+      row.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+          <div>
+            <span style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:700;">${catMeta.icon} ${catMeta.label}:</span>
+            <strong style="font-size:1.05rem; color:#ffe7a5; margin-left:6px;">${esc(vh.word)}</strong>
+            <span style="font-size:0.76rem; color:#cbd5e1; margin-left:6px;">(by ${(vh.submittedBy || []).map(esc).join(', ')})</span>
+          </div>
+          <span class="score-pill ${vh.isAccepted ? 'unique' : 'invalid'}">
+            ${vh.isAccepted ? `✅ Accepted (${vh.yesCount} - ${vh.noCount})` : `❌ Rejected (${vh.yesCount} - ${vh.noCount})`}
+          </span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:5px; margin-top:4px; font-size:0.8rem;">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <strong style="color:#6ee7b7; min-width:85px;">Voted For:</strong> ${forBadges}
+          </div>
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <strong style="color:#fca5a5; min-width:85px;">Voted Against:</strong> ${againstBadges}
+          </div>
+        </div>
+      `;
+      votingList.appendChild(row);
+    });
+  } else {
+    votingBox.classList.add('hidden');
+  }
+
+  // Matched Words Breakdown Section
   const matchedBox = $('matchedWordsSection');
   const matchedList = $('matchedWordsList');
   matchedList.innerHTML = '';
@@ -2518,12 +2661,17 @@ function renderResultsGrid() {
         ? `<img src="${esc(ans.info.thumbnail)}" class="item-thumb" alt="">`
         : `<div class="item-icon-fallback">${catMeta.icon}</div>`;
 
+      const descHtml = (ans.info && ans.info.description)
+        ? `<div class="item-desc">${esc(ans.info.description)}</div>`
+        : '';
+
       html += `
         <div class="item-row ${ans.status}">
           ${mediaHtml}
           <div class="item-body">
             <div class="item-cat">${catMeta.label}</div>
             <div class="item-word">${ans.word ? esc(ans.word) : '—'}</div>
+            ${descHtml}
           </div>
           <div class="score-pill ${ans.status}">${badgeLabel}</div>
         </div>
