@@ -105,6 +105,10 @@ http://rehxk.candymarta.com:80/live/MAGHAFNQKH/MAGLYW6LA3/324810.ts
 #EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36
 http://skyfilex.fun:80/live/26060%40Asif/57453548/148162.ts
 
+#EXTINF:-1 tvg-logo="https://thumb.wikimedia.org/wikipedia/en/thumb/7/7a/StarHub_%282021%29.svg/500px-StarHub_%282021%29.svg.png?utm_source=en.wikipedia.org&utm_campaign=parser&utm_content=thumbnail"  group-title="Sports",Hub Premier 5 Auth
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36
+http://uniqueott.com:80/live/Jabse5646/Sha4656/148162.ts
+
 #EXTINF:-1 tvg-logo="https://assetsv2.nyra.com/filer_public_thumbnails/filer_public/15/bc/15bc193e-022b-49d8-8a84-15766f2f9d91/filer_publicuploadswysiwygfs1_810x430.jpg__1600x1600_q85_ALIAS-lg_subsampling-2.jpg"  group-title="Sports",Liv vs Atm
 #EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36
 https://zubayerop.short.gy/LIV-V-ATM.m3u8
