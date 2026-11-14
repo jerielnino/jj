@@ -1,0 +1,2923 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Number Duel — Tournament Codebreaker</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root {
+  --table-bg: #1e3a8a;
+  --modal-bg: linear-gradient(145deg, #1e3a8a 0%, #0f172a 100%);
+  --modal-border: #60a5fa;
+  --accent: #3b82f6;
+  --accent-glow: rgba(59, 130, 246, 0.45);
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --gold: #ffd66f;
+  --slot-bg: rgba(15, 23, 42, 0.95);
+  --card-bg: rgba(15, 23, 42, 0.85);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  background-color: var(--table-bg);
+  background-image: radial-gradient(ellipse at center, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.6) 100%);
+  color: #fff;
+  font: 15px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: background-color 0.3s;
+}
+
+body[data-theme="blue"] {
+  --table-bg: #1e3a8a;
+  --modal-bg: linear-gradient(145deg, #1e3a8a 0%, #0f172a 100%);
+  --modal-border: #60a5fa;
+  --accent: #3b82f6;
+  --accent-glow: rgba(59, 130, 246, 0.45);
+}
+body[data-theme="green"] {
+  --table-bg: #064e3b;
+  --modal-bg: linear-gradient(145deg, #065f46 0%, #022c22 100%);
+  --modal-border: #34d399;
+  --accent: #10b981;
+  --accent-glow: rgba(16, 185, 129, 0.45);
+}
+body[data-theme="red"] {
+  --table-bg: #7f1d1d;
+  --modal-bg: linear-gradient(145deg, #991b1b 0%, #450a0a 100%);
+  --modal-border: #f87171;
+  --accent: #ef4444;
+  --accent-glow: rgba(239, 68, 68, 0.45);
+}
+body[data-theme="purple"] {
+  --table-bg: #581c87;
+  --modal-bg: linear-gradient(145deg, #6b21a8 0%, #3b0764 100%);
+  --modal-border: #c084fc;
+  --accent: #a855f7;
+  --accent-glow: rgba(168, 85, 247, 0.45);
+}
+body[data-theme="wood"] {
+  --table-bg: #451a03;
+  --modal-bg: linear-gradient(145deg, #78350f 0%, #290f03 100%);
+  --modal-border: #d97706;
+  --accent: #f59e0b;
+  --accent-glow: rgba(245, 158, 11, 0.45);
+}
+body[data-theme="dark"] {
+  --table-bg: #0f172a;
+  --modal-bg: linear-gradient(145deg, #1e293b 0%, #020617 100%);
+  --modal-border: #94a3b8;
+  --accent: #64748b;
+  --accent-glow: rgba(100, 116, 139, 0.45);
+}
+body[data-theme="neon"] {
+  --table-bg: #090d16;
+  --modal-bg: linear-gradient(145deg, #111827 0%, #030712 100%);
+  --modal-border: #06b6d4;
+  --accent: #06b6d4;
+  --accent-glow: rgba(6, 182, 212, 0.6);
+}
+
+/* MAIN HEADER */
+.main-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(8, 13, 23, 0.94);
+  backdrop-filter: blur(14px);
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.14);
+  z-index: 200;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.icon-btn {
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.22);
+  color: #fff; border-radius: 50%; width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  font-size: 0.95rem; transition: all 0.2s; padding: 0;
+}
+.icon-btn:hover { background: rgba(255,255,255,0.22); transform: scale(1.05); }
+
+.top-scoreboard {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.top-scoreboard::-webkit-scrollbar { display: none; }
+.ts-player {
+  display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.09);
+  padding: 4px 10px; border-radius: 99px; font-size: 0.8rem; white-space: nowrap;
+  border: 1.5px solid rgba(255,255,255,0.16); flex-shrink: 0;
+}
+.ts-player.active { background: rgba(255, 214, 111, 0.22); border-color: #ffd66f; color: #ffe7a5; font-weight: 700; }
+.ts-player.duelist { border-color: #38bdf8; background: rgba(56, 189, 248, 0.2); }
+.ts-player.winner { border-color: #34d399; background: rgba(52, 211, 153, 0.25); color: #a7f3d0; }
+.ts-player.offline { opacity: 0.5; border-style: dashed; }
+.ts-player .ts-name { max-width: 80px; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+
+.timer-badge {
+  background: rgba(59, 130, 246, 0.28); border: 1.5px solid var(--accent); color: #dbeafe;
+  padding: 4px 11px; border-radius: 99px; font-size: 0.88rem; font-weight: 800;
+  display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+}
+.timer-badge.urgent {
+  background: rgba(239, 68, 68, 0.4); border-color: #ef4444; color: #fee2e2;
+  animation: urgentPulse 0.6s infinite alternate;
+}
+@keyframes urgentPulse { 0% { transform: scale(1); } 100% { transform: scale(1.08); } }
+
+/* APP LAYOUT WRAPPER */
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 14px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+.panel {
+  background: var(--card-bg);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: 0 16px 42px rgba(0,0,0,0.5);
+  max-width: 680px;
+  width: 100%;
+  margin: auto;
+}
+.hidden { display: none !important; }
+
+/* HERO BRANDING */
+.hero { text-align: center; margin-bottom: 14px; }
+.hero-digits {
+  display: flex; gap: 8px; justify-content: center; margin: 0 auto 10px;
+}
+.hero-digit-tile {
+  width: 48px; height: 60px; background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+  color: #0f172a; border-radius: 12px; border: 2.5px solid #334155;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem; font-weight: 900; box-shadow: 0 8px 18px rgba(0,0,0,0.35);
+  cursor: pointer; user-select: none; transition: all 0.2s;
+}
+.hero-digit-tile:hover { transform: translateY(-4px) rotate(4deg); }
+.hero h1 { margin: 0 0 4px; font-size: 1.8rem; font-weight: 900; color: #ffe7a5; letter-spacing: -0.5px; }
+.hero .subtitle { margin: 0; color: #94a3b8; font-size: 0.9rem; }
+
+/* BUTTONS & FORM ELEMENTS */
+button {
+  background: linear-gradient(135deg, var(--accent) 0%, #1d4ed8 100%);
+  color: #fff; border: none; border-radius: 12px; padding: 11px 18px;
+  font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3); display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-family: inherit;
+}
+button:hover { filter: brightness(1.1); transform: translateY(-1px); }
+button:active { transform: scale(0.98); }
+button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; filter: grayscale(0.6); }
+
+button.btn-alt { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); box-shadow: none; }
+button.btn-alt:hover { background: rgba(255,255,255,0.2); }
+button.btn-good { background: linear-gradient(135deg, #10b981 0%, #047857 100%); }
+button.btn-danger { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); }
+button.btn-warn { background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); }
+button.btn-gold { background: linear-gradient(135deg, #ffd66f 0%, #d97706 100%); color: #0f172a; }
+
+input, select {
+  background: rgba(255,255,255,0.96); color: #0f172a; border: 1.5px solid rgba(255,255,255,0.3);
+  border-radius: 10px; padding: 9px 12px; font-size: 0.95rem; font-family: inherit; font-weight: 600;
+  max-width: 100%; width: 100%;
+}
+input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+.row { display: flex; gap: 10px; align-items: center; justify-content: center; margin-bottom: 12px; flex-wrap: wrap; }
+.roomcode {
+  font-size: 1.25rem; font-weight: 900; color: #ffe7a5; background: rgba(0,0,0,0.45);
+  padding: 6px 14px; border-radius: 10px; letter-spacing: 1.5px; border: 1.5px solid rgba(255, 214, 111, 0.4);
+}
+.qr-wrap { background: #fff; padding: 8px; border-radius: 12px; display: inline-block; }
+
+/* AVATAR PICKER */
+.avatar-grid { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+.avatar-option {
+  width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.1);
+  border: 2px solid transparent; display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; cursor: pointer; transition: all 0.15s;
+}
+.avatar-option:hover { transform: scale(1.15); background: rgba(255,255,255,0.2); }
+.avatar-option.selected { border-color: #ffd66f; background: rgba(255, 214, 111, 0.3); transform: scale(1.18); }
+
+/* SETTINGS CARD */
+.settings-box {
+  background: rgba(0,0,0,0.35); padding: 14px; border-radius: 16px; margin-bottom: 14px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.setting-item { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; text-align: left; }
+.setting-item label { font-size: 0.82rem; font-weight: 700; color: #cbd5e1; }
+
+/* DIGIT SLOTS DISPLAY (FOR SECRET PICKER & GUESS ENTRY) */
+.digit-slots-container {
+  display: flex; gap: 10px; justify-content: center; margin: 14px 0;
+}
+.digit-slot {
+  width: 58px; height: 72px; background: var(--slot-bg);
+  border: 2.5px solid rgba(255,255,255,0.22); border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.3rem; font-weight: 900; color: #ffe7a5;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.25);
+  transition: all 0.2s; position: relative;
+}
+.digit-slot.active {
+  border-color: #38bdf8; box-shadow: 0 0 16px rgba(56, 189, 248, 0.5), inset 0 2px 6px rgba(0,0,0,0.6);
+  transform: translateY(-2px);
+}
+.digit-slot.filled { border-color: #34d399; }
+.digit-slot .slot-placeholder { color: #475569; font-size: 1.8rem; }
+
+/* VIRTUAL KEYPAD */
+.keypad-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 360px; margin: 0 auto 12px;
+}
+.keypad-btn {
+  background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.18);
+  color: #fff; font-size: 1.45rem; font-weight: 800; border-radius: 12px;
+  height: 52px; padding: 0; display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s;
+}
+.keypad-btn:hover { background: rgba(255,255,255,0.24); border-color: #38bdf8; }
+.keypad-btn:active { transform: scale(0.92); }
+.keypad-btn.action-key { font-size: 1rem; font-weight: 700; background: rgba(239, 68, 68, 0.25); border-color: rgba(239, 68, 68, 0.4); }
+
+/* DUEL MAIN VIEWPORT */
+.duel-viewport {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%;
+}
+.duel-scroll-body {
+  flex: 1; overflow-y: auto; overflow-x: hidden; padding: 10px 12px 24px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+
+/* DUEL MATCHUP BANNER */
+.duel-matchup-card {
+  width: 100%; max-width: 760px; background: rgba(15, 23, 42, 0.9);
+  border: 2px solid var(--modal-border); border-radius: 18px; padding: 12px 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.matchup-stage {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.player-badge-box {
+  display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;
+}
+.player-badge-box.right { justify-content: flex-end; text-align: right; }
+.player-avatar-circle {
+  width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,0.12);
+  border: 2px solid rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; flex-shrink: 0;
+}
+.player-badge-box.is-turn .player-avatar-circle {
+  border-color: #34d399; box-shadow: 0 0 14px rgba(52, 211, 153, 0.6);
+  animation: pulseAvatar 1s infinite alternate;
+}
+@keyframes pulseAvatar { 0% { transform: scale(1); } 100% { transform: scale(1.08); } }
+
+.vs-pill {
+  background: linear-gradient(135deg, #ffd66f 0%, #f59e0b 100%);
+  color: #0f172a; font-weight: 900; font-size: 0.9rem; padding: 5px 12px;
+  border-radius: 99px; letter-spacing: 1px; flex-shrink: 0;
+}
+
+.turn-status-banner {
+  margin-top: 10px; padding: 8px 12px; border-radius: 10px; text-align: center;
+  font-weight: 800; font-size: 0.92rem; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.turn-status-banner.your-turn {
+  background: rgba(16, 185, 129, 0.25); border: 1.5px solid #10b981; color: #a7f3d0;
+}
+.turn-status-banner.opp-turn {
+  background: rgba(245, 158, 11, 0.2); border: 1.5px solid #f59e0b; color: #fde68a;
+}
+.turn-status-banner.spectating {
+  background: rgba(59, 130, 246, 0.2); border: 1.5px solid #3b82f6; color: #bfdbfe;
+}
+
+/* DEDUCTION SCRATCHPAD (0-9) */
+.scratchpad-card {
+  width: 100%; max-width: 760px; background: rgba(0,0,0,0.38);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 10px 14px;
+}
+.scratchpad-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+}
+.scratchpad-title { font-size: 0.84rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+.scratchpad-digits { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.scratch-digit-btn {
+  width: 36px; height: 38px; border-radius: 8px; border: 1.5px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08); color: #fff; font-size: 1.15rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none;
+  transition: all 0.15s; position: relative;
+}
+.scratch-digit-btn.eliminated {
+  background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: #fca5a5;
+  text-decoration: line-through; opacity: 0.6;
+}
+.scratch-digit-btn.candidate {
+  background: rgba(245, 158, 11, 0.25); border-color: #fbbf24; color: #fef08a; font-weight: 900;
+}
+.scratch-digit-btn.confirmed {
+  background: rgba(16, 185, 129, 0.3); border-color: #34d399; color: #6ee7b7; font-weight: 900;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+}
+
+/* SLOT POSITION NOTES MATRIX */
+.slot-note-row {
+  display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.25);
+  padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;
+}
+.slot-note-label {
+  font-weight: 800; color: #ffd66f; min-width: 55px; font-size: 0.76rem; flex-shrink: 0;
+}
+.slot-note-digits { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+.slot-mini-btn {
+  width: 25px; height: 26px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06); color: #fff; font-size: 0.82rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none;
+  transition: all 0.12s;
+}
+.slot-mini-btn:hover { background: rgba(255,255,255,0.18); }
+.slot-mini-btn.crossed {
+  background: rgba(239, 68, 68, 0.25); border-color: #ef4444; color: #fca5a5;
+  text-decoration: line-through; opacity: 0.55;
+}
+.slot-mini-btn.starred {
+  background: rgba(16, 185, 129, 0.32); border-color: #34d399; color: #6ee7b7; font-weight: 900;
+}
+
+/* DUAL GUESS LOGS */
+.logs-grid {
+  width: 100%; max-width: 760px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+@media (max-width: 680px) {
+  .logs-grid { grid-template-columns: 1fr; }
+}
+.log-box {
+  background: rgba(15, 23, 42, 0.78); border: 1.5px solid rgba(255,255,255,0.12);
+  border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; min-height: 220px;
+}
+.log-box-header {
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px;
+}
+.log-box-header h4 { margin: 0; font-size: 0.92rem; color: #ffe7a5; display: flex; align-items: center; gap: 6px; }
+.log-list { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; }
+
+.log-entry-row {
+  background: rgba(255,255,255,0.06); border-radius: 10px; padding: 7px 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  border-left: 3.5px solid var(--accent); font-size: 0.88rem;
+}
+.log-entry-row.latest { border-left-color: #ffd66f; background: rgba(255, 214, 111, 0.12); }
+.log-guess-digits { font-family: monospace; font-size: 1.15rem; font-weight: 900; letter-spacing: 2px; color: #fff; }
+.log-feedback-badges { display: flex; gap: 5px; align-items: center; }
+
+.fb-badge {
+  font-size: 0.74rem; font-weight: 800; padding: 3px 7px; border-radius: 6px; white-space: nowrap;
+}
+.fb-badge.order { background: rgba(16, 185, 129, 0.28); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.45); }
+.fb-badge.correct { background: rgba(59, 130, 246, 0.28); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.45); }
+.fb-badge.zero { background: rgba(255,255,255,0.08); color: #94a3b8; }
+
+/* TOURNAMENT BRACKET STYLING */
+.bracket-tree {
+  display: flex; gap: 16px; justify-content: center; align-items: center; padding: 14px 0; overflow-x: auto;
+}
+.bracket-round {
+  display: flex; flex-direction: column; gap: 18px; justify-content: space-around; min-width: 170px;
+}
+.bracket-match-node {
+  background: rgba(15, 23, 42, 0.9); border: 1.5px solid rgba(255,255,255,0.18);
+  border-radius: 12px; padding: 8px 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+}
+.bracket-match-node.active-match { border-color: #38bdf8; box-shadow: 0 0 14px rgba(56, 189, 248, 0.4); }
+.bracket-player-row {
+  display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 0.82rem; font-weight: 600;
+}
+.bracket-player-row.winner { color: #34d399; font-weight: 800; }
+.bracket-player-row .b-score { font-family: monospace; font-weight: 900; }
+
+/* MODALS */
+.modal {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 12px;
+}
+.modal-box {
+  background: var(--modal-bg); border: 2px solid var(--modal-border);
+  border-radius: 22px; padding: 22px; max-width: 640px; width: 100%;
+  max-height: 92vh; overflow-y: auto; overflow-x: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.65); display: flex; flex-direction: column; gap: 14px;
+}
+
+/* PODIUM STYLING */
+.podium-container {
+  display: flex; align-items: flex-end; justify-content: center; gap: 10px; margin: 20px 0 10px;
+}
+.podium-step {
+  display: flex; flex-direction: column; align-items: center; width: 90px;
+}
+.podium-block {
+  width: 100%; border-radius: 10px 10px 0 0; display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 1.3rem; color: #0f172a; box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+.podium-step.first .podium-block { height: 110px; background: linear-gradient(180deg, #ffd66f 0%, #d97706 100%); }
+.podium-step.second .podium-block { height: 80px; background: linear-gradient(180deg, #cbd5e1 0%, #64748b 100%); }
+.podium-step.third .podium-block { height: 60px; background: linear-gradient(180deg, #d97706 0%, #78350f 100%); color:#fff; }
+
+/* FULL-SCREEN CANVAS FOR CONFETTI */
+#confettiCanvas {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999;
+}
+</style>
+</head>
+<body data-theme="blue">
+
+<canvas id="confettiCanvas"></canvas>
+
+<!-- TOP MAIN HEADER -->
+<header class="main-header" id="gameHeader">
+  <div class="top-scoreboard" id="topScoreboard"></div>
+  <div class="header-actions">
+    <div id="duelTimerBadge" class="timer-badge hidden">⏱️ 0:60</div>
+    <button class="icon-btn" id="bracketToggleBtn" title="Tournament Bracket">🏆</button>
+    <button class="icon-btn" id="soundToggleBtn" title="Sound Mute/Unmute">🔊</button>
+    <button class="icon-btn" id="infoBtn" title="How to Play Rules">ℹ️</button>
+  </div>
+</header>
+
+<!-- MAIN APP CONTAINER -->
+<div class="wrap" id="mainWrap">
+
+  <!-- 1. SETUP PANEL -->
+  <section class="panel" id="setupPanel">
+    <div class="hero">
+      <div class="hero-digits" id="heroDigitsRow">
+        <div class="hero-digit-tile">4</div>
+        <div class="hero-digit-tile">6</div>
+        <div class="hero-digit-tile">7</div>
+        <div class="hero-digit-tile">8</div>
+      </div>
+      <h1>Number Duel</h1>
+      <p class="subtitle">Tournament Codebreaker • 1v1 PvP &amp; Knockout LAN</p>
+    </div>
+
+    <!-- Reconnect active game banner if found -->
+    <div id="reconnectBanner" class="hidden" style="background: rgba(16, 185, 129, 0.2); border: 1.5px solid #10b981; padding: 12px; border-radius: 14px; margin-bottom: 14px; text-align: center;">
+      <div style="font-weight: 700; color: #a7f3d0; margin-bottom: 6px;">🔄 Previous Active Game Found!</div>
+      <div class="row" style="margin-bottom: 0;">
+        <button id="reconnectBtn" type="button" class="btn-good" style="padding: 8px 16px; font-size: 0.88rem;">⚡ Reconnect Now</button>
+        <button id="clearSessionBtn" type="button" class="btn-alt" style="padding: 8px 12px; font-size: 0.82rem;">Dismiss</button>
+      </div>
+    </div>
+
+    <!-- Profile Selection (Avatar & Name) -->
+    <div class="settings-box">
+      <div style="text-align:center; font-size:0.82rem; color:#94a3b8; margin-bottom:6px;">Choose Your Avatar &amp; Name:</div>
+      <div class="avatar-grid" id="setupAvatarPicker"></div>
+      <div class="row" style="margin-bottom:0;">
+        <input id="userNameInput" type="text" placeholder="Enter Your Name" maxlength="18" style="text-align:center; font-weight:700; font-size:1rem;">
+      </div>
+    </div>
+
+    <!-- Game Settings (Digits length, Duplicates, Timer) -->
+    <div class="settings-box">
+      <div class="row" style="gap:10px; margin-bottom:8px;">
+        <div class="setting-item">
+          <label>🔢 Code Length:</label>
+          <select id="setupDigitLen">
+            <option value="3">3 Digits (Fast)</option>
+            <option value="4" selected>4 Digits (Standard)</option>
+            <option value="5">5 Digits (Challenging)</option>
+            <option value="6">6 Digits (Mastermind)</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label>🔁 Duplicate Digits:</label>
+          <select id="setupDuplicates">
+            <option value="no" selected>Unique Only (e.g. 4678)</option>
+            <option value="yes">Allow Duplicates (e.g. 9954)</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="gap:10px; margin-bottom:0;">
+        <div class="setting-item">
+          <label>⏱️ Turn Timer:</label>
+          <select id="setupTurnTimer">
+            <option value="30">30 seconds</option>
+            <option value="45">45 seconds</option>
+            <option value="60" selected>60 seconds</option>
+            <option value="90">90 seconds</option>
+            <option value="0">Unlimited (Casual)</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label>🏆 Tournament Rule:</label>
+          <select id="setupTournamentMode">
+            <option value="auto" selected>Auto by Player Count</option>
+            <option value="knockout">Knockout Tournament</option>
+            <option value="roundrobin">Round-Robin League</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row" style="gap: 10px; margin-bottom: 14px;">
+      <button id="hostBtn" type="button" style="flex:1; padding:12px;">👑 Host LAN Duel</button>
+      <button id="soloDuelBtn" class="btn-alt" type="button" style="flex:1; padding:12px;">🤖 Solo vs AI</button>
+      <button id="soloTourneyBtn" class="btn-gold" type="button" style="flex:1; padding:12px;">🏆 Solo 4P Cup</button>
+    </div>
+
+    <!-- Join Room Box -->
+    <div class="settings-box">
+      <div style="text-align:center; font-size:0.82rem; color:#94a3b8; margin-bottom:8px;">Joining a friend's room? Enter room code:</div>
+      <div class="row" style="margin-bottom:0;">
+        <input id="joinCodeInput" placeholder="NUMD-XXXXXX" style="flex:1; text-align:center; font-size:1.05rem; text-transform:uppercase; font-weight:800; letter-spacing:1px;">
+        <button id="joinBtn" type="button" class="btn-good" style="padding:10px 18px;">Join Room</button>
+      </div>
+    </div>
+
+    <div id="setupMsg" style="text-align:center; margin-top:8px; color:#ffe7a5; font-size:0.88rem; min-height:1.2em;"></div>
+
+    <div style="text-align:center; margin-top: 10px;">
+      <label style="color:#94a3b8; font-size:0.82rem;">🎨 Theme:
+        <select id="themeSelect" style="width:auto; margin-left:6px; padding:4px 10px; font-size:0.82rem;">
+          <option value="blue" selected>Ocean Blue</option>
+          <option value="green">Felt Green</option>
+          <option value="red">Casino Red</option>
+          <option value="purple">Royal Purple</option>
+          <option value="wood">Rustic Wood</option>
+          <option value="dark">Midnight Slate</option>
+          <option value="neon">Cyber Neon</option>
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <!-- 2. LOBBY PANEL -->
+  <section class="panel hidden" id="lobbyPanel" style="text-align:center;">
+    <h2 style="font-size:1.6rem; color:#ffe7a5; margin:0 0 4px;">Duel Room Lobby</h2>
+    <p class="subtitle" style="margin-bottom:12px;">Invite friends via LAN, QR code, or add AI bots</p>
+
+    <div class="row" style="margin-bottom:12px;">
+      <span>Room Code:</span>
+      <span class="roomcode" id="lobbyRoomCodeLabel">—</span>
+      <button id="copyInviteBtn" type="button" class="btn-alt" style="padding:6px 12px; font-size:0.82rem;">📋 Copy Link</button>
+    </div>
+
+    <!-- Quick Profile Tweaker inside Lobby -->
+    <div style="background: rgba(255,255,255,0.06); padding: 10px; border-radius: 12px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.12);">
+      <div style="font-size:0.78rem; color:#94a3b8; margin-bottom:6px;">Your Profile in this Room:</div>
+      <div class="avatar-grid" id="lobbyAvatarPicker" style="margin-bottom:6px;"></div>
+      <div class="row" style="margin-bottom:0;">
+        <input id="lobbyNameInput" type="text" maxlength="18" style="max-width:200px; text-align:center;" placeholder="Your Name">
+        <button id="updateProfileBtn" type="button" class="btn-alt" style="padding:8px 14px; font-size:0.82rem;">✓ Save</button>
+      </div>
+    </div>
+
+    <!-- Players Roster & QR Code -->
+    <div style="display:flex; justify-content:center; gap: 16px; align-items:flex-start; flex-wrap:wrap; margin-bottom:14px;">
+      <div style="flex: 1; min-width: 230px; background: rgba(0,0,0,0.32); border-radius:14px; padding:12px; border:1px solid rgba(255,255,255,0.1);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="color:#94a3b8; font-size:0.8rem; font-weight:700; text-transform:uppercase;">Players (<span id="lobbyPlayerCount">0</span>):</span>
+          <span id="lobbyFormatBadge" style="font-size:0.75rem; font-weight:800; background:rgba(59,130,246,0.3); color:#bfdbfe; padding:2px 8px; border-radius:99px;">1v1 Duel</span>
+        </div>
+        <div id="lobbyPlayersList" style="display:flex; flex-direction:column; gap:6px;"></div>
+        
+        <div id="hostBotButtonsRow" class="row hidden" style="margin-top:10px; margin-bottom:0; gap:8px;">
+          <button id="addBotBtn" type="button" class="btn-alt" style="font-size:0.78rem; padding:6px 12px; flex:1;">🤖 + Add AI Bot</button>
+          <button id="removeBotBtn" type="button" class="btn-alt" style="font-size:0.78rem; padding:6px 12px; flex:1;">➖ Remove Bot</button>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div id="lobbyQr" class="qr-wrap"></div>
+        <div style="color:#94a3b8; font-size:0.75rem; margin-top:6px;">Scan on mobile to join</div>
+      </div>
+    </div>
+
+    <!-- Host Match Options inside Lobby -->
+    <div id="hostLobbyControls" class="settings-box hidden" style="text-align:left;">
+      <div style="font-size:0.8rem; font-weight:800; color:#ffe7a5; margin-bottom:8px; text-transform:uppercase;">Host Match Settings:</div>
+      <div class="row" style="margin-bottom:0; gap:10px;">
+        <div class="setting-item">
+          <label>Length:</label>
+          <select id="lobbyDigitLen" style="padding:6px 8px;">
+            <option value="3">3 Digits</option>
+            <option value="4" selected>4 Digits</option>
+            <option value="5">5 Digits</option>
+            <option value="6">6 Digits</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label>Duplicates:</label>
+          <select id="lobbyDuplicates" style="padding:6px 8px;">
+            <option value="no" selected>Unique Only</option>
+            <option value="yes">Allow Duplicates</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label>Timer:</label>
+          <select id="lobbyTurnTimer" style="padding:6px 8px;">
+            <option value="30">30s</option>
+            <option value="45">45s</option>
+            <option value="60" selected>60s</option>
+            <option value="0">Unlimited</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" style="gap:10px; margin-bottom:0;">
+      <button id="startTournamentBtn" type="button" class="btn-good hidden" style="font-size:1.05rem; padding: 12px 28px;">🚀 Start Match / Cup!</button>
+      <button id="leaveLobbyBtn" type="button" class="btn-danger">Leave Room</button>
+    </div>
+  </section>
+
+  <!-- 3. SECRET NUMBER SELECTION PANEL -->
+  <section class="panel hidden" id="secretPickerPanel" style="text-align:center;">
+    <div style="font-size: 2.2rem; margin-bottom: 2px;">🔒</div>
+    <h2 style="font-size:1.55rem; color:#ffe7a5; margin:0 0 4px;">Choose Your Secret Number</h2>
+    <p id="secretRulesPrompt" class="subtitle" style="margin-bottom:12px;">Enter a 4-digit secret code. Digits must be unique!</p>
+
+    <!-- Interactive Slots -->
+    <div class="digit-slots-container" id="secretSlotsContainer"></div>
+
+    <!-- Helper buttons -->
+    <div class="row" style="gap:10px; margin-bottom:14px;">
+      <button id="secretRandomBtn" type="button" class="btn-alt" style="padding:8px 14px; font-size:0.86rem;">🎲 Random Pick</button>
+      <button id="secretClearBtn" type="button" class="btn-alt" style="padding:8px 14px; font-size:0.86rem;">🗑️ Clear</button>
+    </div>
+
+    <!-- Onscreen keypad -->
+    <div class="keypad-grid" id="secretKeypad">
+      <button type="button" class="keypad-btn" data-digit="1">1</button>
+      <button type="button" class="keypad-btn" data-digit="2">2</button>
+      <button type="button" class="keypad-btn" data-digit="3">3</button>
+      <button type="button" class="keypad-btn" data-digit="4">4</button>
+      <button type="button" class="keypad-btn" data-digit="5">5</button>
+      <button type="button" class="keypad-btn" data-digit="6">6</button>
+      <button type="button" class="keypad-btn" data-digit="7">7</button>
+      <button type="button" class="keypad-btn" data-digit="8">8</button>
+      <button type="button" class="keypad-btn" data-digit="9">9</button>
+      <button type="button" class="keypad-btn" data-digit="0">0</button>
+    </div>
+
+    <div id="secretErrorMsg" style="color:#ef4444; font-weight:700; font-size:0.88rem; min-height:1.2em; margin-bottom:10px;"></div>
+
+    <div class="row" style="margin-bottom:0;">
+      <button id="lockInSecretBtn" type="button" class="btn-good" style="font-size:1.05rem; padding:12px 28px;">🔒 Lock In Secret Code</button>
+    </div>
+
+    <div id="secretWaitBanner" class="hidden" style="margin-top:14px; background:rgba(0,0,0,0.35); padding:10px; border-radius:12px; border:1px solid rgba(255,214,111,0.3);">
+      <div style="font-weight:700; color:#ffd66f;">⏳ Secret Locked!</div>
+      <div style="font-size:0.84rem; color:#cbd5e1; margin-top:2px;" id="secretLockStatusText">Waiting for opponent to choose their secret number...</div>
+    </div>
+  </section>
+
+  <!-- 4. LIVE 1v1 DUEL VIEWPORT -->
+  <main class="duel-viewport hidden" id="duelPanel">
+    <div class="duel-scroll-body" id="duelScrollContainer">
+
+      <!-- MATCHUP HEADER -->
+      <div class="duel-matchup-card">
+        <div class="matchup-stage">
+          <!-- Left Player -->
+          <div class="player-badge-box" id="duelP1Box">
+            <div class="player-avatar-circle" id="duelP1Avatar">🦁</div>
+            <div>
+              <div style="font-weight:800; font-size:0.98rem; color:#fff;" id="duelP1Name">Player 1</div>
+              <div style="font-size:0.75rem; color:#94a3b8;"><span id="duelP1GuessCount">0</span> guesses</div>
+            </div>
+          </div>
+
+          <div class="vs-pill" id="duelMatchStageLabel">1v1 DUEL</div>
+
+          <!-- Right Player -->
+          <div class="player-badge-box right" id="duelP2Box">
+            <div>
+              <div style="font-weight:800; font-size:0.98rem; color:#fff;" id="duelP2Name">Player 2</div>
+              <div style="font-size:0.75rem; color:#94a3b8;"><span id="duelP2GuessCount">0</span> guesses</div>
+            </div>
+            <div class="player-avatar-circle" id="duelP2Avatar">🦊</div>
+          </div>
+        </div>
+
+        <!-- Live Turn Indicator -->
+        <div class="turn-status-banner your-turn" id="duelTurnBanner">
+          <span id="duelTurnIcon">🎯</span>
+          <span id="duelTurnText">YOUR TURN TO GUESS!</span>
+          <span id="duelTurnTimerPill" class="timer-badge" style="margin-left:auto; font-size:0.78rem; padding:2px 8px;">⏱️ 60s</span>
+        </div>
+      </div>
+
+      <!-- ACTIVE GUESS INPUT CARD (Only visible if you are one of the duelists and it is the match phase) -->
+      <div class="panel" id="guessInputStage" style="padding:14px 16px; margin:0 auto; width:100%; max-width:760px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:6px; margin-bottom:10px;">
+          <div style="font-weight:800; color:#ffe7a5; font-size:0.92rem;">Enter Your Guess Against Opponent:</div>
+          <div style="font-size:0.76rem; color:#94a3b8;" id="mySecretHint">Your Secret: <strong style="color:#6ee7b7; font-family:monospace; letter-spacing:1px;" id="mySecretBadge">****</strong></div>
+        </div>
+
+        <!-- Digit Slots for Current Guess -->
+        <div class="digit-slots-container" id="guessSlotsContainer" style="margin: 8px 0 12px;"></div>
+
+        <!-- On-screen Numpad for Guessing -->
+        <div class="keypad-grid" id="guessKeypad">
+          <button type="button" class="keypad-btn" data-digit="1">1</button>
+          <button type="button" class="keypad-btn" data-digit="2">2</button>
+          <button type="button" class="keypad-btn" data-digit="3">3</button>
+          <button type="button" class="keypad-btn" data-digit="4">4</button>
+          <button type="button" class="keypad-btn" data-digit="5">5</button>
+          <button type="button" class="keypad-btn" data-digit="6">6</button>
+          <button type="button" class="keypad-btn" data-digit="7">7</button>
+          <button type="button" class="keypad-btn" data-digit="8">8</button>
+          <button type="button" class="keypad-btn" data-digit="9">9</button>
+          <button type="button" class="keypad-btn" data-digit="0">0</button>
+        </div>
+
+        <div id="guessErrorMsg" style="color:#ef4444; font-weight:700; font-size:0.86rem; text-align:center; min-height:1.2em; margin-bottom:8px;"></div>
+
+        <div class="row" style="margin-bottom:0; gap:10px;">
+          <button id="guessBackspaceBtn" type="button" class="btn-alt" style="padding:10px 14px;">⌫ Back</button>
+          <button id="guessClearBtn" type="button" class="btn-alt" style="padding:10px 14px;">🗑️ Clear</button>
+          <button id="guessSubmitBtn" type="button" class="btn-good" style="flex:1; padding:10px 18px; font-size:1.02rem;">🎯 Submit Guess</button>
+        </div>
+      </div>
+
+      <!-- SPECTATOR NOTICE (If spectating this duel) -->
+      <div class="panel hidden" id="spectatorNoticeCard" style="text-align:center; padding:16px; width:100%; max-width:760px;">
+        <div style="font-size:2rem; margin-bottom:4px;">👀</div>
+        <h3 style="color:#60a5fa; margin:0 0 4px;">You are Spectating this Duel</h3>
+        <p style="color:#94a3b8; font-size:0.86rem; margin:0;">Watch their guesses in real-time below! Your match will start soon.</p>
+      </div>
+
+      <!-- DEDUCTION SCRATCHPAD (0-9 Digits Elimination Pad) -->
+      <div class="scratchpad-card">
+        <div class="scratchpad-header">
+          <div class="scratchpad-title">🧠 Deduction Scratchpad (Tap 0-9 to mark: ❌ ❓ 🎯)</div>
+          <div style="display:flex; gap:6px;">
+            <button id="toggleSlotNotesBtn" type="button" class="btn-alt" style="padding:3px 8px; font-size:0.72rem;">📋 Slot Notes</button>
+            <button id="resetScratchpadBtn" type="button" class="btn-alt" style="padding:3px 8px; font-size:0.72rem;">Reset Pad</button>
+          </div>
+        </div>
+        <div class="scratchpad-digits" id="scratchpadRow">
+          <!-- Digits 0 through 9 rendered dynamically -->
+        </div>
+
+        <!-- Expandable Slot Position Matrix -->
+        <div id="slotNotesContainer" class="hidden" style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px;">
+          <div style="font-size:0.74rem; color:#94a3b8; font-weight:700; margin-bottom:6px; text-transform:uppercase;">Slot Position Notes (Tap to Cross Out ❌ or Star ⭐ per slot):</div>
+          <div id="slotNotesRows" style="display:flex; flex-direction:column; gap:6px;"></div>
+        </div>
+      </div>
+
+      <!-- DUAL GUESS LOGS -->
+      <div class="logs-grid">
+        <!-- Log 1: My Guesses against Opponent -->
+        <div class="log-box">
+          <div class="log-box-header">
+            <h4><span>🎯</span> <span id="myLogTitle">My Guesses (vs Opponent)</span></h4>
+            <span style="font-size:0.74rem; color:#94a3b8;" id="myLogCount">0 guesses</span>
+          </div>
+          <div class="log-list" id="myGuessesLogList">
+            <div style="color:#64748b; font-size:0.82rem; text-align:center; padding:20px;">No guesses made yet. Make your first guess above!</div>
+          </div>
+        </div>
+
+        <!-- Log 2: Opponent's Guesses against Me -->
+        <div class="log-box">
+          <div class="log-box-header">
+            <h4><span>🛡️</span> <span id="oppLogTitle">Opponent's Guesses (vs Me)</span></h4>
+            <span style="font-size:0.74rem; color:#94a3b8;" id="oppLogCount">0 guesses</span>
+          </div>
+          <div class="log-list" id="oppGuessesLogList">
+            <div style="color:#64748b; font-size:0.82rem; text-align:center; padding:20px;">Opponent has not guessed yet.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- 5. TOURNAMENT BRACKET / STANDINGS OVERLAY VIEW -->
+  <section class="panel hidden" id="bracketPanel" style="max-width:840px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.14); padding-bottom:8px; margin-bottom:12px;">
+      <h2 style="margin:0; font-size:1.4rem; color:#ffe7a5; display:flex; align-items:center; gap:8px;">
+        <span>🏆</span> Tournament Standings &amp; Tree
+      </h2>
+      <button id="closeBracketBtn" type="button" class="btn-alt" style="padding:4px 10px; font-size:0.8rem;">✕ Close</button>
+    </div>
+
+    <div id="tournamentFormatDescription" style="font-size:0.86rem; color:#cbd5e1; text-align:center; margin-bottom:12px;">
+      4-Player Knockout Tournament (Semifinals ➔ Grand Final)
+    </div>
+
+    <!-- Knockout Bracket Visualization -->
+    <div id="knockoutBracketContainer" class="bracket-tree"></div>
+
+    <!-- Round-Robin Standings Table (for 3-Player triangle clash) -->
+    <div id="roundRobinContainer" class="hidden">
+      <table style="width:100%; border-collapse:collapse; font-size:0.86rem; text-align:center; background:rgba(0,0,0,0.3); border-radius:12px; overflow:hidden;">
+        <thead>
+          <tr style="background:rgba(255,255,255,0.1); color:#ffe7a5; font-weight:800;">
+            <th style="padding:8px;">Rank</th>
+            <th style="padding:8px; text-align:left;">Player</th>
+            <th style="padding:8px;">Wins</th>
+            <th style="padding:8px;">Losses</th>
+            <th style="padding:8px;">Total Guesses</th>
+            <th style="padding:8px;">Status</th>
+          </tr>
+        </thead>
+        <tbody id="roundRobinTableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="row" style="margin-top:14px; margin-bottom:0; justify-content:center;">
+      <button id="bracketActionBtn" type="button" class="btn-good" style="padding:10px 22px;">Return to Match</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- MODAL: MATCH VICTORY (CRACKED CODE) -->
+<div class="modal hidden" id="matchOverModal">
+  <div class="modal-box" style="text-align:center; max-width:540px;">
+    <div style="font-size: 3rem; margin-bottom: 2px;" id="matchOverIcon">🎉</div>
+    <div style="font-size:0.8rem; font-weight:800; text-transform:uppercase; color:#ffd66f;" id="matchOverSubheader">CODE CRACKED!</div>
+    <h2 style="font-size:1.7rem; color:#fff; margin:4px 0 10px;" id="matchOverWinnerName">Alice Wins the Match!</h2>
+
+    <div style="background:rgba(0,0,0,0.38); border:1.5px solid rgba(255,255,255,0.15); border-radius:16px; padding:16px; margin-bottom:14px;">
+      <div style="font-size:0.82rem; color:#94a3b8; margin-bottom:8px; text-transform:uppercase; font-weight:700;">Secret Numbers Revealed:</div>
+      <div class="row" style="justify-content:space-around; margin-bottom:0;">
+        <div>
+          <div style="font-size:0.78rem; color:#cbd5e1;" id="revealP1Label">Player 1:</div>
+          <div style="font-family:monospace; font-size:1.7rem; font-weight:900; color:#34d399; letter-spacing:2px;" id="revealP1Secret">4678</div>
+        </div>
+        <div style="font-size:1.5rem; color:#64748b; display:flex; align-items:center;">vs</div>
+        <div>
+          <div style="font-size:0.78rem; color:#cbd5e1;" id="revealP2Label">Player 2:</div>
+          <div style="font-family:monospace; font-size:1.7rem; font-weight:900; color:#38bdf8; letter-spacing:2px;" id="revealP2Secret">9312</div>
+        </div>
+      </div>
+      <div style="font-size:0.82rem; color:#fde68a; margin-top:10px;" id="matchOverStatsLine">
+        Cracked in 6 guesses • Match duration: 1m 45s
+      </div>
+    </div>
+
+    <div class="row" style="margin-bottom:0; gap:10px;">
+      <button id="nextTournamentMatchBtn" type="button" class="btn-good" style="flex:1; padding:12px 20px; font-size:1rem;">Advance to Next Match ➔</button>
+      <button id="viewBracketFromModalBtn" type="button" class="btn-alt" style="padding:12px 16px;">🏆 View Bracket</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TOURNAMENT GRAND CHAMPION -->
+<div class="modal hidden" id="championModal">
+  <div class="modal-box" style="text-align:center; max-width:580px;">
+    <div style="font-size:3.5rem; margin-bottom:2px;">👑</div>
+    <div style="font-size:0.85rem; font-weight:900; text-transform:uppercase; letter-spacing:1px; color:#ffd66f;">TOURNAMENT COMPLETED</div>
+    <h2 style="font-size:2rem; color:#fff; margin:4px 0 10px;" id="grandChampionName">Alice is the Grand Champion!</h2>
+
+    <!-- Podium -->
+    <div class="podium-container">
+      <!-- 2nd Place -->
+      <div class="podium-step second">
+        <div style="font-size:1.4rem; margin-bottom:2px;" id="podiumP2Avatar">🦊</div>
+        <div style="font-size:0.75rem; font-weight:700; max-width:85px; overflow:hidden; text-overflow:ellipsis;" id="podiumP2Name">Bob</div>
+        <div class="podium-block">2nd</div>
+      </div>
+      <!-- 1st Place -->
+      <div class="podium-step first">
+        <div style="font-size:1.9rem; margin-bottom:2px;" id="podiumP1Avatar">🦁</div>
+        <div style="font-size:0.82rem; font-weight:800; max-width:95px; overflow:hidden; text-overflow:ellipsis; color:#ffd66f;" id="podiumP1Name">Alice</div>
+        <div class="podium-block">🥇 1st</div>
+      </div>
+      <!-- 3rd Place -->
+      <div class="podium-step third">
+        <div style="font-size:1.3rem; margin-bottom:2px;" id="podiumP3Avatar">🐼</div>
+        <div style="font-size:0.72rem; font-weight:700; max-width:85px; overflow:hidden; text-overflow:ellipsis;" id="podiumP3Name">Charlie</div>
+        <div class="podium-block">3rd</div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:14px; margin-bottom:0; gap:10px;">
+      <button id="newTournamentBtn" type="button" class="btn-good" style="flex:1; padding:12px 24px; font-size:1.05rem;">🎲 Play Another Tournament</button>
+      <button id="closeChampionBtn" type="button" class="btn-alt">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: RULES & HOW TO PLAY -->
+<div class="modal hidden" id="infoModal">
+  <div class="modal-box" style="max-width: 580px;">
+    <h2 style="margin: 0; color:#ffe7a5; font-size:1.5rem; text-align:center;">📖 How to Play Number Duel</h2>
+    <div style="line-height: 1.55; color:#e2e8f0; font-size:0.9rem;">
+      <p style="margin-top:0;"><strong>The Objective:</strong> Crack your opponent's secret code before they crack yours!</p>
+      
+      <ul style="padding-left: 18px; display:flex; flex-direction:column; gap:8px; margin:0 0 12px;">
+        <li><strong>Secret Selection:</strong> Each player secretly picks a 3, 4, 5, or 6-digit number. You can choose whether digits must be unique or if duplicates like <code>9954</code> are allowed.</li>
+        <li><strong>Taking Turns:</strong> Players take turns guessing the other player's secret.</li>
+        <li><strong>Feedback Clues:</strong>
+          <ul>
+            <li><strong style="color:#60a5fa;">Total Correct:</strong> How many digits in your guess exist in the secret code.</li>
+            <li><strong style="color:#34d399;">Order Correct:</strong> How many digits are in the <em>exact same slot position</em>!</li>
+            <li><strong style="color:#fde68a;">Example:</strong> If secret is <code>4678</code> and guess is <code>6490</code> ➔ returns <strong>2 correct, 0 order correct</strong> (because 4 and 6 exist in the code, but neither is in the right position).</li>
+          </ul>
+        </li>
+        <li><strong>Deduction Scratchpad:</strong> Tap digits 0-9 below the game board to mark them as Eliminated ❌, Possible ❓, or Confirmed 🎯.</li>
+        <li><strong>Tournaments:</strong>
+          <ul>
+            <li><strong>2 Players:</strong> Head-to-Head 1v1 showdown.</li>
+            <li><strong>3 Players:</strong> Triangle Clash (Round-robin duels where each pair plays; top 2 advance to the Grand Final!).</li>
+            <li><strong>4 Players:</strong> Knockout Tournament (Semifinals ➔ Grand Final &amp; 3rd place match).</li>
+          </ul>
+        </li>
+        <li><strong>Victory:</strong> The first player to get all digits in exact order (e.g. 4 order correct for a 4-digit code) wins!</li>
+      </ul>
+    </div>
+    <div class="row" style="margin-bottom:0; justify-content:center;">
+      <button id="closeInfoBtn" type="button" style="padding:10px 24px;">Got It, Let's Play!</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// CONFIG & CONSTANTS
+const AVATARS = ['🦁', '🦊', '🐼', '🐯', '🚀', '👑', '🦄', '⚡', '🎸', '🎯', '🐙', '🦖', '🤖', '🕵️', '🧙', '💎'];
+
+const PEER_OPTS = {
+  debug: 1,
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]
+  }
+};
+
+// AUDIO SYNTHESIZER ENGINE (Web Audio API)
+let audioCtx = null;
+let soundEnabled = (localStorage.getItem('numduel_sound') !== 'false');
+
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function playTone(freq, type, duration, vol = 0.1) {
+  if (!soundEnabled || !audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + duration);
+  } catch (e) {}
+}
+function playClickSound() { playTone(540, 'triangle', 0.04, 0.08); }
+function playBackspaceSound() { playTone(320, 'sine', 0.05, 0.08); }
+function playValidGuessSound() {
+  playTone(587, 'triangle', 0.08, 0.1);
+  setTimeout(() => playTone(880, 'sine', 0.1, 0.12), 70);
+}
+function playBuzzerSound() { playTone(180, 'sawtooth', 0.16, 0.12); }
+function playWinFanfare() {
+  [523, 659, 784, 1046, 1318].forEach((n, i) => setTimeout(() => playTone(n, 'triangle', 0.28, 0.15), i * 110));
+}
+document.body.addEventListener('click', initAudio, { once: true });
+document.body.addEventListener('touchstart', initAudio, { once: true });
+
+// CANVAS CONFETTI ENGINE (Zero External Dependencies)
+const confettiCanvas = $('confettiCanvas');
+const confettiCtx = confettiCanvas.getContext('2d');
+let confettiParticles = [];
+let confettiAnimationId = null;
+
+function resizeConfetti() {
+  confettiCanvas.width = window.innerWidth;
+  confettiCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeConfetti);
+resizeConfetti();
+
+function fireConfetti(count = 90) {
+  const colors = ['#ffd66f', '#3b82f6', '#10b981', '#ec4899', '#8b5cf6', '#f59e0b', '#06b6d4'];
+  for (let i = 0; i < count; i++) {
+    confettiParticles.push({
+      x: window.innerWidth * 0.5 + (Math.random() - 0.5) * 200,
+      y: window.innerHeight * 0.45,
+      vx: (Math.random() - 0.5) * 16,
+      vy: -Math.random() * 14 - 4,
+      size: Math.random() * 8 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      vRot: (Math.random() - 0.5) * 12,
+      gravity: 0.35,
+      opacity: 1
+    });
+  }
+  if (!confettiAnimationId) renderConfetti();
+}
+
+function renderConfetti() {
+  confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  for (let i = confettiParticles.length - 1; i >= 0; i--) {
+    const p = confettiParticles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += p.gravity;
+    p.rotation += p.vRot;
+    p.opacity -= 0.008;
+
+    if (p.opacity <= 0 || p.y > confettiCanvas.height) {
+      confettiParticles.splice(i, 1);
+      continue;
+    }
+
+    confettiCtx.save();
+    confettiCtx.translate(p.x, p.y);
+    confettiCtx.rotate((p.rotation * Math.PI) / 180);
+    confettiCtx.fillStyle = p.color;
+    confettiCtx.globalAlpha = Math.max(0, p.opacity);
+    confettiCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.4);
+    confettiCtx.restore();
+  }
+
+  if (confettiParticles.length > 0) {
+    confettiAnimationId = requestAnimationFrame(renderConfetti);
+  } else {
+    confettiAnimationId = null;
+    confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  }
+}
+
+// NUMBER MATCHING & GUESS EVALUATION CORE
+// Example: Secret 4678 vs Guess 6490 -> { totalCorrect: 2, orderCorrect: 0, wrongOrder: 2 }
+function evaluateGuess(guessStr, secretStr) {
+  const guess = String(guessStr);
+  const secret = String(secretStr);
+  const len = secret.length;
+
+  let orderCorrect = 0;
+  const sFreq = {}, gFreq = {};
+
+  for (let i = 0; i < len; i++) {
+    if (guess[i] === secret[i]) {
+      orderCorrect++;
+    }
+    sFreq[secret[i]] = (sFreq[secret[i]] || 0) + 1;
+    gFreq[guess[i]] = (gFreq[guess[i]] || 0) + 1;
+  }
+
+  let totalCorrect = 0;
+  for (const d in gFreq) {
+    if (sFreq[d]) {
+      totalCorrect += Math.min(gFreq[d], sFreq[d]);
+    }
+  }
+
+  const wrongOrder = Math.max(0, totalCorrect - orderCorrect);
+  return { totalCorrect, orderCorrect, wrongOrder };
+}
+
+// PERSISTENT IDENTIFIERS & SAVED PROFILES
+function getPersistentPlayerId() {
+  try {
+    let id = localStorage.getItem('numduel_persistent_pid');
+    if (!id) {
+      id = 'P-' + Math.random().toString(36).slice(2, 9).toUpperCase();
+      localStorage.setItem('numduel_persistent_pid', id);
+    }
+    return id;
+  } catch (e) {
+    return 'P-' + Math.random().toString(36).slice(2, 9).toUpperCase();
+  }
+}
+
+function saveSessionInfo(code, isHostRole) {
+  try {
+    localStorage.setItem('numduel_last_session', JSON.stringify({
+      roomCode: code,
+      isHost: isHostRole,
+      name: myName,
+      avatar: myAvatar,
+      ts: Date.now()
+    }));
+  } catch (e) {}
+}
+
+function getSavedSessionInfo() {
+  try {
+    const raw = localStorage.getItem('numduel_last_session');
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (Date.now() - data.ts > 3 * 60 * 60 * 1000) return null;
+    return data;
+  } catch (e) { return null; }
+}
+
+function clearSavedSession() {
+  try { localStorage.removeItem('numduel_last_session'); } catch (e) {}
+  $('reconnectBanner')?.classList.add('hidden');
+}
+
+// ROOM CODES & PEERJS NETWORKING
+function cleanRoomCode(input) {
+  if (!input) return '';
+  let str = String(input).trim().toUpperCase();
+  if (str.includes('JOIN=')) str = str.split('JOIN=')[1].split('&')[0];
+  str = decodeURIComponent(str).trim();
+  if (str.startsWith('NUMD-')) str = str.slice(5);
+  str = str.replace(/[^A-Z0-9]/g, '');
+  return str ? ('NUMD-' + str) : '';
+}
+
+function peerIdForRoom(rCode) {
+  const code = cleanRoomCode(rCode);
+  return 'numduel-v1-' + code.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+}
+
+function generateRoomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = 'NUMD-';
+  for (let i = 0; i < 6; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
+  return s;
+}
+
+// GLOBAL GAME STATE VARIABLES
+let peer = null;
+let connections = new Map(); // pid -> DataConnection
+let host = false;
+let solo = false;
+let roomCode = '';
+let myId = getPersistentPlayerId();
+let hostPeerId = '';
+let myName = localStorage.getItem('numduel_name') || ('Player ' + Math.floor(10 + Math.random() * 89));
+let myAvatar = localStorage.getItem('numduel_avatar') || '🦁';
+
+let players = []; // [{ id, name, avatar, isBot, online }]
+let settings = {
+  digitLen: 4,
+  allowDuplicates: false,
+  turnTimer: 60,
+  tournamentMode: 'auto'
+};
+
+// Tournament structure:
+// phase: 'lobby' | 'secret_selection' | 'duel' | 'match_over' | 'tournament_over'
+let tournament = null;
+let currentDuel = null; // { id, matchLabel, p1Id, p2Id, p1Secret, p2Secret, p1Locked, p2Locked, currentTurnPlayerId, p1Guesses: [], p2Guesses: [], winnerId: null, startTime: null, timerInterval: null }
+
+// Local deduction scratchpad state (digit -> 0: neutral, 1: eliminated, 2: candidate, 3: confirmed)
+let scratchpadState = {};
+for (let d = 0; d <= 9; d++) scratchpadState[d] = 0;
+let slotNotesState = {}; // slotIdx -> { digit -> 0: normal, 1: crossed, 2: starred }
+
+// Local input buffer
+let localSecretBuffer = '';
+let localGuessBuffer = '';
+let duelTimerInterval = null;
+let currentTurnRemaining = 60;
+
+// HELPER: SENDING OVER PEER CONNECTIONS
+function send(conn, obj) {
+  if (conn && conn.open) {
+    try { conn.send(obj); return true; } catch (e) { return false; }
+  }
+  return false;
+}
+function broadcastHost(obj) {
+  if (!host) return;
+  for (const c of connections.values()) send(c, obj);
+}
+function broadcastDuelState(type, extra = {}) {
+  if (!host || !currentDuel) return;
+  for (const [pid, conn] of connections.entries()) {
+    send(conn, {
+      type,
+      duel: sanitizeDuelForTarget(currentDuel, pid),
+      tournament,
+      settings,
+      ...extra
+    });
+  }
+}
+function sendToHost(obj) {
+  const payload = { ...obj, playerId: myId };
+  if (window._hostConn && window._hostConn.open) {
+    send(window._hostConn, payload);
+  }
+}
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// RANDOM NUMBER GENERATOR MEETING CURRENT RULES
+function generateRandomSecret(len, allowDup) {
+  const digits = ['0','1','2','3','4','5','6','7','8','9'];
+  if (allowDup) {
+    let res = '';
+    for (let i = 0; i < len; i++) res += digits[Math.floor(Math.random() * 10)];
+    return res;
+  } else {
+    // Unique digits
+    const pool = [...digits];
+    let res = '';
+    for (let i = 0; i < len; i++) {
+      const idx = Math.floor(Math.random() * pool.length);
+      res += pool[idx];
+      pool.splice(idx, 1);
+    }
+    return res;
+  }
+}
+
+// VALIDATE NUMBER STRING AGAINST CURRENT SETTINGS
+function validateNumber(str, len, allowDup) {
+  if (!str) return 'Please enter a number.';
+  if (str.length !== len) return `Number must be exactly ${len} digits.`;
+  if (!/^\d+$/.test(str)) return 'Number must contain only digits 0-9.';
+  if (!allowDup) {
+    const set = new Set(str);
+    if (set.size !== len) return 'Duplicate digits are not allowed for this game.';
+  }
+  return null; // Valid!
+}
+
+// TOURNAMENT BRACKET GENERATION LOGIC
+// 2 Players: Direct 1v1
+// 3 Players: Round-Robin (P1 vs P2, P2 vs P3, P3 vs P1) -> Grand Final between Top 2!
+// 4 Players: Knockout (Semifinal 1: P1 vs P2, Semifinal 2: P3 vs P4) -> Grand Final & 3rd Place Match
+function createTournamentState(playersList, gameSettings) {
+  const pList = [...playersList];
+  const pCount = pList.length;
+
+  let mode = gameSettings.tournamentMode;
+  if (mode === 'auto') {
+    if (pCount === 2) mode = 'duel';
+    else if (pCount === 3) mode = 'roundrobin';
+    else mode = 'knockout';
+  }
+
+  const matches = [];
+
+  if (pCount === 2 || mode === 'duel') {
+    matches.push({
+      id: 'm1',
+      round: 'Final',
+      matchLabel: '1v1 Showdown',
+      p1Id: pList[0].id,
+      p2Id: pList[1].id,
+      winnerId: null,
+      status: 'pending' // pending | active | completed
+    });
+  } else if (pCount === 3 || mode === 'roundrobin') {
+    // Round Robin Phase 1
+    matches.push({
+      id: 'rr1',
+      round: 'Round-Robin Match 1',
+      matchLabel: `${pList[0].name} vs ${pList[1].name}`,
+      p1Id: pList[0].id,
+      p2Id: pList[1].id,
+      winnerId: null,
+      status: 'pending'
+    });
+    matches.push({
+      id: 'rr2',
+      round: 'Round-Robin Match 2',
+      matchLabel: `${pList[1].name} vs ${pList[2].name}`,
+      p1Id: pList[1].id,
+      p2Id: pList[2].id,
+      winnerId: null,
+      status: 'pending'
+    });
+    matches.push({
+      id: 'rr3',
+      round: 'Round-Robin Match 3',
+      matchLabel: `${pList[2].name} vs ${pList[0].name}`,
+      p1Id: pList[2].id,
+      p2Id: pList[0].id,
+      winnerId: null,
+      status: 'pending'
+    });
+    // Grand Final will be populated after Round Robin
+    matches.push({
+      id: 'rr_final',
+      round: 'Grand Final',
+      matchLabel: 'Top 2 Championship',
+      p1Id: null,
+      p2Id: null,
+      winnerId: null,
+      status: 'pending'
+    });
+  } else {
+    // 4 Players (Knockout)
+    // Semifinal 1
+    matches.push({
+      id: 'sf1',
+      round: 'Semifinal 1',
+      matchLabel: 'Semifinal 1',
+      p1Id: pList[0].id,
+      p2Id: pList[1].id,
+      winnerId: null,
+      status: 'pending'
+    });
+    // Semifinal 2
+    matches.push({
+      id: 'sf2',
+      round: 'Semifinal 2',
+      matchLabel: 'Semifinal 2',
+      p1Id: pList[2].id,
+      p2Id: pList[3].id,
+      winnerId: null,
+      status: 'pending'
+    });
+    // 3rd Place Match
+    matches.push({
+      id: 'm_bronze',
+      round: '3rd Place Match',
+      matchLabel: 'Bronze Match',
+      p1Id: null,
+      p2Id: null,
+      winnerId: null,
+      status: 'pending'
+    });
+    // Grand Final
+    matches.push({
+      id: 'm_final',
+      round: 'Grand Final',
+      matchLabel: 'Championship Final',
+      p1Id: null,
+      p2Id: null,
+      winnerId: null,
+      status: 'pending'
+    });
+  }
+
+  // Standings tracker
+  const standings = {};
+  pList.forEach(p => {
+    standings[p.id] = { wins: 0, losses: 0, totalGuesses: 0 };
+  });
+
+  return {
+    mode,
+    matches,
+    currentMatchIndex: 0,
+    standings,
+    podium: null, // { firstId, secondId, thirdId }
+    championId: null
+  };
+}
+
+// SMART AI BOT DEDUCTION SOLVER
+const botSolverState = new Map(); // botId -> { pool: [], lastGuess: null }
+
+function initBotSolver(botId, len, allowDup) {
+  // Generate a healthy pool of candidates
+  const pool = [];
+  const max = Math.pow(10, len);
+  const sampleLimit = len >= 5 ? 12000 : max;
+
+  if (len <= 4) {
+    for (let i = 0; i < max; i++) {
+      const s = String(i).padStart(len, '0');
+      if (!allowDup) {
+        if (new Set(s).size !== len) continue;
+      }
+      pool.push(s);
+    }
+  } else {
+    // For 5 or 6 digits, generate a varied, well-distributed candidate pool
+    const seen = new Set();
+    while (pool.length < sampleLimit) {
+      const cand = generateRandomSecret(len, allowDup);
+      if (!seen.has(cand)) {
+        seen.add(cand);
+        pool.push(cand);
+      }
+    }
+  }
+
+  botSolverState.set(botId, {
+    pool: pool,
+    lastGuess: null,
+    secret: generateRandomSecret(len, allowDup)
+  });
+}
+
+function getBotGuess(botId, len, allowDup) {
+  let solver = botSolverState.get(botId);
+  if (!solver || solver.pool.length === 0) {
+    initBotSolver(botId, len, allowDup);
+    solver = botSolverState.get(botId);
+  }
+
+  // Pick an informative candidate from the remaining pool
+  const guess = solver.pool[Math.floor(Math.random() * Math.min(solver.pool.length, 6))];
+  solver.lastGuess = guess;
+  return guess;
+}
+
+function updateBotFeedback(botId, guess, totalCorrect, orderCorrect) {
+  const solver = botSolverState.get(botId);
+  if (!solver) return;
+
+  // Filter pool: keep only candidates that produce the EXACT same feedback against this guess!
+  solver.pool = solver.pool.filter(cand => {
+    const fb = evaluateGuess(guess, cand);
+    return fb.totalCorrect === totalCorrect && fb.orderCorrect === orderCorrect;
+  });
+}
+
+// HOST & PEERJS INITIALIZATION
+function hostGame(restoreCode = null) {
+  saveMyProfileLocally();
+  roomCode = restoreCode || generateRoomCode();
+  host = true; solo = false;
+  hostPeerId = peerIdForRoom(roomCode);
+
+  settings.digitLen = parseInt($('setupDigitLen').value, 10) || 4;
+  settings.allowDuplicates = ($('setupDuplicates').value === 'yes');
+  settings.turnTimer = parseInt($('setupTurnTimer').value, 10);
+  settings.tournamentMode = $('setupTournamentMode').value || 'auto';
+
+  players = [{ id: myId, name: myName, avatar: myAvatar, isBot: false, online: true }];
+  tournament = null;
+  currentDuel = null;
+
+  saveSessionInfo(roomCode, true);
+  showPanel('lobbyPanel');
+  $('lobbyRoomCodeLabel').textContent = roomCode;
+  $('lobbyDigitLen').value = settings.digitLen;
+  $('lobbyDuplicates').value = settings.allowDuplicates ? 'yes' : 'no';
+  $('lobbyTurnTimer').value = settings.turnTimer;
+  $('lobbyNameInput').value = myName;
+
+  makeQr();
+  renderLobbyPlayers();
+  updateTopScoreboard();
+
+  if (peer) { try { peer.destroy(); } catch (e) {} }
+  peer = new Peer(hostPeerId, PEER_OPTS);
+
+  peer.on('open', () => {
+    startHeartbeat();
+  });
+
+  peer.on('connection', conn => {
+    conn.on('data', data => handleHostMessage(conn, data));
+    conn.on('close', () => {
+      for (const [pid, c] of connections.entries()) {
+        if (c === conn) {
+          const p = players.find(pl => pl.id === pid);
+          if (p) p.online = false;
+          renderLobbyPlayers();
+          updateTopScoreboard();
+          broadcastLobbyState();
+        }
+      }
+    });
+  });
+
+  peer.on('error', err => {
+    if (err.type === 'unavailable-id' && !restoreCode) {
+      roomCode = generateRoomCode();
+      hostGame();
+    } else {
+      msg('Network notice: ' + (err.message || err.type));
+    }
+  });
+}
+
+function joinGame(customCode = null) {
+  saveMyProfileLocally();
+  const inputVal = customCode || $('joinCodeInput').value;
+  const clean = cleanRoomCode(inputVal);
+  if (!clean || clean.length < 5) {
+    msg('Please enter a valid room code (e.g. NUMD-ABC123)');
+    return;
+  }
+
+  roomCode = clean;
+  host = false; solo = false;
+  hostPeerId = peerIdForRoom(roomCode);
+  saveSessionInfo(roomCode, false);
+
+  $('lobbyNameInput').value = myName;
+  msg('Connecting to room ' + roomCode + '...');
+
+  if (peer) { try { peer.destroy(); } catch (e) {} }
+  peer = new Peer(PEER_OPTS);
+
+  peer.on('open', () => {
+    startHeartbeat();
+    connectClientToHostPeer();
+  });
+  peer.on('error', () => msg('Could not connect to host. Retrying...'));
+}
+
+function connectClientToHostPeer() {
+  const conn = peer.connect(hostPeerId, { reliable: true });
+  window._hostConn = conn;
+  conn.on('open', () => {
+    msg('');
+    send(conn, { type: 'JOIN', playerId: myId, name: myName, avatar: myAvatar });
+  });
+  conn.on('data', data => handleClientMessage(data));
+}
+
+// SOLO MODES
+function playSoloDuel() {
+  saveMyProfileLocally();
+  roomCode = 'SOLO-DUEL';
+  host = true; solo = true;
+
+  settings.digitLen = parseInt($('setupDigitLen').value, 10) || 4;
+  settings.allowDuplicates = ($('setupDuplicates').value === 'yes');
+  settings.turnTimer = parseInt($('setupTurnTimer').value, 10);
+  settings.tournamentMode = 'duel';
+
+  players = [
+    { id: myId, name: myName, avatar: myAvatar, isBot: false, online: true },
+    { id: 'bot-1', name: 'Bot Orion', avatar: '🤖', isBot: true, online: true }
+  ];
+
+  startTournament();
+}
+
+function playSoloTournament() {
+  saveMyProfileLocally();
+  roomCode = 'SOLO-CUP';
+  host = true; solo = true;
+
+  settings.digitLen = parseInt($('setupDigitLen').value, 10) || 4;
+  settings.allowDuplicates = ($('setupDuplicates').value === 'yes');
+  settings.turnTimer = parseInt($('setupTurnTimer').value, 10);
+  settings.tournamentMode = 'knockout';
+
+  players = [
+    { id: myId, name: myName, avatar: myAvatar, isBot: false, online: true },
+    { id: 'bot-1', name: 'Bot Alpha', avatar: '🤖', isBot: true, online: true },
+    { id: 'bot-2', name: 'Bot Nova', avatar: '⚡', isBot: true, online: true },
+    { id: 'bot-3', name: 'Bot Cipher', avatar: '🧙', isBot: true, online: true }
+  ];
+
+  startTournament();
+}
+
+// HOST MESSAGE DISPATCHER
+function handleHostMessage(conn, data) {
+  if (!data) return;
+  const pid = data.playerId || conn.peer;
+
+  if (pid) {
+    connections.set(pid, conn);
+    const existing = players.find(p => p.id === pid);
+    if (existing) existing.online = true;
+  }
+
+  if (data.type === 'JOIN' || data.type === 'UPDATE_PROFILE') {
+    let p = players.find(pl => pl.id === pid);
+    if (p) {
+      p.name = data.name || p.name;
+      p.avatar = data.avatar || p.avatar;
+      p.online = true;
+    } else {
+      p = { id: pid, name: data.name || 'Player', avatar: data.avatar || '🦁', isBot: false, online: true };
+      players.push(p);
+    }
+    renderLobbyPlayers();
+    updateTopScoreboard();
+    broadcastLobbyState();
+
+    send(conn, {
+      type: 'SYNC_LOBBY',
+      roomCode,
+      players,
+      settings
+    });
+  } else if (data.type === 'LOCK_SECRET') {
+    if (currentDuel && (pid === currentDuel.p1Id || pid === currentDuel.p2Id)) {
+      handleLockSecret(pid, data.secret);
+    }
+  } else if (data.type === 'SUBMIT_GUESS') {
+    if (currentDuel && pid === currentDuel.currentTurnPlayerId) {
+      handleDuelGuess(pid, data.guess);
+    }
+  }
+}
+
+// CLIENT MESSAGE DISPATCHER
+function handleClientMessage(data) {
+  if (!data) return;
+
+  if (data.type === 'SYNC_LOBBY' || data.type === 'LOBBY_UPDATE') {
+    players = data.players || players;
+    settings = data.settings || settings;
+    showPanel('lobbyPanel');
+    $('lobbyRoomCodeLabel').textContent = roomCode;
+    renderLobbyPlayers();
+    updateTopScoreboard();
+  } else if (data.type === 'START_MATCH_SECRETS') {
+    settings = data.settings || settings;
+    currentDuel = data.duel;
+    tournament = data.tournament;
+    renderSecretSelectionScreen();
+  } else if (data.type === 'DUEL_START') {
+    currentDuel = data.duel;
+    startDuelGameplay();
+  } else if (data.type === 'GUESS_LOGGED') {
+    currentDuel = data.duel;
+    updateDuelUI();
+    if (data.lastGuessPlayerId === myId) {
+      playValidGuessSound();
+    } else {
+      playClickSound();
+    }
+  } else if (data.type === 'SECRET_LOCKED_UPDATE') {
+    if (currentDuel) {
+      currentDuel.p1Locked = data.p1Locked;
+      currentDuel.p2Locked = data.p2Locked;
+    }
+  } else if (data.type === 'TURN_TICK') {
+    currentTurnRemaining = data.remaining;
+    updateDuelTimerUI(currentTurnRemaining);
+  } else if (data.type === 'MATCH_OVER') {
+    currentDuel = data.duel;
+    tournament = data.tournament;
+    showMatchOverModal();
+  } else if (data.type === 'TOURNAMENT_OVER') {
+    tournament = data.tournament;
+    showChampionModal();
+  } else if (data.type === 'RETURN_TO_LOBBY') {
+    $('championModal').classList.add('hidden');
+    $('matchOverModal').classList.add('hidden');
+    $('bracketPanel').classList.add('hidden');
+    showPanel('lobbyPanel');
+    renderLobbyPlayers();
+    updateTopScoreboard();
+  }
+}
+
+// TOURNAMENT ORCHESTRATION (HOST)
+function startTournament() {
+  if (!host) return;
+  tournament = createTournamentState(players, settings);
+  advanceToNextTournamentMatch();
+}
+
+function advanceToNextTournamentMatch() {
+  if (!host || !tournament) return;
+
+  const matches = tournament.matches;
+  let nextMatch = matches.find(m => m.status === 'pending');
+
+  if (!nextMatch) {
+    // Check if 3-Player Round Robin finished, populate Grand Final!
+    if (tournament.mode === 'roundrobin') {
+      const rrMatches = matches.filter(m => m.id.startsWith('rr') && m.id !== 'rr_final');
+      const allRRDone = rrMatches.every(m => m.status === 'completed');
+      const finalMatch = matches.find(m => m.id === 'rr_final');
+
+      if (allRRDone && finalMatch && finalMatch.status === 'pending' && !finalMatch.p1Id) {
+        // Sort players by wins, then fewest guesses
+        const sorted = [...players].sort((a, b) => {
+          const sa = tournament.standings[a.id];
+          const sb = tournament.standings[b.id];
+          if (sb.wins !== sa.wins) return sb.wins - sa.wins;
+          return sa.totalGuesses - sb.totalGuesses;
+        });
+
+        finalMatch.p1Id = sorted[0].id;
+        finalMatch.p2Id = sorted[1].id;
+        finalMatch.matchLabel = `${sorted[0].name} vs ${sorted[1].name} (Grand Final)`;
+        nextMatch = finalMatch;
+      }
+    } else if (tournament.mode === 'knockout') {
+      // Check if Semifinals finished, populate Final & Bronze match
+      const sf1 = matches.find(m => m.id === 'sf1');
+      const sf2 = matches.find(m => m.id === 'sf2');
+      const bronze = matches.find(m => m.id === 'm_bronze');
+      const final = matches.find(m => m.id === 'm_final');
+
+      if (sf1.status === 'completed' && sf2.status === 'completed') {
+        const sf1Winner = sf1.winnerId;
+        const sf1Loser = sf1.p1Id === sf1Winner ? sf1.p2Id : sf1.p1Id;
+        const sf2Winner = sf2.winnerId;
+        const sf2Loser = sf2.p1Id === sf2Winner ? sf2.p2Id : sf2.p1Id;
+
+        if (final && final.status === 'pending' && !final.p1Id) {
+          final.p1Id = sf1Winner;
+          final.p2Id = sf2Winner;
+          final.matchLabel = `${getPlayer(sf1Winner).name} vs ${getPlayer(sf2Winner).name}`;
+        }
+        if (bronze && bronze.status === 'pending' && !bronze.p1Id) {
+          bronze.p1Id = sf1Loser;
+          bronze.p2Id = sf2Loser;
+          bronze.matchLabel = `${getPlayer(sf1Loser).name} vs ${getPlayer(sf2Loser).name}`;
+        }
+        nextMatch = matches.find(m => m.status === 'pending');
+      }
+    }
+  }
+
+  if (!nextMatch) {
+    // Entire tournament is completed! Crown the Champion!
+    finalizeTournamentChampions();
+    return;
+  }
+
+  nextMatch.status = 'active';
+
+  // Initialize bot solvers if needed
+  [nextMatch.p1Id, nextMatch.p2Id].forEach(pid => {
+    const pl = getPlayer(pid);
+    if (pl && pl.isBot) {
+      initBotSolver(pid, settings.digitLen, settings.allowDuplicates);
+    }
+  });
+
+  currentDuel = {
+    id: nextMatch.id,
+    matchLabel: nextMatch.matchLabel,
+    p1Id: nextMatch.p1Id,
+    p2Id: nextMatch.p2Id,
+    p1Secret: '',
+    p2Secret: '',
+    p1Locked: false,
+    p2Locked: false,
+    currentTurnPlayerId: nextMatch.p1Id, // P1 starts
+    p1Guesses: [],
+    p2Guesses: [],
+    winnerId: null,
+    startTime: Date.now()
+  };
+
+  broadcastDuelState('START_MATCH_SECRETS');
+  renderSecretSelectionScreen();
+
+  // Trigger bots to lock in secrets automatically with human-like delay
+  [nextMatch.p1Id, nextMatch.p2Id].forEach(pid => {
+    const pl = getPlayer(pid);
+    if (pl && pl.isBot) {
+      setTimeout(() => {
+        const solver = botSolverState.get(pid);
+        const botSecret = solver ? solver.secret : generateRandomSecret(settings.digitLen, settings.allowDuplicates);
+        handleLockSecret(pid, botSecret);
+      }, 900 + Math.random() * 800);
+    }
+  });
+}
+
+function handleLockSecret(playerId, secret) {
+  if (!host || !currentDuel) return;
+  if (playerId === currentDuel.p1Id) {
+    currentDuel.p1Secret = secret;
+    currentDuel.p1Locked = true;
+  } else if (playerId === currentDuel.p2Id) {
+    currentDuel.p2Secret = secret;
+    currentDuel.p2Locked = true;
+  }
+
+  // If both players have locked in, start the duel!
+  if (currentDuel.p1Locked && currentDuel.p2Locked) {
+    broadcastDuelState('DUEL_START');
+    startDuelGameplay();
+  } else {
+    // Notify clients of lock status
+    broadcastDuelState('SECRET_LOCKED_UPDATE', {
+      p1Locked: currentDuel.p1Locked,
+      p2Locked: currentDuel.p2Locked
+    });
+    if (playerId === myId) {
+      $('secretWaitBanner')?.classList.remove('hidden');
+    }
+  }
+}
+
+function handleDuelGuess(playerId, guess) {
+  if (!host || !currentDuel || currentDuel.winnerId) return;
+  if (playerId !== currentDuel.currentTurnPlayerId) return;
+
+  const isP1 = (playerId === currentDuel.p1Id);
+  const targetSecret = isP1 ? currentDuel.p2Secret : currentDuel.p1Secret;
+
+  const result = evaluateGuess(guess, targetSecret);
+  const guessEntry = {
+    guess,
+    totalCorrect: result.totalCorrect,
+    orderCorrect: result.orderCorrect,
+    wrongOrder: result.wrongOrder,
+    time: Date.now()
+  };
+
+  if (isP1) currentDuel.p1Guesses.push(guessEntry);
+  else currentDuel.p2Guesses.push(guessEntry);
+
+  // Check if cracked!
+  if (result.orderCorrect === settings.digitLen) {
+    currentDuel.winnerId = playerId;
+    if (duelTimerInterval) clearInterval(duelTimerInterval);
+
+    // Update match record
+    const match = tournament.matches.find(m => m.id === currentDuel.id);
+    if (match) {
+      match.winnerId = playerId;
+      match.status = 'completed';
+    }
+
+    // Update standings
+    const loserId = isP1 ? currentDuel.p2Id : currentDuel.p1Id;
+    tournament.standings[playerId].wins++;
+    tournament.standings[playerId].totalGuesses += (isP1 ? currentDuel.p1Guesses.length : currentDuel.p2Guesses.length);
+    tournament.standings[loserId].losses++;
+    tournament.standings[loserId].totalGuesses += (isP1 ? currentDuel.p2Guesses.length : currentDuel.p1Guesses.length);
+
+    broadcastHost({
+      type: 'MATCH_OVER',
+      duel: {
+        ...currentDuel,
+        p1Secret: currentDuel.p1Secret,
+        p2Secret: currentDuel.p2Secret
+      },
+      tournament
+    });
+
+    showMatchOverModal();
+    return;
+  }
+
+  // If not solved, switch turn to other player!
+  currentDuel.currentTurnPlayerId = isP1 ? currentDuel.p2Id : currentDuel.p1Id;
+  resetTurnTimer();
+
+  // If other player is a Bot, schedule bot deduction guess
+  const nextPlayer = getPlayer(currentDuel.currentTurnPlayerId);
+  if (nextPlayer && nextPlayer.isBot) {
+    // Feed bot feedback from opponent's guess if needed or trigger bot turn
+    setTimeout(() => {
+      if (currentDuel && !currentDuel.winnerId && currentDuel.currentTurnPlayerId === nextPlayer.id) {
+        const botGuess = getBotGuess(nextPlayer.id, settings.digitLen, settings.allowDuplicates);
+        handleDuelGuess(nextPlayer.id, botGuess);
+      }
+    }, 1800 + Math.random() * 1600);
+  }
+
+  broadcastDuelState('GUESS_LOGGED', {
+    lastGuessPlayerId: playerId
+  });
+
+  updateDuelUI();
+}
+
+function finalizeTournamentChampions() {
+  if (!host || !tournament) return;
+
+  let firstId = null, secondId = null, thirdId = null;
+
+  if (tournament.mode === 'duel') {
+    const m = tournament.matches[0];
+    firstId = m.winnerId;
+    secondId = (m.p1Id === firstId ? m.p2Id : m.p1Id);
+  } else if (tournament.mode === 'roundrobin') {
+    const finalMatch = tournament.matches.find(m => m.id === 'rr_final');
+    firstId = finalMatch.winnerId;
+    secondId = (finalMatch.p1Id === firstId ? finalMatch.p2Id : finalMatch.p1Id);
+    thirdId = players.find(p => p.id !== firstId && p.id !== secondId)?.id || null;
+  } else {
+    // Knockout
+    const finalMatch = tournament.matches.find(m => m.id === 'm_final');
+    const bronzeMatch = tournament.matches.find(m => m.id === 'm_bronze');
+    firstId = finalMatch?.winnerId || null;
+    secondId = (finalMatch?.p1Id === firstId ? finalMatch?.p2Id : finalMatch?.p1Id);
+    thirdId = bronzeMatch?.winnerId || null;
+  }
+
+  tournament.championId = firstId;
+  tournament.podium = { firstId, secondId, thirdId };
+
+  broadcastHost({
+    type: 'TOURNAMENT_OVER',
+    tournament
+  });
+
+  showChampionModal();
+}
+
+function sanitizeDuelForTarget(duel, targetPlayerId) {
+  if (!duel) return null;
+  return {
+    ...duel,
+    p1Secret: duel.winnerId ? duel.p1Secret : (duel.p1Id === targetPlayerId ? duel.p1Secret : '****'),
+    p2Secret: duel.winnerId ? duel.p2Secret : (duel.p2Id === targetPlayerId ? duel.p2Secret : '****')
+  };
+}
+
+function sanitizeDuelForClient(duel) {
+  return sanitizeDuelForTarget(duel, myId);
+}
+
+// TURN TIMER CLOCK
+function resetTurnTimer() {
+  if (duelTimerInterval) clearInterval(duelTimerInterval);
+  if (!settings.turnTimer || settings.turnTimer <= 0) return;
+
+  currentTurnRemaining = settings.turnTimer;
+  updateDuelTimerUI(currentTurnRemaining);
+
+  duelTimerInterval = setInterval(() => {
+    if (!currentDuel || currentDuel.winnerId) {
+      clearInterval(duelTimerInterval);
+      return;
+    }
+    currentTurnRemaining--;
+    updateDuelTimerUI(currentTurnRemaining);
+
+    if (host) {
+      broadcastHost({ type: 'TURN_TICK', remaining: currentTurnRemaining });
+    }
+
+    if (currentTurnRemaining <= 0) {
+      clearInterval(duelTimerInterval);
+      if (host) {
+        // Auto-guess random or pass turn
+        const activePid = currentDuel.currentTurnPlayerId;
+        const autoGuess = generateRandomSecret(settings.digitLen, settings.allowDuplicates);
+        handleDuelGuess(activePid, autoGuess);
+      }
+    }
+  }, 1000);
+}
+
+function updateDuelTimerUI(remaining) {
+  const badge = $('duelTimerBadge');
+  const pill = $('duelTurnTimerPill');
+  if (!badge) return;
+
+  if (!settings.turnTimer || settings.turnTimer <= 0) {
+    badge.classList.add('hidden');
+    if (pill) pill.textContent = '⏱️ ∞';
+    return;
+  }
+
+  const text = `⏱️ 0:${remaining.toString().padStart(2, '0')}`;
+  badge.textContent = text;
+  badge.classList.remove('hidden');
+  badge.classList.toggle('urgent', remaining <= 10);
+
+  if (pill) {
+    pill.textContent = text;
+    pill.classList.toggle('urgent', remaining <= 10);
+  }
+}
+
+// UI RENDERING: SECRET SELECTION SCREEN
+function renderSecretSelectionScreen() {
+  const amIDuelist = currentDuel && (myId === currentDuel.p1Id || myId === currentDuel.p2Id);
+  if (!amIDuelist) {
+    // Spectating this match while secrets are being picked
+    showPanel('duelPanel');
+    $('guessInputStage').classList.add('hidden');
+    $('spectatorNoticeCard').classList.remove('hidden');
+    const p1 = getPlayer(currentDuel.p1Id) || { name: 'Player 1' };
+    const p2 = getPlayer(currentDuel.p2Id) || { name: 'Player 2' };
+    $('spectatorNoticeCard').innerHTML = `
+      <div style="font-size:2.2rem; margin-bottom:4px;">⏳</div>
+      <h3 style="color:#60a5fa; margin:0 0 6px;">${esc(currentDuel.matchLabel || 'Match')} Preparing...</h3>
+      <p style="color:#cbd5e1; font-size:0.9rem; margin:0 0 12px;">
+        <strong>${esc(p1.name)}</strong> and <strong>${esc(p2.name)}</strong> are setting their secret codes.
+      </p>
+      <button type="button" class="btn-alt" onclick="renderBracketOverlay()">🏆 View Tournament Bracket</button>
+    `;
+    updateDuelUI();
+    return;
+  }
+
+  showPanel('secretPickerPanel');
+  localSecretBuffer = '';
+  $('secretErrorMsg').textContent = '';
+  $('secretWaitBanner').classList.add('hidden');
+
+  const len = settings.digitLen;
+  const allowDup = settings.allowDuplicates;
+  $('secretRulesPrompt').textContent = `Enter a ${len}-digit secret code. ${allowDup ? 'Duplicate digits allowed (e.g. 9954).' : 'All digits must be unique (e.g. 4678).'}`;
+
+  // Render slot boxes
+  const container = $('secretSlotsContainer');
+  container.innerHTML = '';
+  for (let i = 0; i < len; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'digit-slot' + (i === 0 ? ' active' : '');
+    slot.id = `secSlot_${i}`;
+    slot.innerHTML = `<span class="slot-placeholder">_</span>`;
+    container.appendChild(slot);
+  }
+}
+
+function updateSecretSlotsUI() {
+  const len = settings.digitLen;
+  for (let i = 0; i < len; i++) {
+    const slot = $(`secSlot_${i}`);
+    if (!slot) continue;
+    const digit = localSecretBuffer[i];
+    if (digit !== undefined) {
+      slot.textContent = digit;
+      slot.classList.add('filled');
+      slot.classList.remove('active');
+    } else {
+      slot.innerHTML = `<span class="slot-placeholder">_</span>`;
+      slot.classList.remove('filled');
+      slot.classList.toggle('active', i === localSecretBuffer.length);
+    }
+  }
+}
+
+function onSecretKeypadPress(digit) {
+  if (localSecretBuffer.length >= settings.digitLen) return;
+  if (!settings.allowDuplicates && localSecretBuffer.includes(digit)) {
+    $('secretErrorMsg').textContent = `Digit '${digit}' already used! Unique digits only.`;
+    playBuzzerSound();
+    return;
+  }
+  $('secretErrorMsg').textContent = '';
+  localSecretBuffer += digit;
+  playClickSound();
+  updateSecretSlotsUI();
+}
+
+function onSecretBackspace() {
+  if (localSecretBuffer.length > 0) {
+    localSecretBuffer = localSecretBuffer.slice(0, -1);
+    $('secretErrorMsg').textContent = '';
+    playBackspaceSound();
+    updateSecretSlotsUI();
+  }
+}
+
+function submitMySecret() {
+  const err = validateNumber(localSecretBuffer, settings.digitLen, settings.allowDuplicates);
+  if (err) {
+    $('secretErrorMsg').textContent = err;
+    playBuzzerSound();
+    return;
+  }
+  playClickSound();
+  $('secretErrorMsg').textContent = '';
+  $('secretWaitBanner').classList.remove('hidden');
+
+  if (host) {
+    handleLockSecret(myId, localSecretBuffer);
+  } else {
+    sendToHost({ type: 'LOCK_SECRET', secret: localSecretBuffer });
+  }
+}
+
+// UI RENDERING: DUEL SCREEN
+function startDuelGameplay() {
+  showPanel('duelPanel');
+  localGuessBuffer = '';
+  $('guessErrorMsg').textContent = '';
+
+  // Render Scratchpad 0-9
+  renderScratchpad();
+
+  // Render Guess Slots
+  const container = $('guessSlotsContainer');
+  container.innerHTML = '';
+  for (let i = 0; i < settings.digitLen; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'digit-slot' + (i === 0 ? ' active' : '');
+    slot.id = `guessSlot_${i}`;
+    slot.innerHTML = `<span class="slot-placeholder">_</span>`;
+    container.appendChild(slot);
+  }
+
+  resetTurnTimer();
+  updateDuelUI();
+}
+
+function updateDuelUI() {
+  if (!currentDuel) return;
+
+  const p1 = getPlayer(currentDuel.p1Id) || { name: 'Player 1', avatar: '🦁' };
+  const p2 = getPlayer(currentDuel.p2Id) || { name: 'Player 2', avatar: '🦊' };
+
+  $('duelP1Name').textContent = p1.name;
+  $('duelP1Avatar').textContent = p1.avatar;
+  $('duelP1GuessCount').textContent = currentDuel.p1Guesses.length;
+
+  $('duelP2Name').textContent = p2.name;
+  $('duelP2Avatar').textContent = p2.avatar;
+  $('duelP2GuessCount').textContent = currentDuel.p2Guesses.length;
+
+  $('duelMatchStageLabel').textContent = currentDuel.matchLabel || '1v1 DUEL';
+
+  const isMyTurn = (currentDuel.currentTurnPlayerId === myId);
+  const isP1Turn = (currentDuel.currentTurnPlayerId === currentDuel.p1Id);
+
+  $('duelP1Box').classList.toggle('is-turn', isP1Turn);
+  $('duelP2Box').classList.toggle('is-turn', !isP1Turn);
+
+  const banner = $('duelTurnBanner');
+  const bannerIcon = $('duelTurnIcon');
+  const bannerText = $('duelTurnText');
+
+  const amIDuelist = (myId === currentDuel.p1Id || myId === currentDuel.p2Id);
+
+  if (amIDuelist) {
+    $('guessInputStage').classList.remove('hidden');
+    $('spectatorNoticeCard').classList.add('hidden');
+
+    if (isMyTurn) {
+      banner.className = 'turn-status-banner your-turn';
+      bannerIcon.textContent = '🎯';
+      bannerText.textContent = 'YOUR TURN TO GUESS!';
+      $('guessSubmitBtn').disabled = false;
+    } else {
+      const opp = (myId === currentDuel.p1Id ? p2 : p1);
+      banner.className = 'turn-status-banner opp-turn';
+      bannerIcon.textContent = '⏳';
+      bannerText.textContent = `${opp.name.toUpperCase()} IS THINKING...`;
+      $('guessSubmitBtn').disabled = true;
+    }
+
+    // Display your own secret safely
+    const mySec = (myId === currentDuel.p1Id ? currentDuel.p1Secret : currentDuel.p2Secret) || localSecretBuffer;
+    $('mySecretBadge').textContent = mySec || '****';
+  } else {
+    // Spectating
+    $('guessInputStage').classList.add('hidden');
+    $('spectatorNoticeCard').classList.remove('hidden');
+    const activePlayer = (isP1Turn ? p1 : p2);
+    banner.className = 'turn-status-banner spectating';
+    bannerIcon.textContent = '👀';
+    bannerText.textContent = `SPECTATING: ${activePlayer.name.toUpperCase()}'S TURN`;
+  }
+
+  // Update Logs
+  renderGuessLogs(amIDuelist);
+}
+
+function updateGuessSlotsUI() {
+  const len = settings.digitLen;
+  for (let i = 0; i < len; i++) {
+    const slot = $(`guessSlot_${i}`);
+    if (!slot) continue;
+    const digit = localGuessBuffer[i];
+    if (digit !== undefined) {
+      slot.textContent = digit;
+      slot.classList.add('filled');
+      slot.classList.remove('active');
+    } else {
+      slot.innerHTML = `<span class="slot-placeholder">_</span>`;
+      slot.classList.remove('filled');
+      slot.classList.toggle('active', i === localGuessBuffer.length);
+    }
+  }
+}
+
+function onGuessKeypadPress(digit) {
+  if (currentDuel && currentDuel.currentTurnPlayerId !== myId) return;
+  if (localGuessBuffer.length >= settings.digitLen) return;
+  if (!settings.allowDuplicates && localGuessBuffer.includes(digit)) {
+    $('guessErrorMsg').textContent = `Digit '${digit}' already used! Unique digits only.`;
+    playBuzzerSound();
+    return;
+  }
+  $('guessErrorMsg').textContent = '';
+  localGuessBuffer += digit;
+  playClickSound();
+  updateGuessSlotsUI();
+}
+
+function onGuessBackspace() {
+  if (localGuessBuffer.length > 0) {
+    localGuessBuffer = localGuessBuffer.slice(0, -1);
+    $('guessErrorMsg').textContent = '';
+    playBackspaceSound();
+    updateGuessSlotsUI();
+  }
+}
+
+function submitGuess() {
+  if (currentDuel && currentDuel.currentTurnPlayerId !== myId) return;
+
+  const err = validateNumber(localGuessBuffer, settings.digitLen, settings.allowDuplicates);
+  if (err) {
+    $('guessErrorMsg').textContent = err;
+    playBuzzerSound();
+    return;
+  }
+
+  const guess = localGuessBuffer;
+  localGuessBuffer = '';
+  updateGuessSlotsUI();
+  $('guessErrorMsg').textContent = '';
+
+  if (host) {
+    handleDuelGuess(myId, guess);
+  } else {
+    sendToHost({ type: 'SUBMIT_GUESS', guess });
+  }
+}
+
+// LOGS RENDERING (Dual columns)
+function renderGuessLogs(amIDuelist) {
+  if (!currentDuel) return;
+
+  const p1 = getPlayer(currentDuel.p1Id) || { name: 'Player 1' };
+  const p2 = getPlayer(currentDuel.p2Id) || { name: 'Player 2' };
+
+  let myGuesses = [], oppGuesses = [];
+  let myTitle = '', oppTitle = '';
+
+  if (amIDuelist) {
+    const isP1 = (myId === currentDuel.p1Id);
+    myGuesses = isP1 ? currentDuel.p1Guesses : currentDuel.p2Guesses;
+    oppGuesses = isP1 ? currentDuel.p2Guesses : currentDuel.p1Guesses;
+    myTitle = `My Guesses (vs ${(isP1 ? p2.name : p1.name)})`;
+    oppTitle = `${(isP1 ? p2.name : p1.name)}'s Guesses (vs Me)`;
+  } else {
+    // Spectator
+    myGuesses = currentDuel.p1Guesses;
+    oppGuesses = currentDuel.p2Guesses;
+    myTitle = `${p1.name}'s Guesses`;
+    oppTitle = `${p2.name}'s Guesses`;
+  }
+
+  $('myLogTitle').textContent = myTitle;
+  $('oppLogTitle').textContent = oppTitle;
+  $('myLogCount').textContent = `${myGuesses.length} guesses`;
+  $('oppLogCount').textContent = `${oppGuesses.length} guesses`;
+
+  renderLogList($('myGuessesLogList'), myGuesses, true);
+  renderLogList($('oppGuessesLogList'), oppGuesses, false);
+}
+
+function renderLogList(container, guesses, isMine) {
+  container.innerHTML = '';
+  if (!guesses || guesses.length === 0) {
+    container.innerHTML = `<div style="color:#64748b; font-size:0.82rem; text-align:center; padding:20px;">No guesses yet.</div>`;
+    return;
+  }
+
+  // Render from newest to oldest
+  for (let i = guesses.length - 1; i >= 0; i--) {
+    const g = guesses[i];
+    const row = document.createElement('div');
+    row.className = 'log-entry-row' + (i === guesses.length - 1 ? ' latest' : '');
+
+    row.innerHTML = `
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:0.75rem; color:#94a3b8; font-weight:700;">#${i + 1}</span>
+        <span class="log-guess-digits">${esc(g.guess)}</span>
+      </div>
+      <div class="log-feedback-badges">
+        <span class="fb-badge ${g.totalCorrect > 0 ? 'correct' : 'zero'}">🎯 ${g.totalCorrect} Correct</span>
+        <span class="fb-badge ${g.orderCorrect > 0 ? 'order' : 'zero'}">📍 ${g.orderCorrect} Order</span>
+      </div>
+    `;
+    container.appendChild(row);
+  }
+}
+
+// DEDUCTION SCRATCHPAD (0-9 Digits)
+function renderScratchpad() {
+  const row = $('scratchpadRow');
+  row.innerHTML = '';
+
+  for (let d = 0; d <= 9; d++) {
+    const state = scratchpadState[d] || 0;
+    const btn = document.createElement('div');
+    let stateClass = '';
+    if (state === 1) stateClass = 'eliminated';
+    else if (state === 2) stateClass = 'candidate';
+    else if (state === 3) stateClass = 'confirmed';
+
+    btn.className = `scratch-digit-btn ${stateClass}`;
+    btn.textContent = d;
+    btn.onclick = () => {
+      // Toggle state: 0 -> 1 (eliminated) -> 2 (candidate) -> 3 (confirmed) -> 0
+      scratchpadState[d] = (scratchpadState[d] + 1) % 4;
+      playClickSound();
+      renderScratchpad();
+    };
+    row.appendChild(btn);
+  }
+}
+
+function renderSlotNotes() {
+  const container = $('slotNotesRows');
+  if (!container) return;
+  container.innerHTML = '';
+  const len = settings.digitLen || 4;
+
+  for (let s = 0; s < len; s++) {
+    if (!slotNotesState[s]) slotNotesState[s] = {};
+    const row = document.createElement('div');
+    row.className = 'slot-note-row';
+
+    const label = document.createElement('div');
+    label.className = 'slot-note-label';
+    label.textContent = `Slot #${s + 1}:`;
+    row.appendChild(label);
+
+    const digitsDiv = document.createElement('div');
+    digitsDiv.className = 'slot-note-digits';
+
+    for (let d = 0; d <= 9; d++) {
+      const state = slotNotesState[s][d] || 0;
+      const mini = document.createElement('div');
+      let stCls = '';
+      if (state === 1) stCls = 'crossed';
+      else if (state === 2) stCls = 'starred';
+
+      mini.className = `slot-mini-btn ${stCls}`;
+      mini.textContent = d;
+      mini.onclick = () => {
+        // 0 -> 1 (crossed) -> 2 (starred) -> 0
+        slotNotesState[s][d] = (slotNotesState[s][d] + 1) % 3;
+        playClickSound();
+        renderSlotNotes();
+      };
+      digitsDiv.appendChild(mini);
+    }
+
+    row.appendChild(digitsDiv);
+    container.appendChild(row);
+  }
+}
+
+// TOURNAMENT BRACKET OVERLAY
+function renderBracketOverlay() {
+  if (!tournament) return;
+
+  $('bracketPanel').classList.remove('hidden');
+  const treeContainer = $('knockoutBracketContainer');
+  const rrContainer = $('roundRobinContainer');
+
+  if (tournament.mode === 'roundrobin') {
+    treeContainer.classList.add('hidden');
+    rrContainer.classList.remove('hidden');
+    $('tournamentFormatDescription').textContent = '3-Player Triangle Clash (Round-Robin ➔ Top 2 to Grand Final)';
+    renderRoundRobinTable();
+  } else {
+    treeContainer.classList.remove('hidden');
+    rrContainer.classList.add('hidden');
+    $('tournamentFormatDescription').textContent = (tournament.mode === 'duel') ? '1v1 Direct Duel' : '4-Player Knockout Tournament';
+    renderKnockoutTree();
+  }
+}
+
+function renderKnockoutTree() {
+  const container = $('knockoutBracketContainer');
+  container.innerHTML = '';
+
+  const matches = tournament.matches;
+
+  // Round 1: Semifinals
+  const round1Div = document.createElement('div');
+  round1Div.className = 'bracket-round';
+  round1Div.innerHTML = `<div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase;">Semifinals</div>`;
+
+  const sfMatches = matches.filter(m => m.id === 'sf1' || m.id === 'sf2' || m.id === 'm1');
+  sfMatches.forEach(m => {
+    round1Div.appendChild(createMatchNodeEl(m));
+  });
+  container.appendChild(round1Div);
+
+  if (tournament.mode !== 'duel') {
+    // Round 2: Grand Final & 3rd Place
+    const round2Div = document.createElement('div');
+    round2Div.className = 'bracket-round';
+    round2Div.innerHTML = `<div style="font-size:0.75rem; font-weight:800; color:#ffd66f; text-transform:uppercase;">Grand Final</div>`;
+
+    const finalMatch = matches.find(m => m.id === 'm_final');
+    if (finalMatch) round2Div.appendChild(createMatchNodeEl(finalMatch));
+
+    const bronzeMatch = matches.find(m => m.id === 'm_bronze');
+    if (bronzeMatch) round2Div.appendChild(createMatchNodeEl(bronzeMatch));
+
+    container.appendChild(round2Div);
+  }
+}
+
+function createMatchNodeEl(match) {
+  const p1 = getPlayer(match.p1Id) || { name: 'TBD', avatar: '❓' };
+  const p2 = getPlayer(match.p2Id) || { name: 'TBD', avatar: '❓' };
+
+  const isCurrent = (currentDuel && currentDuel.id === match.id);
+
+  const node = document.createElement('div');
+  node.className = 'bracket-match-node' + (isCurrent ? ' active-match' : '');
+  node.innerHTML = `
+    <div style="font-size:0.72rem; color:#94a3b8; margin-bottom:4px; font-weight:700;">${match.round}</div>
+    <div class="bracket-player-row ${match.winnerId === match.p1Id ? 'winner' : ''}">
+      <span>${p1.avatar} ${esc(p1.name)}</span>
+      <span>${match.winnerId === match.p1Id ? '🏆 Win' : ''}</span>
+    </div>
+    <div class="bracket-player-row ${match.winnerId === match.p2Id ? 'winner' : ''}">
+      <span>${p2.avatar} ${esc(p2.name)}</span>
+      <span>${match.winnerId === match.p2Id ? '🏆 Win' : ''}</span>
+    </div>
+  `;
+  return node;
+}
+
+function renderRoundRobinTable() {
+  const tbody = $('roundRobinTableBody');
+  tbody.innerHTML = '';
+
+  const sorted = [...players].sort((a, b) => {
+    const sa = tournament.standings[a.id] || { wins: 0, totalGuesses: 999 };
+    const sb = tournament.standings[b.id] || { wins: 0, totalGuesses: 999 };
+    if (sb.wins !== sa.wins) return sb.wins - sa.wins;
+    return sa.totalGuesses - sb.totalGuesses;
+  });
+
+  sorted.forEach((p, idx) => {
+    const s = tournament.standings[p.id] || { wins: 0, losses: 0, totalGuesses: 0 };
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid rgba(255,255,255,0.08)';
+    tr.innerHTML = `
+      <td style="padding:8px; font-weight:900; color:#ffd66f;">#${idx + 1}</td>
+      <td style="padding:8px; text-align:left; font-weight:700;">${p.avatar} ${esc(p.name)}</td>
+      <td style="padding:8px; color:#34d399; font-weight:800;">${s.wins}</td>
+      <td style="padding:8px; color:#ef4444;">${s.losses}</td>
+      <td style="padding:8px; font-family:monospace;">${s.totalGuesses}</td>
+      <td style="padding:8px;">${idx < 2 ? '<span style="color:#6ee7b7; font-weight:700;">Advances ➔</span>' : '<span style="color:#94a3b8;">3rd Place</span>'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// VICTORY & CHAMPION MODALS
+function showMatchOverModal() {
+  if (!currentDuel) return;
+  playWinFanfare();
+  fireConfetti(100);
+
+  const winner = getPlayer(currentDuel.winnerId) || { name: 'Player', avatar: '🏆' };
+  $('matchOverWinnerName').textContent = `${winner.avatar} ${winner.name} Cracked the Code!`;
+
+  const p1 = getPlayer(currentDuel.p1Id) || { name: 'Player 1' };
+  const p2 = getPlayer(currentDuel.p2Id) || { name: 'Player 2' };
+
+  $('revealP1Label').textContent = `${p1.name}'s Secret:`;
+  $('revealP1Secret').textContent = currentDuel.p1Secret;
+
+  $('revealP2Label').textContent = `${p2.name}'s Secret:`;
+  $('revealP2Secret').textContent = currentDuel.p2Secret;
+
+  const winnerGuesses = (currentDuel.winnerId === currentDuel.p1Id ? currentDuel.p1Guesses.length : currentDuel.p2Guesses.length);
+  $('matchOverStatsLine').textContent = `Code cracked in ${winnerGuesses} guesses!`;
+
+  $('nextTournamentMatchBtn').classList.toggle('hidden', !host);
+  $('matchOverModal').classList.remove('hidden');
+  updateTopScoreboard();
+}
+
+function showChampionModal() {
+  if (!tournament || !tournament.podium) return;
+  playWinFanfare();
+  fireConfetti(160);
+
+  const champ = getPlayer(tournament.podium.firstId) || { name: 'Champion', avatar: '👑' };
+  $('grandChampionName').textContent = `${champ.avatar} ${champ.name} is the Tournament Champion!`;
+
+  const p1 = getPlayer(tournament.podium.firstId) || { name: '1st', avatar: '🥇' };
+  const p2 = getPlayer(tournament.podium.secondId) || { name: '2nd', avatar: '🥈' };
+  const p3 = getPlayer(tournament.podium.thirdId) || { name: '3rd', avatar: '🥉' };
+
+  $('podiumP1Name').textContent = p1.name;
+  $('podiumP1Avatar').textContent = p1.avatar;
+
+  $('podiumP2Name').textContent = p2.name;
+  $('podiumP2Avatar').textContent = p2.avatar;
+
+  $('podiumP3Name').textContent = p3.name;
+  $('podiumP3Avatar').textContent = p3.avatar;
+
+  $('matchOverModal').classList.add('hidden');
+  $('championModal').classList.remove('hidden');
+  updateTopScoreboard();
+}
+
+// UTILITY FUNCTIONS
+function getPlayer(pid) {
+  return players.find(p => p.id === pid) || null;
+}
+function showPanel(panelId) {
+  $('setupPanel').classList.toggle('hidden', panelId !== 'setupPanel');
+  $('lobbyPanel').classList.toggle('hidden', panelId !== 'lobbyPanel');
+  $('secretPickerPanel').classList.toggle('hidden', panelId !== 'secretPickerPanel');
+  $('duelPanel').classList.toggle('hidden', panelId !== 'duelPanel');
+}
+function msg(t) { if ($('setupMsg')) $('setupMsg').textContent = t; }
+function inviteUrl() { return location.origin + location.pathname + '?join=' + encodeURIComponent(roomCode); }
+
+function makeQr() {
+  const qrEl = $('lobbyQr');
+  if (!qrEl) return;
+  qrEl.innerHTML = '';
+  if (window.QRCode) new QRCode(qrEl, { text: inviteUrl(), width: 110, height: 110 });
+}
+
+function updateTopScoreboard() {
+  const sb = $('topScoreboard');
+  if (!sb) return;
+  sb.innerHTML = '';
+
+  players.forEach(p => {
+    const isMe = (p.id === myId);
+    const isDuelist = currentDuel && (p.id === currentDuel.p1Id || p.id === currentDuel.p2Id);
+    const isWinner = tournament && tournament.championId === p.id;
+    const wins = tournament?.standings?.[p.id]?.wins || 0;
+
+    const el = document.createElement('div');
+    el.className = 'ts-player' + (isMe ? ' active' : '') + (isDuelist ? ' duelist' : '') + (isWinner ? ' winner' : '') + (p.online === false ? ' offline' : '');
+    el.innerHTML = `<span>${p.avatar}</span> <strong class="ts-name">${esc(p.name)}</strong> <span>${wins}W</span> ${isWinner ? '👑' : ''}`;
+    sb.appendChild(el);
+  });
+}
+
+function renderLobbyPlayers() {
+  const list = $('lobbyPlayersList');
+  if (!list) return;
+  list.innerHTML = '';
+  $('lobbyPlayerCount').textContent = players.length;
+
+  // Format badge
+  const pCount = players.length;
+  let formatText = '1v1 Head-to-Head';
+  if (pCount === 3) formatText = '3P Triangle Clash';
+  else if (pCount >= 4) formatText = `${pCount}P Knockout Cup`;
+  $('lobbyFormatBadge').textContent = formatText;
+
+  players.forEach((p, idx) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.08); padding:8px 12px; border-radius:10px; font-weight:600; font-size:0.9rem;';
+    row.innerHTML = `
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:1.25rem;">${p.avatar}</span>
+        <span>${esc(p.name)}</span>
+        ${p.id === myId ? '<span style="font-size:0.7rem; color:#6ee7b7;">(You)</span>' : ''}
+        ${p.isBot ? '<span style="font-size:0.7rem; color:#93c5fd;">(AI Bot)</span>' : ''}
+        ${p.online === false ? '<span style="font-size:0.7rem; color:#fca5a5;">(Offline)</span>' : ''}
+      </div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        ${idx === 0 ? '<span style="font-size:0.75rem; background:rgba(255,214,111,0.25); color:#ffd66f; padding:2px 6px; border-radius:4px;">👑 Host</span>' : ''}
+        ${host && !p.isBot && p.id !== myId ? `<button type="button" class="btn-alt" style="padding:2px 6px; font-size:0.7rem;" onclick="kickPlayer('${p.id}')">Kick</button>` : ''}
+      </div>
+    `;
+    list.appendChild(row);
+  });
+
+  $('startTournamentBtn').classList.toggle('hidden', !host);
+  $('hostLobbyControls').classList.toggle('hidden', !host);
+  $('hostBotButtonsRow').classList.toggle('hidden', !host);
+}
+
+function kickPlayer(pid) {
+  if (!host) return;
+  players = players.filter(p => p.id !== pid);
+  const conn = connections.get(pid);
+  if (conn) {
+    send(conn, { type: 'KICKED' });
+    conn.close();
+  }
+  connections.delete(pid);
+  renderLobbyPlayers();
+  updateTopScoreboard();
+  broadcastLobbyState();
+}
+
+function broadcastLobbyState() {
+  if (!host) return;
+  broadcastHost({
+    type: 'LOBBY_UPDATE',
+    players,
+    settings
+  });
+}
+
+function saveMyProfileLocally() {
+  const mainName = $('userNameInput')?.value.trim();
+  if (mainName) myName = mainName;
+  try {
+    localStorage.setItem('numduel_name', myName);
+    localStorage.setItem('numduel_avatar', myAvatar);
+  } catch (e) {}
+}
+
+function syncAvatarPickers() {
+  ['setupAvatarPicker', 'lobbyAvatarPicker'].forEach(cid => {
+    const container = $(cid);
+    if (!container) return;
+    container.innerHTML = '';
+    AVATARS.forEach(emoji => {
+      const el = document.createElement('div');
+      el.className = 'avatar-option' + (emoji === myAvatar ? ' selected' : '');
+      el.textContent = emoji;
+      el.onclick = () => {
+        myAvatar = emoji;
+        syncAvatarPickers();
+        playClickSound();
+      };
+      container.appendChild(el);
+    });
+  });
+}
+
+// HEARTBEAT & RECONNECT MONITOR
+let heartbeatTimer = null;
+function startHeartbeat() {
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
+  heartbeatTimer = setInterval(() => {
+    if (peer && !peer.destroyed && peer.disconnected) {
+      try { peer.reconnect(); } catch (e) {}
+    }
+    if (host) {
+      for (const c of connections.values()) {
+        if (c && c.open) send(c, { type: 'PING' });
+      }
+    } else {
+      if (window._hostConn && window._hostConn.open) {
+        send(window._hostConn, { type: 'PING', playerId: myId });
+      }
+    }
+  }, 3500);
+}
+
+// BIND ALL UI INTERACTION EVENTS
+function bindUI() {
+  $('userNameInput').value = myName;
+  syncAvatarPickers();
+
+  // Check saved session
+  const savedSession = getSavedSessionInfo();
+  if (savedSession && savedSession.roomCode) {
+    $('reconnectBanner').classList.remove('hidden');
+    $('reconnectBtn').textContent = `⚡ Reconnect to ${savedSession.roomCode}`;
+    $('reconnectBtn').onclick = () => {
+      if (savedSession.isHost) hostGame(savedSession.roomCode);
+      else joinGame(savedSession.roomCode);
+    };
+    $('clearSessionBtn').onclick = clearSavedSession;
+  }
+
+  // Setup buttons
+  $('hostBtn').onclick = () => { playClickSound(); hostGame(); };
+  $('joinBtn').onclick = () => { playClickSound(); joinGame(); };
+  $('soloDuelBtn').onclick = () => { playClickSound(); playSoloDuel(); };
+  $('soloTourneyBtn').onclick = () => { playClickSound(); playSoloTournament(); };
+
+  $('startTournamentBtn').onclick = () => { playClickSound(); startTournament(); };
+  $('nextTournamentMatchBtn').onclick = () => {
+    playClickSound();
+    $('matchOverModal').classList.add('hidden');
+    advanceToNextTournamentMatch();
+  };
+
+  $('leaveLobbyBtn').onclick = () => { clearSavedSession(); if (peer) peer.destroy(); location.reload(); };
+
+  // Bot management buttons in lobby
+  $('addBotBtn').onclick = () => {
+    if (!host) return;
+    const botNames = ['Bot Delta', 'Bot Echo', 'Bot Titan', 'Bot Apex', 'Bot Blaze'];
+    const botAvatars = ['🤖', '⚡', '🧙', '🎯', '🐙'];
+    const count = players.filter(p => p.isBot).length;
+    const name = botNames[count % botNames.length];
+    const avatar = botAvatars[count % botAvatars.length];
+    players.push({ id: 'bot-' + Date.now(), name, avatar, isBot: true, online: true });
+    renderLobbyPlayers();
+    updateTopScoreboard();
+    broadcastLobbyState();
+    playClickSound();
+  };
+
+  $('removeBotBtn').onclick = () => {
+    if (!host) return;
+    const botIdx = players.findLastIndex(p => p.isBot);
+    if (botIdx !== -1) {
+      players.splice(botIdx, 1);
+      renderLobbyPlayers();
+      updateTopScoreboard();
+      broadcastLobbyState();
+      playClickSound();
+    }
+  };
+
+  // Host live lobby settings changes
+  ['lobbyDigitLen', 'lobbyDuplicates', 'lobbyTurnTimer'].forEach(id => {
+    $(id).onchange = () => {
+      if (!host) return;
+      settings.digitLen = parseInt($('lobbyDigitLen').value, 10);
+      settings.allowDuplicates = ($('lobbyDuplicates').value === 'yes');
+      settings.turnTimer = parseInt($('lobbyTurnTimer').value, 10);
+      broadcastLobbyState();
+    };
+  });
+
+  // Profile update from Lobby
+  $('updateProfileBtn').onclick = () => {
+    const newName = $('lobbyNameInput').value.trim();
+    if (newName) myName = newName;
+    $('userNameInput').value = myName;
+    saveMyProfileLocally();
+    if (host) {
+      const me = players.find(p => p.id === myId);
+      if (me) { me.name = myName; me.avatar = myAvatar; }
+      renderLobbyPlayers();
+      updateTopScoreboard();
+      broadcastLobbyState();
+    } else {
+      sendToHost({ type: 'UPDATE_PROFILE', name: myName, avatar: myAvatar });
+    }
+    $('updateProfileBtn').textContent = 'Saved! ✓';
+    setTimeout(() => { $('updateProfileBtn').textContent = '✓ Save'; }, 1200);
+  };
+
+  // Secret Selection Keypad & Buttons
+  $('secretKeypad').addEventListener('click', e => {
+    const btn = e.target.closest('.keypad-btn');
+    if (!btn) return;
+    const digit = btn.getAttribute('data-digit');
+    if (digit !== null) onSecretKeypadPress(digit);
+  });
+  $('secretClearBtn').onclick = () => {
+    localSecretBuffer = '';
+    $('secretErrorMsg').textContent = '';
+    playBackspaceSound();
+    updateSecretSlotsUI();
+  };
+  $('secretRandomBtn').onclick = () => {
+    localSecretBuffer = generateRandomSecret(settings.digitLen, settings.allowDuplicates);
+    $('secretErrorMsg').textContent = '';
+    playClickSound();
+    updateSecretSlotsUI();
+  };
+  $('lockInSecretBtn').onclick = submitMySecret;
+
+  // Guess Keypad & Buttons
+  $('guessKeypad').addEventListener('click', e => {
+    const btn = e.target.closest('.keypad-btn');
+    if (!btn) return;
+    const digit = btn.getAttribute('data-digit');
+    if (digit !== null) onGuessKeypadPress(digit);
+  });
+  $('guessBackspaceBtn').onclick = onGuessBackspace;
+  $('guessClearBtn').onclick = () => {
+    localGuessBuffer = '';
+    $('guessErrorMsg').textContent = '';
+    playBackspaceSound();
+    updateGuessSlotsUI();
+  };
+  $('guessSubmitBtn').onclick = submitGuess;
+
+  // Scratchpad Reset & Slot Notes Toggle
+  $('resetScratchpadBtn').onclick = () => {
+    for (let d = 0; d <= 9; d++) scratchpadState[d] = 0;
+    slotNotesState = {};
+    playClickSound();
+    renderScratchpad();
+    renderSlotNotes();
+  };
+
+  $('toggleSlotNotesBtn').onclick = () => {
+    const container = $('slotNotesContainer');
+    const isHidden = container.classList.toggle('hidden');
+    $('toggleSlotNotesBtn').textContent = isHidden ? '📋 Slot Notes' : '✕ Hide Notes';
+    if (!isHidden) renderSlotNotes();
+    playClickSound();
+  };
+
+  // Physical Keyboard Support
+  window.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+    if (!document.getElementById('secretPickerPanel').classList.contains('hidden')) {
+      if (e.key >= '0' && e.key <= '9') onSecretKeypadPress(e.key);
+      else if (e.key === 'Backspace') onSecretBackspace();
+      else if (e.key === 'Enter') submitMySecret();
+    } else if (!document.getElementById('duelPanel').classList.contains('hidden')) {
+      if (e.key >= '0' && e.key <= '9') onGuessKeypadPress(e.key);
+      else if (e.key === 'Backspace') onGuessBackspace();
+      else if (e.key === 'Enter') submitGuess();
+    }
+  });
+
+  // Bracket Overlay Navigation
+  $('bracketToggleBtn').onclick = renderBracketOverlay;
+  $('viewBracketFromModalBtn').onclick = () => {
+    $('matchOverModal').classList.add('hidden');
+    renderBracketOverlay();
+  };
+  $('closeBracketBtn').onclick = () => $('bracketPanel').classList.add('hidden');
+  $('bracketActionBtn').onclick = () => $('bracketPanel').classList.add('hidden');
+
+  // Themes
+  $('themeSelect').onchange = e => {
+    document.body.setAttribute('data-theme', e.target.value);
+    localStorage.setItem('numduel_theme', e.target.value);
+  };
+  const savedTheme = localStorage.getItem('numduel_theme');
+  if (savedTheme) {
+    document.body.setAttribute('data-theme', savedTheme);
+    $('themeSelect').value = savedTheme;
+  }
+
+  // Sound toggle
+  $('soundToggleBtn').onclick = () => {
+    soundEnabled = !soundEnabled;
+    localStorage.setItem('numduel_sound', soundEnabled);
+    $('soundToggleBtn').textContent = soundEnabled ? '🔊' : '🔇';
+  };
+  $('soundToggleBtn').textContent = soundEnabled ? '🔊' : '🔇';
+
+  // Info Modal
+  $('infoBtn').onclick = () => $('infoModal').classList.remove('hidden');
+  $('closeInfoBtn').onclick = () => $('infoModal').classList.add('hidden');
+
+  // Copy link
+  $('copyInviteBtn').onclick = () => {
+    navigator.clipboard.writeText(inviteUrl()).then(() => {
+      $('copyInviteBtn').textContent = 'Copied! ✓';
+      setTimeout(() => { $('copyInviteBtn').textContent = '📋 Copy Link'; }, 1800);
+    });
+  };
+
+  // Champion modal buttons
+  $('newTournamentBtn').onclick = () => {
+    $('championModal').classList.add('hidden');
+    if (host) {
+      broadcastHost({ type: 'RETURN_TO_LOBBY' });
+    }
+    showPanel('lobbyPanel');
+    renderLobbyPlayers();
+    updateTopScoreboard();
+  };
+  $('closeChampionBtn').onclick = () => $('championModal').classList.add('hidden');
+
+  // URL Join param handler
+  const urlParams = new URLSearchParams(location.search);
+  const joinParam = urlParams.get('join') || urlParams.get('room');
+  if (joinParam && $('joinCodeInput')) {
+    $('joinCodeInput').value = cleanRoomCode(joinParam);
+    msg('Room code filled! Set your Name & Avatar, then click Join Room.');
+  }
+
+  // Hero digit flip animation on click
+  $('heroDigitsRow').addEventListener('click', () => {
+    const tiles = document.querySelectorAll('.hero-digit-tile');
+    tiles.forEach(tile => {
+      tile.textContent = Math.floor(Math.random() * 10);
+    });
+    playClickSound();
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bindUI);
+} else {
+  bindUI();
+}
+</script>
+</body>
+</html>
