@@ -9,6 +9,12 @@ https://live.skystream.in/live/kcnksrgod/index.m3u8
 #EXTINF:-1 tvg-logo="https://play-lh.googleusercontent.com/U11okGjVgkdk9GkYNnqoiLrES36ayRBUnP83lUDuPaPVsOVkOUdiuWZtdLRZ0NJgee3Dz_Aa0kgI5NP3ioNhSw=w240-h480-rw"  group-title="Malayalam",ONE Tv
 http://103.99.205.223:1935/live/onetv/playlist.m3u8
 
+#EXTINF:-1 tvg-logo="https://play-lh.googleusercontent.com/U11okGjVgkdk9GkYNnqoiLrES36ayRBUnP83lUDuPaPVsOVkOUdiuWZtdLRZ0NJgee3Dz_Aa0kgI5NP3ioNhSw=w240-h480-rw"  group-title="Sports", Hub PL 1 Server
+http://3serverx.com:80/live/hclenander%40gmail.com/aha7rkNaPm/288375.ts
+
+#EXTINF:-1 tvg-logo="https://play-lh.googleusercontent.com/U11okGjVgkdk9GkYNnqoiLrES36ayRBUnP83lUDuPaPVsOVkOUdiuWZtdLRZ0NJgee3Dz_Aa0kgI5NP3ioNhSw=w240-h480-rw"  group-title="Sports", Now PL 1 Server
+http://3serverx.com:80/live/hclenander%40gmail.com/aha7rkNaPm/715574.ts
+
 #EXTINF:-1 tvg-logo="https://thumb.wikimedia.org/wikipedia/en/thumb/7/7a/StarHub_%282021%29.svg/500px-StarHub_%282021%29.svg.png?utm_source=en.wikipedia.org&utm_campaign=parser&utm_content=thumbnail"  group-title="Sports",Now Sports 1
 #EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36
 http://bxsmrt.cc:80/live/D87453C26354A79/yVXK9kM8DT/979906.ts
